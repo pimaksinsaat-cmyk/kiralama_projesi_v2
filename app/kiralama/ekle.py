@@ -105,7 +105,8 @@ def ekle():
     if form.validate_on_submit():
         yeni_kiralama = Kiralama(
             kiralama_form_no=form.kiralama_form_no.data,
-            musteri_id=form.musteri_id.data
+            musteri_id=form.musteri_id.data,
+            kdv_orani=form.kdv_orani.data
         )
         db.session.add(yeni_kiralama) 
 
@@ -307,6 +308,13 @@ def duzenle(kiralama_id):
         original_ekipman_ids = {k.ekipman_id for k in db_kalemler_map.values() if k.ekipman_id}
 
         try:
+
+            # --- YENİ GÜNCELLEME BLOĞU ---
+            # Kalemleri işlemeden önce ana Kiralama form bilgilerini güncelle
+            kiralama.kiralama_form_no = form.kiralama_form_no.data
+            kiralama.musteri_id = form.musteri_id.data
+            kiralama.kdv_orani = form.kdv_orani.data
+            # --- YENİ BLOK SONU ---
             new_ekipman_ids = set()
             new_kalemler_data = [] 
             sonlandirilmis_kalemler_map = {} 

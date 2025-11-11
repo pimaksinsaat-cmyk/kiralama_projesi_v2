@@ -99,6 +99,11 @@ class Kiralama(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     kiralama_form_no = db.Column(db.String(100), nullable=True)
 
+    # --- YENİ EKLENECEK ALAN ---
+    # KDV Oranı. Varsayılan olarak %20.
+    kdv_orani = db.Column(db.Integer, nullable=False, default=20)
+    # --- YENİ ALAN SONU ---
+
     # Müşteri ilişkisi (Aynı kaldı)
     musteri_id = db.Column(db.Integer, db.ForeignKey('musteri.id'), nullable=False)
     musteri = db.relationship('Musteri', back_populates='kiralamalar')

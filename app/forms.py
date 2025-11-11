@@ -7,12 +7,14 @@ from wtforms import (
     SubmitField, 
     FormField,  # Alt formları eklemek için
     FieldList,   # Alt form listesi oluşturmak için
-    HiddenField
+    HiddenField,
+    IntegerField
+    
 )
 # DataRequired yerine InputRequired kullanmak,
 # '' (boş metin) değerlerinin coerce=int veya Decimal()
 # hatalarına yol açmasını engeller.
-from wtforms.validators import Optional, InputRequired
+from wtforms.validators import Optional, InputRequired,NumberRange
 
 # --- 1. Ekipman Ekleme Formu ---
 
@@ -80,6 +82,14 @@ class KiralamaForm(FlaskForm):
     
     # DÜZELTME: 'coerce=int' KALDIRILDI.
     musteri_id = SelectField('Müşteri Seç', validators=[InputRequired()])
+    # --- YENİ EKLENECEK ALAN ---
+    # Varsayılan değeri 20 olan, 0-100 arası bir sayı alanı
+    kdv_orani = IntegerField(
+        'KDV Oranı (%)', 
+        default=20, 
+        validators=[InputRequired(), NumberRange(min=0, max=100)]
+    )
+    # --- YENİ ALAN SONU ---
 
     # 'kalemler' listesi, 'KiralamaKalemiForm' alt formlarını tutar
     kalemler = FieldList(FormField(KiralamaKalemiForm), min_entries=1)

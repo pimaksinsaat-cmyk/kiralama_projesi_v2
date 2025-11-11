@@ -30,6 +30,16 @@
                     <label>{{ form.musteri_id.label }}</label>
                     {{ form.musteri_id(class="form-control") }}
                 </div>
+
+                <div class="form-group">
+                    {{ form.kdv_orani.label }}
+                    {{ form.kdv_orani(class="form-control", size=10) }}
+                    {% for error in form.kdv_orani.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+
             </div>
         </div>
         
