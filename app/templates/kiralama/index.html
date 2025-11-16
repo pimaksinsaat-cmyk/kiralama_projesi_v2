@@ -1,98 +1,537 @@
 {% extends "base.html" %}
 
+{% block title %}Tüm Kiralamalar{% endblock %}
+
 {% block content %}
-<div class="container2">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Kiralama Kayıtları</h1>
-        
-        <div style="display: flex; justify-content: flex-start; align-items: center; gap: 10px; margin-top: 20px;">
-         <a href="{{ url_for('kiralama.ekle') }}" class="btn">Yeni Kiralama Ekle</a>
-         <span>|</span>
-         <a href="{{ url_for('main.index') }}">Ana Sayfaya Dön</a>
-        </div>
+<!-- 
+CSS, 'content' bloğunun içine taşındı ve
+'Sağ Tık Menüsü' (Context Menu), Durum Renkleri, Arama Formu, Sayfalama
+ve Sonlandırma Modalı için gerekli tüm stilleri içerir.
+-->
+<style>
+    .container { 
+        max-width: 1500px; 
+        margin: 20px auto; 
+        padding: 20px; 
+        background-color: #fff; 
+        border-radius: 8px; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+    }
+    table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        margin-top: 20px; 
+        font-size: 0.9em; 
+    }
+    th, td { 
+        padding: 12px; 
+        border: 1px solid #dee2e6; 
+        text-align: left; 
+        vertical-align: top; 
+    }
+    /* Başlıkların sabit kalmasını sağlar */
+    th { 
+        background-color: #e9ecef; 
+        position: sticky;
+        top: 0; 
+        z-index: 10;
+    }
+    a { color: #007bff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    
+    /* Buton Stilleri */
+    .btn {
+        display: inline-block;
+        padding: 8px 12px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: bold;
+        color: white;
+        transition: background-color 0.2s;
+        margin-bottom: 5px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9em;
+    }
+    .btn-danger { background-color: #c82333; }
+    .btn-primary { background-color: #007bff; }
+    .btn-secondary { background-color: #6c757d; }
 
+    .alert { padding: 1rem; margin-bottom: 1rem; border: 1px solid transparent; border-radius: .25rem; }
+    .alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+    .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+    .alert-warning { color: #856404; background-color: #fff3cd; border-color: #ffeeba; } 
+    .alert-primary { color: #004085; background-color: #cce5ff; border-color: #b8daff; } 
 
+    /* Etiket/Badge Stilleri (Tüm Durumlar İçin) */
+    .badge {
+        display: inline-block;
+        padding: .45em .75em;
+        font-size: .8em;
+        font-weight: 700;
+        line-height: 1;
+        color: #fff;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: .25rem;
+        margin: 2px;
+    }
+    .bg-primary { background-color: #007bff; }
+    .bg-warning { background-color: #ffc107; color: #343a40; }
+    .bg-secondary { background-color: #6c757d; }
+    .bg-info { background-color: #17a2b8; }
+    .bg-success { background-color: #28a745; }
+    .bg-danger { background-color: #dc3545; }
+    .bg-light { background-color: #f8f9fa; color: #343a40; border: 1px solid #ccc;}
+    .bg-dark { background-color: #343a40; } 
 
+    /* Kalem listesi için (iç içe liste) */
+    .kalem-listesi {
+        list-style-type: none;
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+    .kalem-listesi li {
+        padding: 5px;
+        border-bottom: 1px dashed #eee;
+    }
+    .kalem-listesi li:last-child {
+        border-bottom: none;
+    }
+    .kalem-listesi-item:hover {
+        background-color: #f8f9fa;
+        cursor: context-menu;
+    }
+    
+    /* Sağ Tık Menüleri */
+    .context-menu, .context-menu-kalem {
+        display: none; 
+        position: absolute; 
+        background-color: white;
+        border: 1px solid #ccc;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border-radius: 5px;
+        z-index: 1000;
+        min-width: 180px;
+        padding: 5px 0;
+    }
+    .context-menu-kalem {
+        z-index: 1001; /* Diğer menünün üstünde */
+        min-width: 220px;
+    }
+    
+    .context-menu-item { display: block; padding: 8px 15px; color: #333; text-decoration: none; font-size: 0.9em; }
+    .context-menu-item:hover { background-color: #f5f5f5; color: #000; text-decoration: none; }
+    .context-menu-item.delete { color: #dc3545; font-weight: bold; }
+    .context-menu-item.delete:hover { background-color: #dc3545; color: white; }
+    .context-menu-divider { height: 1px; margin: 5px 0; background-color: #eee; }
+    
+    /* Arama Formu Stilleri */
+    .search-form { display: flex; gap: 10px; margin-bottom: 15px; }
+    .search-form input[type="text"] { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 1em; }
+    .search-form button { padding: 8px 15px; border: none; border-radius: 5px; background-color: #007bff; color: white; font-weight: bold; cursor: pointer; }
+    .search-form button:hover { background-color: #0056b3; }
+
+    /* Sayfalama (Pagination) Stilleri */
+    .pagination { margin-top: 20px; text-align: center; }
+    .pagination a, .pagination span { display: inline-block; padding: 8px 12px; margin: 0 3px; border: 1px solid #dee2e6; border-radius: 5px; text-decoration: none; color: #007bff; }
+    .pagination a:hover { background-color: #e9ecef; }
+    .pagination .active { background-color: #007bff; color: white; border-color: #007bff; }
+    .pagination .disabled { color: #6c757d; pointer-events: none; }
+    
+    /* Sonlandırma Modalı (Popup) Stilleri */
+    .modal-backdrop {
+        display: none; 
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 1040;
+    }
+    .modal-dialog {
+        display: none; 
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        z-index: 1050;
+        width: 90%;
+        max-width: 400px;
+    }
+    .modal-dialog h3 {
+        margin-top: 0;
+    }
+    .modal-dialog .form-group {
+        margin-bottom: 15px;
+    }
+    .modal-dialog .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    .modal-dialog .form-group input[type="date"] {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box; 
+    }
+    .modal-actions {
+        text-align: right;
+        margin-top: 20px;
+    }
+</style>
+
+<div class="container">
+
+    <h1>Tüm Kiralamalar</h1>
+    
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' }}" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        {% endif %}
     {% endwith %}
-    <style>
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
-    </style>
-    <table class="table table-striped table-bordered">
-        <thead class="thead-dark">
+
+    <p>
+        <a href="{{ url_for('kiralama.ekle') }}">+ Yeni Kiralama Ekle</a>
+         &nbsp; | &nbsp; 
+        <a href="{{ url_for('main.index') }}">Ana Sayfaya Dön</a>
+    </p>
+
+    <!-- Arama Formu -->
+    <form method="GET" action="{{ url_for('kiralama.index') }}" class="search-form">
+        <input type="text" name="q" placeholder="Form No, Firma Adı veya Yetkili Adı ile ara..." value="{{ q or '' }}">
+        <button type="submit">Bul</button>
+    </form>
+
+    <table>
+        <thead>
             <tr>
-                <th>Form No</th>
-                <th>Müşteri</th>
-                <th>Kiralanan Ekipmanlar</th>
-                <th>Başlangıç Tarihleri</th>
-                <th>Bitiş Tarihleri</th>
-                <th>Birim Fiyatlar</th>
-                <th>İşlemler</th>
+                <th>
+                    Form No
+                    <br>
+                    <small class="text-muted" style="font-weight: normal;">(Seçenekler için sağ tık)</small>
+                </th>
+                <th>Müşteri (Firma)</th>
+                <th>
+                    Kiralama Kalemleri
+                    <br>
+                    <small class="text-muted" style="font-weight: normal;">(Sonlandırmak için sağ tık)</small>
+                </th>
+                <th>Kalem Durumları</th>
             </tr>
         </thead>
         <tbody>
-            {% if kiralamalar %}
-                {% for kiralama in kiralamalar %}
-                <tr>
-                    
-                    <td>
-                        <a href="{{ url_for('kiralama.duzenle', kiralama_id=kiralama.id) }}">
-                            {{ kiralama.kiralama_form_no }}
+            {% for kiralama in kiralamalar %}
+            <tr class="kiralama-satiri"
+                data-kiralama-id="{{ kiralama.id }}"
+                data-duzenle-url="{{ url_for('kiralama.duzenle', kiralama_id=kiralama.id) }}"
+                data-sil-url="{{ url_for('kiralama.sil', kiralama_id=kiralama.id) }}"
+                data-csrf-token="{{ csrf_token() }}"
+                data-form-no="{{ kiralama.kiralama_form_no }}"
+                >
+                <td>
+                    <strong>{{ kiralama.kiralama_form_no }}</strong>
+                </td>
+                
+                <td>
+                    {% if kiralama.firma_musteri %}
+                        <a href="{{ url_for('firmalar.bilgi', id=kiralama.firma_musteri.id) }}">
+                            <strong>{{ kiralama.firma_musteri.firma_adi }}</strong>
                         </a>
-                    </td>
-                    <td>{{ kiralama.musteri.firma_adi if kiralama.musteri else 'Müşteri Yok' }}</td>
-                    
-                    <td>
+                    {% else %}
+                        <span class="text-danger">Müşteri Bulunamadı</span>
+                    {% endif %}
+                </td>
+                
+                <td>
+                    <ul class="kalem-listesi">
                         {% for kalem in kiralama.kalemler %}
-                            {{ kalem.ekipman.kod if kalem.ekipman else 'Ekipman Yok' }}<br>
+                        <li class="kalem-listesi-item"
+                            data-kalem-id="{{ kalem.id }}"
+                            data-ekipman-kod="{{ kalem.ekipman.kod if kalem.ekipman else 'Bilinmeyen' }}"
+                            data-csrf-token="{{ csrf_token() }}"
+                            data-sonlandirilmis="{{ 1 if kalem.sonlandirildi else 0 }}"
+                            title="Bu kalemi sonlandırmak için sağ tıkla"
+                            >
+                            
+                            {% if kalem.ekipman %}
+                                <strong>{{ kalem.ekipman.kod }}</strong> ({{ kalem.ekipman.tipi }})
+                            {% else %}
+                                <strong class="text-danger">Silinmiş Ekipman</strong>
+                            {% endif %}
+                            
+                            <br>
+                            
+                            {% if kalem.ekipman and kalem.ekipman.firma_tedarikci_id %}
+                                <span class="badge bg-warning">Harici Ekipman (Tedarikçi: {{ kalem.ekipman.firma_tedarikci.firma_adi }})</span>
+                            {% else %}
+                                <span class="badge bg-primary">Pimaks Filosu</span>
+                            {% endif %}
+                            
+                            {% if kalem.nakliye_tedarikci_id %}
+                                <span class="badge bg-info">Harici Nakliye (Tedarikçi: {{ kalem.nakliye_tedarikci.firma_adi }})</span>
+                            {% else %}
+                                <span class="badge bg-light">Pimaks Nakliye</span>
+                            {% endif %}
+                        </li>
                         {% endfor %}
-                    </td>
-                    
-                    <td>
+                    </ul>
+                </td>
+                
+                <td>
+                    <ul class="kalem-listesi">
                         {% for kalem in kiralama.kalemler %}
-                            {{ kalem.kiralama_baslangıcı|tarihtr }}<br>
+                        <li>
+                            <span class="badge bg-{{ kalem.durum_sinifi | default('secondary') }}">
+                                {{ kalem.durum_mesaji | default('Bilinmiyor') }}
+                            </span>
+                        </li>
                         {% endfor %}
-                    </td>
-
-                    <td> {% for kalem in kiralama.kalemler %}
-                            {{ kalem.kiralama_bitis|tarihtr }} <br>
-                        {% endfor %}
-                    </td>
-
-                    <td>
-                        {% for kalem in kiralama.kalemler %}
-                            {{ kalem.kiralama_brm_fiyat }} TL<br>
-                        {% endfor %}
-                    </td>
-
-                    <td>
-                        <form action="{{ url_for('kiralama.sil', kiralama_id=kiralama.id) }}"
-                         method="POST" 
-                         style="display: inline;"
-                         onsubmit="return confirm('Bu kiralama kaydını (ve tüm kalemlerini) silmek istediğinize emin misiniz?');">
-    
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    
-                             <button type="submit" class="btn btn-danger2 btn-sm">
-                              Sil
-                             </button>
-                         </form>
-                        
-                    </td>
-                </tr>
-                {% endfor %}
+                    </ul>
+                </td>
+            </tr>
             {% else %}
-                <tr>
-                    <td colspan="6" class="text-center">Henüz kiralama kaydı bulunmuyor.</td>
-                </tr>
-            {% endif %}
+            <tr>
+                <td colspan="4">
+                    {% if q %}
+                        "'{{ q }}'" için arama sonucu bulunamadı.
+                    {% else %}
+                        Kayıtlı kiralama bulunamadı.
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
         </tbody>
-        
     </table>
+
+    <!-- Sayfalama (Pagination) Linkleri -->
+    {% if pagination %}
+    <div class="pagination">
+        <a href="{{ url_for('kiralama.index', page=pagination.prev_num, q=q) if pagination.has_prev else '#' }}"
+           class="{{ 'disabled' if not pagination.has_prev else '' }}">
+           &laquo; Önceki
+        </a>
+        {% for page_num in pagination.iter_pages() %}
+            {% if page_num %}
+                {% if page_num != pagination.page %}
+                    <a href="{{ url_for('kiralama.index', page=page_num, q=q) }}">{{ page_num }}</a>
+                {% else %}
+                    <span class="active">{{ page_num }}</span>
+                {% endif %}
+            {% else %}
+                <span class="disabled">...</span>
+            {% endif %}
+        {% endfor %}
+        <a href="{{ url_for('kiralama.index', page=pagination.next_num, q=q) if pagination.has_next else '#' }}"
+           class="{{ 'disabled' if not pagination.has_next else '' }}">
+           Sonraki &raquo;
+        </a>
+    </div>
+    <div style="text-align: center; font-size: 0.9em; color: #555;">
+        Toplam {{ pagination.total }} kayıttan {{ pagination.first }} - {{ pagination.last }} arası gösteriliyor.
+    </div>
+    {% endif %}
+
 </div>
+
+<!-- 
+---------------------------------------------------------------
+GİZLİ MENÜLER VE FORMLAR
+---------------------------------------------------------------
+-->
+
+<!-- 1. ANA KİRALAMA SAĞ TIK MENÜSÜ -->
+<div id="context-menu" class="context-menu">
+    <a href="#" class="context-menu-item" id="menu-duzenle">
+        <i class="fa fa-pencil"></i> Kiralamayı Düzenle
+    </a>
+    <div class="context-menu-divider"></div>
+    <a href="#" class="context-menu-item delete" id="menu-sil">
+        <i class="fa fa-trash"></i> Kiralamayı Sil
+    </a>
+</div>
+
+<!-- 2. ANA SİLME FORMU -->
+<form id="delete-form" method="POST" style="display: none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+
+<!-- 3. KALEM SAĞ TIK MENÜSÜ -->
+<div id="context-menu-kalem" class="context-menu-kalem">
+    <a href="#" class="context-menu-item" id="menu-sonlandir">
+        <i class="fa fa-check"></i> Kiralamayı Sonlandır...
+    </a>
+</div>
+
+<!-- 4. MODAL (POPUP) PENCERESİ VE FORMU -->
+<div id="modal-backdrop" class="modal-backdrop"></div>
+<div id="sonlandir-modal" class="modal-dialog">
+    <form id="sonlandir-kalem-form" method="POST" action="{{ url_for('kiralama.sonlandir_kalem') }}">
+        <h3>Kiralamayı Sonlandır</h3>
+        <p>Lütfen <strong id="modal-ekipman-kod"></strong> için bir bitiş tarihi seçin.</p>
+        
+        <input type="hidden" name="csrf_token" id="modal-csrf-token">
+        <input type="hidden" name="kalem_id" id="modal-kalem-id">
+        
+        <div class="form-group">
+            <label for="modal-bitis-tarihi">Kiralama Bitiş Tarihi:</label>
+            <input type="date" id="modal-bitis-tarihi" name="bitis_tarihi" required>
+        </div>
+        
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" id="modal-iptal">İptal</button>
+            <button type="submit" class="btn btn-primary">Sonlandır</button>
+        </div>
+    </form>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- 1. ANA KİRALAMA SAĞ TIK (SATIR) ---
+    const contextMenu = document.getElementById('context-menu');
+    const deleteForm = document.getElementById('delete-form');
+    const menuDuzenle = document.getElementById('menu-duzenle');
+    const menuSil = document.getElementById('menu-sil');
+    
+    let currentSilUrl = null;
+    let currentCsrfToken = null;
+    let currentFormNo = null;
+
+    document.querySelectorAll('.kiralama-satiri').forEach(row => {
+        row.addEventListener('contextmenu', function(event) {
+            event.preventDefault();
+            hideKalemMenu(); 
+            hideSonlandirModal(); 
+
+            currentSilUrl = row.dataset.silUrl;
+            currentCsrfToken = row.dataset.csrfToken;
+            currentFormNo = row.dataset.formNo;
+            menuDuzenle.href = row.dataset.duzenleUrl;
+
+            contextMenu.style.left = event.pageX + 'px';
+            contextMenu.style.top = event.pageY + 'px';
+            contextMenu.style.display = 'block';
+        });
+    });
+
+    // Ana "Sil" butonu
+    menuSil.addEventListener('click', function(event) {
+        event.preventDefault();
+        if (currentSilUrl && currentFormNo) {
+            const onay = confirm("'" + currentFormNo + "' nolu KİRALAMANIN TAMAMINI silmek istediğinizden emin misiniz?");
+            if (onay) {
+                deleteForm.action = currentSilUrl;
+                deleteForm.querySelector('input[name="csrf_token"]').value = currentCsrfToken;
+                deleteForm.submit();
+            }
+        }
+        hideRowMenu();
+    });
+
+
+    // --- 2. YENİ: KALEM SONLANDIRMA SAĞ TIK (LİSTE ÖĞESİ) ---
+    const contextMenuKalem = document.getElementById('context-menu-kalem');
+    const menuSonlandir = document.getElementById('menu-sonlandir');
+    const modalBackdrop = document.getElementById('modal-backdrop');
+    const sonlandirModal = document.getElementById('sonlandir-modal');
+    const sonlandirForm = document.getElementById('sonlandir-kalem-form');
+    const modalKalemIdInput = document.getElementById('modal-kalem-id');
+    const modalCsrfInput = document.getElementById('modal-csrf-token');
+    const modalEkipmanKod = document.getElementById('modal-ekipman-kod');
+    const modalBitisTarihiInput = document.getElementById('modal-bitis-tarihi');
+    const modalIptalButton = document.getElementById('modal-iptal');
+
+    let currentKalemId = null;
+    let currentEkipmanKod = null;
+    let currentKalemCsrfToken = null;
+
+    document.querySelectorAll('.kalem-listesi-item').forEach(item => {
+        item.addEventListener('contextmenu', function(event) {
+            event.stopPropagation(); 
+            event.preventDefault();
+            hideRowMenu(); 
+            
+            // DÜZELTME: Zaten sonlandırılmışsa menüyü hiç açma
+            if (item.dataset.sonlandirilmis === '1') {
+                return; 
+            }
+
+            // Tıklanan 'li' öğesinden verileri al
+            currentKalemId = item.dataset.kalemId;
+            currentEkipmanKod = item.dataset.ekipmanKod;
+            currentKalemCsrfToken = item.dataset.csrfToken;
+
+            // Menüyü göster
+            contextMenuKalem.style.left = event.pageX + 'px';
+            contextMenuKalem.style.top = event.pageY + 'px';
+            contextMenuKalem.style.display = 'block';
+        });
+    });
+
+    // Kalem "Sonlandır" (menüde) butonuna tıklandığında
+    menuSonlandir.addEventListener('click', function(event) {
+        event.preventDefault();
+        hideKalemMenu();
+        
+        if (currentKalemId && currentEkipmanKod) {
+            modalKalemIdInput.value = currentKalemId;
+            modalEkipmanKod.textContent = currentEkipmanKod;
+            modalCsrfInput.value = currentKalemCsrfToken; // CSRF token'ı modal forma ekle
+            
+            // Bitiş tarihini varsayılan olarak bugüne ayarla
+            modalBitisTarihiInput.value = new Date().toISOString().split('T')[0]; 
+            
+            // Modalı göster
+            modalBackdrop.style.display = 'block';
+            sonlandirModal.style.display = 'block';
+        }
+    });
+
+    // Modal "İptal" butonuna tıklandığında
+    modalIptalButton.addEventListener('click', function() {
+        hideSonlandirModal();
+    });
+
+
+    // --- 3. YARDIMCI MENÜ KAPATMA FONKSİYONLARI ---
+    function hideRowMenu() {
+        if (contextMenu.style.display === 'block') {
+            contextMenu.style.display = 'none';
+        }
+    }
+    function hideKalemMenu() {
+        if (contextMenuKalem.style.display === 'block') {
+            contextMenuKalem.style.display = 'none';
+        }
+    }
+    function hideSonlandirModal() {
+        modalBackdrop.style.display = 'none';
+        sonlandirModal.style.display = 'none';
+    }
+
+    // Menü dışına (normal) tıklandığında tüm menüleri gizle
+    window.addEventListener('click', function(event) {
+        // Eğer tıklama modalın dışındaysa (backdrop'a tıklandıysa)
+        if (event.target === modalBackdrop) {
+            hideSonlandirModal();
+        }
+        
+        // Diğer sağ tık menülerini her zaman kapat
+        hideRowMenu();
+        hideKalemMenu();
+    });
+});
+</script>
+
 {% endblock %}

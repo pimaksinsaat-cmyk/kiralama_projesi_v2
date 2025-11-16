@@ -1,105 +1,159 @@
-
-<!DOCTYPE html>
-
-<html lang="tr">
-<head>
-<meta charset="UTF-8">
-<title>Makine Kayıt Düzelt</title>
-<style>
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 20px; background-color: #f8f9fa; }
-.container { max-width: 550px; margin: auto; padding: 25px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-h1 { color: #343a40; text-align: center; margin-bottom: 20px;}
-.form-group { margin-bottom: 0.7rem; }
-label { display: block; margin-bottom: .4rem; font-weight: 500; color: #495057; }
-input, select { width: 100%; max-width: 700px;padding: 1rem; border: 1px solid #ced4da; border-radius: .25rem; box-sizing: border-box; font-size: 1rem; }
-.form-info { background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9rem; text-align: center;}
-.btn-container { margin-top: 20px; }
-.btn { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; font-size: 1.1rem;}
-.btn-primary { background-color: #007bff; color: white; }
-.alert { padding: 1rem; margin-bottom: 1rem; border: 1px solid transparent; border-radius: .25rem; }
-.alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
-.alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
-.back-link { display: block; text-align: center; margin-top: 20px; text-decoration: none; color: #007bff; font-size: 0.9rem; font-weight: normal; }
-.back-link:hover { text-decoration: underline; }
-</style>
-</head>
-<body>
 {% extends "base.html" %}
 
+{% block title %}Firma Bilgilerini Düzelt{% endblock %}
+
 {% block content %}
-<div class="container">
+<!-- 
+    NOT: Bu sayfaya özel stilleri buraya taşıdım.
+    'base.html' dosyanızda bir 'head_style' bloğu varsa,
+    bu <style> etiketini oraya taşımak daha iyidir.
+-->
+<style>
+    /* Sayfanın ana stilleri */
+    .container { max-width: 550px; margin: auto; padding: 25px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    h2 { color: #343a40; text-align: center; margin-bottom: 20px;}
+    .form-group { margin-bottom: 0.7rem; }
+    label { display: block; margin-bottom: .4rem; font-weight: 500; color: #495057; }
     
-    <h2> "{{ musteri.firma_adi }}" Bilgilerini Düzelt</h2>
-    <form action="" method="POST" novalidate>
-        {{ form.hidden_tag() }}
-       
-        <div class="form-group">
-            <label for="firma_adi">Firma Adı :</label>
-            <input type="text" id="firma_adi" name="firma_adi" value="{{musteri.firma_adi}}" required>
-        </div>
+    /* WTForms'un üreteceği etiketlere stil uygulamak */
+    .form-control { 
+        width: 100%; 
+        max-width: 700px;
+        padding: 1rem; 
+        border: 1px solid #ced4da; 
+        border-radius: .25rem; 
+        box-sizing: border-box; 
+        font-size: 1rem; 
+    }
+    input[type="text"].form-control, 
+    input[type="number"].form-control, 
+    input[type="tel"].form-control, /* 'vergi_no' için eklendi */
+    textarea.form-control {
+            width: 100%; 
+    }
+    
+    /* Checkbox stilleri (Yeni Roller için) */
+    .form-check-input {
+            margin-right: 10px;
+    }
+    .form-check-label {
+            display: inline;
+            font-weight: normal;
+    }
 
-        <div class="form-group">
-            <label for="yetkili_adi">Yetkili Kişi :</label>
-            <input type="text" id="yetkili_adi" name="yetkili_adi" value="{{musteri.yetkili_adi}}"  required>
-        </div>
-
-       <div class="form-group">
-            <label for="iletisim_bilgileri">Adres :</label>   
-            <input type="text" id="iletisim_bilgileri" name="iletisim_bilgileri" value="{{musteri.iletisim_bilgileri}}" required>
-        </div>
-        <div class="form-group">
-            <label for="vergi_dairesi">Vergi Dairesi :</label>
-            <input type="text" id="vergi_dairesi" name="vergi_dairesi" value="{{musteri.vergi_dairesi}}" required>     
-        </div>
-        <div class="form-group">
-            <label for="vergi_no">Vergi No:</label>
-            <input type="number"  id="vergi_no" name="vergi_no" value="{{musteri.vergi_no}}" required>     
-        </div>
-
-        <!-- Butonlar -->
-        <div class="butonlar">
-         <button type="submit" class="buton">Kaydet 
-            </button>
-         <a href="{{ url_for('firmalar.index') }}" class="buton iptal">İptal</a>
-         </div>
-    </form>
-       <style>
-        .butonlar {
+    /* Buton stilleri */
+    .butonlar {
         display: flex;
         justify-content: flex-start; /* sola hizala */
         gap: 40px; /* butonlar arası boşluk */
         margin-top: 30px;
-        }
-
-            .buton {
-                display: inline-block;
-             padding: 10px 10px;
-                background-color: #007BFF;
-                color: white;
-                text-decoration: none;
-                border-radius: 5px;
-                font-weight: bold;
-                border: none;
-                cursor: pointer;
-                transition: background-color 0.3s ease;
-              }
-
-        .buton:hover {
-             background-color: #0056b3;
-            }
-
-         .buton.iptal {
-            background-color: #6c757d; /* gri */
-            }
-
-         .buton.iptal:hover {
-             background-color: #5a6268;
-            }
+    }
+    .buton {
+        display: inline-block;
+        padding: 10px 10px;
+        background-color: #007BFF;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        font-size: 1.1rem; /* Buton fontunu eşleştirdim */
+    }
+    .buton:hover {
+        background-color: #0056b3;
+    }
+    .buton.iptal {
+        background-color: #6c757d; /* gri */
+    }
+    .buton.iptal:hover {
+        background-color: #5a6268;
+    }
 </style>
-    </form>
-    
+
+<div class="container">
+  
+    <!-- 'musteri' -> 'firma' olarak güncellendi -->
+  <h2>"{{ firma.firma_adi }}" Bilgilerini Düzelt</h2>
+
+    <!-- Flash mesajları (ekle.html'den kopyaladım, burada yoktu) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+  <form action="" method="POST" novalidate>
+    {{ form.hidden_tag() }}
    
-    
-</style>
+    <div class="form-group">
+            <!-- 'value' attribute'ü kaldırıldı, WTForms veriyi otomatik doldurur -->
+      {{ form.firma_adi.label(text="Firma Adı :") }}
+            {{ form.firma_adi(class="form-control") }}
+            {% for error in form.firma_adi.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ form.yetkili_adi.label(text="Yetkili Kişi :") }}
+      {{ form.yetkili_adi(class="form-control") }}
+            {% for error in form.yetkili_adi.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+
+   <div class="form-group">
+      {{ form.iletisim_bilgileri.label(text="Adres :") }}  
+            <!-- Bu, 'forms.py'da TextAreaField olduğu için otomatik <textarea> olur -->
+      {{ form.iletisim_bilgileri(class="form-control", rows=3) }}
+            {% for error in form.iletisim_bilgileri.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+    <div class="form-group">
+      {{ form.vergi_dairesi.label(text="Vergi Dairesi :") }}
+      {{ form.vergi_dairesi(class="form-control") }}   
+            {% for error in form.vergi_dairesi.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+    <div class="form-group">
+      {{ form.vergi_no.label(text="Vergi No:") }}
+      {{ form.vergi_no(class="form-control") }}   
+            {% for error in form.vergi_no.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+
+        <!-- 
+        ---------------------------------------------------------------
+        YENİ EKLENEN FİRMA ROLÜ BÖLÜMÜ
+        (Veriler 'obj=firma' sayesinde otomatik olarak dolu gelir)
+        ---------------------------------------------------------------
+        -->
+        <fieldset class="form-group" style="border: 1px solid #dee2e6; padding: 1.5rem; margin-top: 20px; border-radius: 5px;">
+            <legend style="font-size: 1.2em; font-weight: 500; width: auto; padding: 0 10px; margin-left: 5px;">Firma Rolleri</legend>
+            
+            <div class="form-check form-switch mb-2">
+                <!-- 'is_musteri' (CheckBox) alanı -->
+                {{ form.is_musteri(id="is_musteri", class="form-check-input") }}
+                {{ form.is_musteri.label(for="is_musteri", class="form-check-label") }}
+                <br>
+                <small class="text-muted">(Bu firmaya kiralama faturası kesilecekse işaretleyin.)</small>
+            </div>
+
+            <div class="form-check form-switch">
+                <!-- 'is_tedarikci' (CheckBox) alanı -->
+                {{ form.is_tedarikci(id="is_tedarikci", class="form-check-input") }}
+                {{ form.is_tedarikci.label(for="is_tedarikci", class="form-check-label") }}
+                <br>
+                <small class="text-muted">(Bu firmadan makine, parça veya hizmet alınacaksa işaretleyin.)</small>
+            </div>
+        </fieldset>
+        <!-- YENİ BÖLÜM SONU -->
+
+    <!-- Butonlar (Sizin stillerinize uyduruldu) -->
+    <div class="butonlar">
+         <!-- 'form.submit' kullanarak 'Kaydet' butonunu render ettim -->
+    {{ form.submit(class="buton", value="Kaydet") }}
+    <a href="{{ url_for('firmalar.index') }}" class="buton iptal">İptal</a>
+    </div>
+  </form>
 </div>
 {% endblock %}

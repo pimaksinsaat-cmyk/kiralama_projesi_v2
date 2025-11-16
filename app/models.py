@@ -66,7 +66,7 @@ class Firma(db.Model):
 
 # -------------------------------------------------------------------------
 # 2. GÜNCELLENEN MODEL: 'Ekipman'
-# (Bakım kayıtları için yeni ilişki eklendi)
+# (Benzersizlik kısıtlaması (UNIQUE) düzeltildi)
 # -------------------------------------------------------------------------
 class Ekipman(db.Model):
     """
@@ -77,11 +77,15 @@ class Ekipman(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     kod = db.Column(db.String(100), unique=True, nullable=False, index=True)
-    # ... (yakit, tipi, marka, seri_no, yukseklik, kapasite, uretim_tarihi...)
     yakit = db.Column(db.String(50), nullable=False, default='')
     tipi = db.Column(db.String(100), nullable=False, default='')
     marka = db.Column(db.String(100), nullable=False)
-    seri_no = db.Column(db.String(100), unique=True, nullable=False, index=True)
+
+    # --- DÜZELTME (UNIQUE Hatası) ---
+    # 'unique=True' parametresi bu satırdan KALDIRILDI.
+    seri_no = db.Column(db.String(100), nullable=False, index=True) 
+    # --- DÜZELTME SONU ---
+
     calisma_yuksekligi = db.Column(db.Integer, nullable=False)
     kaldirma_kapasitesi = db.Column(db.Integer, nullable=False)
     uretim_tarihi = db.Column(db.String(100), nullable=False)
@@ -98,11 +102,17 @@ class Ekipman(db.Model):
                                          back_populates='ekipman', 
                                          cascade="all, delete-orphan")
                                          
-    # --- YENİ (STOK/SERVİS MODÜLÜ İÇİN) ---
-    # Bu ekipmana yapılan tüm bakım/servis işlemleri
+    # DÜZELTME (Mapper Hatası): Henüz tanımlanmayan 'BakimKaydi' için string referansı ('') kullanıldı
     bakim_kayitlari = db.relationship('BakimKaydi', 
                                       back_populates='ekipman', 
                                       cascade="all, delete-orphan")
+
+    # --- YENİ EKLENEN KISITLAMA (UNIQUE Hatası Düzeltmesi) ---
+    # (Tedarikçi ID, Seri No) çiftinin benzersiz olmasını sağlar.
+    __table_args__ = (
+        db.UniqueConstraint('firma_tedarikci_id', 'seri_no', name='_tedarikci_seri_no_uc'),
+    )
+    # --- YENİ KISITLAMA SONU ---
 
     def __repr__(self):
         return f'<Ekipman {self.kod}>'
@@ -110,7 +120,6 @@ class Ekipman(db.Model):
 
 # -------------------------------------------------------------------------
 # 3. GÜNCELLENEN MODEL: 'Kiralama' (Ana Form)
-# (Değişiklik yok, 'Firma'ya bağlı)
 # -------------------------------------------------------------------------
 class Kiralama(db.Model):
     __tablename__ = 'kiralama'
@@ -125,14 +134,14 @@ class Kiralama(db.Model):
                                cascade="all, delete-orphan")
 
     def __repr__(self):
-        if self.firma_musteri:
+        # 'firma_musteri' yüklenmemiş olabilir (örn: silinmiş), None kontrolü eklendi
+        if getattr(self, 'firma_musteri', None):
             return f'<Kiralama {self.kiralama_form_no or ""} - {self.firma_musteri.firma_adi}>'
         return f'<Kiralama {self.kiralama_form_no or ""}>'
 
 
 # -------------------------------------------------------------------------
 # 4. NİHAİ MODEL: 'KiralamaKalemi' (En Kritik Tablo)
-# (Değişiklik yok, tüm finansalları içeriyor)
 # -------------------------------------------------------------------------
 class KiralamaKalemi(db.Model):
     __tablename__ = 'kiralama_kalemi'
@@ -162,7 +171,6 @@ class KiralamaKalemi(db.Model):
 
 # -------------------------------------------------------------------------
 # 5. YENİ MODEL: 'Odeme' (Cari Hesap - Alacak)
-# (Değişiklik yok, 'Firma'ya bağlı)
 # -------------------------------------------------------------------------
 class Odeme(db.Model):
     __tablename__ = 'odeme'
@@ -174,14 +182,13 @@ class Odeme(db.Model):
     aciklama = db.Column(db.String(250), nullable=True)
 
     def __repr__(self):
-        if self.firma_musteri:
+        if getattr(self, 'firma_musteri', None):
             return f'<Odeme {self.firma_musteri.firma_adi} - {self.tutar}>'
         return f'<Odeme {self.tutar}>'
 
 
 # -------------------------------------------------------------------------
 # 6. YENİ MODEL: 'HizmetKaydi' (Cari Hesap - Borç/Alacak Jokeri)
-# (Değişiklik yok, 'Firma'ya bağlı)
 # -------------------------------------------------------------------------
 class HizmetKaydi(db.Model):
     __tablename__ = 'hizmet_kaydi'
@@ -194,7 +201,7 @@ class HizmetKaydi(db.Model):
     yon = db.Column(db.String(10), nullable=False, default='giden') # 'giden' veya 'gelen'
 
     def __repr__(self):
-        if self.firma:
+        if getattr(self, 'firma', None):
             return f'<HizmetKaydi {self.firma.firma_adi} - {self.yon} - {self.tutar}>'
         return f'<HizmetKaydi {self.yon} - {self.tutar}>'
 
@@ -216,6 +223,7 @@ class StokKarti(db.Model):
     varsayilan_tedarikci = db.relationship('Firma', back_populates='tedarik_edilen_parcalar', foreign_keys=[varsayilan_tedarikci_id])
     
     # Bu parçanın kullanıldığı tüm bakım kayıtları
+    # DÜZELTME (Mapper Hatası): Henüz tanımlanmayan 'KullanilanParca' için string referansı ('') kullanıldı
     kullanim_kayitlari = db.relationship('KullanilanParca', back_populates='stok_karti')
 
     def __repr__(self):
@@ -241,6 +249,7 @@ class BakimKaydi(db.Model):
     calisma_saati = db.Column(db.Integer, nullable=True) # Bakım yapıldığındaki saat
     
     # Bu bakımda hangi parçalar kullanıldı?
+    # DÜZELTME (Mapper Hatası): Henüz tanımlanmayan 'KullanilanParca' için string referansı ('') kullanıldı
     kullanilan_parcalar = db.relationship('KullanilanParca', 
                                           back_populates='bakim_kaydi', 
                                           cascade="all, delete-orphan")
@@ -251,4 +260,24 @@ class BakimKaydi(db.Model):
 # -------------------------------------------------------------------------
 # 9. YENİ MODEL: 'KullanilanParca' (İlişki Nesnesi)
 # Stok ve Servis modüllerini birbirine bağlar.
-# --------------------------------
+# -------------------------------------------------------------------------
+class KullanilanParca(db.Model):
+    """
+    Bir 'BakimKaydi'nda, 'StokKarti'ndan kaç adet kullanıldığını
+    tutan ilişki tablosu (Association Object).
+    """
+    __tablename__ = 'kullanilan_parca'
+    id = db.Column(db.Integer, primary_key=True)
+    
+    bakim_kaydi_id = db.Column(db.Integer, db.ForeignKey('bakim_kaydi.id'), nullable=False)
+    stok_karti_id = db.Column(db.Integer, db.ForeignKey('stok_karti.id'), nullable=False)
+    
+    kullanilan_adet = db.Column(db.Integer, nullable=False, default=1)
+    
+    # İlişkiler (Bu sınıflar yukarıda tanımlandığı için string'e gerek yok,
+    # ancak tutarlılık için string kullanmak en iyisidir)
+    bakim_kaydi = db.relationship('BakimKaydi', back_populates='kullanilan_parcalar')
+    stok_karti = db.relationship('StokKarti', back_populates='kullanim_kayitlari')
+
+    def __repr__(self):
+        return f'<Kullanim B:{self.bakim_kaydi_id} S:{self.stok_karti_id} Adet:{self.kullanilan_adet}>'

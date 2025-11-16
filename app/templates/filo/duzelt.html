@@ -1,148 +1,180 @@
-
-<!DOCTYPE html>
-
-<html lang="tr">
-<head>
-<meta charset="UTF-8">
-<title>Makine Kayıt Düzelt</title>
-<style>
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 20px; background-color: #f8f9fa; }
-.container { max-width: 550px; margin: auto; padding: 25px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-h1 { color: #343a40; text-align: center; margin-bottom: 20px;}
-.form-group { margin-bottom: 0.7rem; }
-label { display: block; margin-bottom: .4rem; font-weight: 500; color: #495057; }
-input, select { width: 100%; padding: .5rem; border: 1px solid #ced4da; border-radius: .25rem; box-sizing: border-box; font-size: 1rem; }
-.form-info { background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9rem; text-align: center;}
-.btn-container { margin-top: 20px; }
-.btn { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; font-size: 1.1rem;}
-.btn-primary { background-color: #007bff; color: white; }
-.alert { padding: 1rem; margin-bottom: 1rem; border: 1px solid transparent; border-radius: .25rem; }
-.alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
-.alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
-.back-link { display: block; text-align: center; margin-top: 20px; text-decoration: none; color: #007bff; font-size: 0.9rem; font-weight: normal; }
-.back-link:hover { text-decoration: underline; }
-</style>
-</head>
-<body>
 {% extends "base.html" %}
+
+{% block title %}Makine Bilgilerini Düzelt{% endblock %}
+
+{% block head %}
+    {{ super() }} <!-- Ana şablondaki 'head' içeriğini korur -->
+    <!-- 'ekle.html' ile aynı stilleri kullan (font, padding, buton vb.) -->
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 20px; background-color: #f8f9fa; }
+        .container { max-width: 550px; margin: auto; padding: 25px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h2 { color: #343a40; text-align: center; margin-bottom: 20px;} 
+        .form-group { margin-bottom: 0.7rem; }
+        label { display: block; margin-bottom: .4rem; font-weight: 500; color: #495057; }
+        
+        input.form-control, 
+        select.form-control, 
+        textarea.form-control { 
+            width: 100%; 
+            padding: .5rem; 
+            border: 1px solid #ced4da; 
+            border-radius: .25rem; 
+            box-sizing: border-box; 
+            font-size: 1rem;
+            font-family: inherit; 
+            resize: vertical;     
+        }
+        
+        .form-info { background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9rem; text-align: center;}
+        .alert { padding: 1rem; margin-bottom: 1rem; border: 1px solid transparent; border-radius: .25rem; }
+        .alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+        .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+
+        /* Buton stilleri */
+        .butonlar { display: flex; justify-content: flex-start; gap: 40px; margin-top: 30px; }
+        .buton { display: inline-block; padding: 10px 10px; background-color: #007BFF; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; border: none; cursor: pointer; transition: background-color 0.3s ease; font-size: 1.1rem; }
+        .buton:hover { background-color: #0056b3; }
+        .buton.iptal { background-color: #6c757d; }
+        .buton.iptal:hover { background-color: #5a6268; }
+    </style>
+{% endblock %}
+
 
 {% block content %}
 <div class="container">
-    <h1>Makine Bilgilerini Düzelt</h1>
-    <h2>( {{ ekipman.kod }}-{{ ekipman.marka }})</h2>
-    <hr>
+    <!-- Başlık güncellendi -->
+  <h2>"{{ ekipman.kod }}" Makinesini Düzelt</h2>
+  
+  <form action="" method="POST" novalidate>
+    {{ form.hidden_tag() }} 
     
-    <form action="" method="POST" novalidate>
-        {{ form.hidden_tag() }}
-       
-       <div class="form-group">
-            <label for="kod">Makine Kodu :</label>
-            <input type="text" id="kod" name="kod" value="{{ ekipman.kod }}" required>
-        </div>
-       
-        <div class="form-group">
-             <label for="yakit">Yakıt</label>
-             <input list="yakit-listesi"  id="yakit"   name="yakit" value="{{ ekipman.yakit }}" required>
-            <datalist id="yakit-listesi">
-                <option value="Elektrikli">
-                <option value="Dizel">
-                <option value="Hybrid"> 
-            </datalist>
-        </div>  
-        <div class="form-group">
-             <label for="tipi">Tipi</label>
-             <input list="tip-listesi"  id="tipi"   name="tipi" value="{{ ekipman.tipi }}" required>
-            <datalist id="tip-listesi">
-                <option value="Manlift">
-                <option value="Eklemli">
-                <option value="Teleskopik sepet">
-                <option value="Forklift">   
-            </datalist> 
-        </div>
-        <div class="form-group">
-             <label for="marka">Markası</label>
-             <input list="marka-listesi" id="marka" name="marka" value="{{ ekipman.marka }}" required>
-
-            <datalist id="marka-listesi">
-                <option value="Dingli">
-                <option value="Sinoboom">
-                <option value="Zoomlion">
-                <option value="Mantall">
-                <option value="Haulotte">
-                <option value="LGMC">
-                <option value="JLG">
-                <option value="Genie">
-                <option value="Skyjack">
-                <option value="Ygs">
-                <option value="Lonking">
-                <option value="TCM">
-                <option value="Hyster">
-                <option value="Komatsu">
-            </datalist> 
-        </div>
-       <div class="form-group">
-            <label for="seri_no">Seri No :</label>   
-            <input type="text" id="seri_no" name="seri_no" value="{{ ekipman.seri_no}}" required>
-        </div>
-        <div class="form-group">
-            <label for="calisma_yuksekligi">Çalışma Yüksekliği (m):</label>
-            <input type="number" step="0.1" id="calisma_yuksekligi" name="calisma_yuksekligi" value="{{ ekipman.calisma_yuksekligi }}" required>     
-        </div>
-        <div class="form-group">
-            <label for="kaldirma_kapasitesi">Kaldırma Kapasitesi (kg):</label>
-            <input type="number" id="kaldirma_kapasitesi" name="kaldirma_kapasitesi" value="{{ ekipman.kaldirma_kapasitesi}}" required>
-        </div>
-       
-
-        <div class="form-group">
-            <label for="uretim_tarihi">Üretim Tarihi:</label>
-            <input type="number" id="uretim_tarihi" name="uretim_tarihi" value="{{ ekipman.uretim_tarihi}}"  min="1990" max="2100" required>
-        </div>
-
-        <!-- Butonlar -->
-        <div class="butonlar">
-         <button type="submit" class="buton">Kaydet 
-            </button>
-         <a href="{{ url_for('filo.index') }}" class="buton iptal">İptal</a>
-         </div>
-    </form>
-       <style>
-        .butonlar {
-        display: flex;
-        justify-content: flex-start; /* sola hizala */
-        gap: 40px; /* butonlar arası boşluk */
-        margin-top: 30px;
-        }
-
-            .buton {
-                display: inline-block;
-             padding: 10px 10px;
-                background-color: #007BFF;
-                color: white;
-                text-decoration: none;
-                border-radius: 5px;
-                font-weight: bold;
-                border: none;
-                cursor: pointer;
-                transition: background-color 0.3s ease;
-              }
-
-        .buton:hover {
-             background-color: #0056b3;
-            }
-
-         .buton.iptal {
-            background-color: #6c757d; /* gri */
-            }
-
-         .buton.iptal:hover {
-             background-color: #5a6268;
-            }
-</style>
-    </form>
+    <!-- Flash Mesajları (Hata/Başarı) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
     
+        <!-- 'Son Kod' bilgisi 'duzelt' sayfasında gerekli değil, kaldırıldı -->
+
+    <div class="form-group">
+            <!-- 
+                NOT: 'value' attribute'ü yok. WTForms, 'obj=ekipman' sayesinde
+                bu alanı otomatik olarak doldurur.
+            -->
+            {{ form.kod.label(text="Makine Kodu :") }}
+            {{ form.kod(class="form-control") }}
+            {% for error in form.kod.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ form.yakit.label(text="Yakıt Tipi :") }}
+      {{ form.yakit(id="yakit", class="form-control", list="yakit-listesi") }}
+      <datalist id="yakit-listesi">
+        <option value="Elektrikli">
+        <option value="Dizel">
+        <option value="Hybrid"> 
+      </datalist>
+            {% for error in form.yakit.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>  
+
+    <div class="form-group">
+      {{ form.tipi.label(text="Makine Tipi:") }}
+      {{ form.tipi(id="tipi", class="form-control", list="tip-listesi") }}
+      <datalist id="tip-listesi">
+        <option value="Manlift">
+        <option value="Eklemli">
+        <option value="Teleskopik sepet">
+        <option value="Forklift">  
+      </datalist>
+            {% for error in form.tipi.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+
+
+    <div class="form-group">
+      {{ form.marka.label(text="Markası :") }}
+      {{ form.marka(id="marka", class="form-control", list="marka-listesi") }}
+      <datalist id="marka-listesi">
+        <option value="Dingli">
+        <option value="Sinoboom">
+        <option value="Zoomlion">
+        <option value="Haulotte">
+                <!-- ...diğerleri... -->
+      </datalist>
+            {% for error in form.marka.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+
+   <div class="form-group">
+      {{ form.seri_no.label(text="Seri No :") }}  
+      {{ form.seri_no(id="seri_no", class="form-control") }}
+            {% for error in form.seri_no.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ form.calisma_yuksekligi.label(text="Çalışma Yüksekliği (m):") }}
+      {{ form.calisma_yuksekligi(id="calisma_yuksekligi", class="form-control", type="number", step="1") }}   
+            {% for error in form.calisma_yuksekligi.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ form.kaldirma_kapasitesi.label(text="Kaldırma Kapasitesi (kg):") }}
+      {{ form.kaldirma_kapasitesi(id="kaldirma_kapasitesi", class="form-control", type="number") }}
+            {% for error in form.kaldirma_kapasitesi.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
    
-    
-</style>
+    <div class="form-group">
+      {{ form.uretim_tarihi.label(text="Üretim Tarihi (Yıl):") }}
+      {{ form.uretim_tarihi(id="uretim_tarihi", class="form-control", type="number", step="1", min="1990") }}
+            {% for error in form.uretim_tarihi.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+
+        <!-- 
+        ---------------------------------------------------------------
+        YENİ EKLENEN MAKİNE MALİYET BÖLÜMÜ
+        (Veriler 'obj=ekipman' sayesinde dolu gelir)
+        ---------------------------------------------------------------
+        -->
+        <fieldset class="form-group" style="border: 1px solid #dee2e6; padding: 1.5rem; margin-top: 20px; border-radius: 5px;">
+            <legend style="font-size: 1.2em; font-weight: 500; width: auto; padding: 0 10px; margin-left: 5px;">Makine Maliyeti</legend>
+            
+            <div class="form-group">
+                <!-- YENİ ALAN: Giriş Maliyeti -->
+                {{ form.giris_maliyeti.label(text="Giriş Maliyeti (Satın Alma Fiyatı):") }}
+                {{ form.giris_maliyeti(class="form-control", placeholder="0.00") }} 
+                <small style="color: #555; margin-top: 5px; display: block;">
+                    Bu makinenin filonuza giriş maliyetini (analiz için) girin.
+                </small>
+                {% for error in form.giris_maliyeti.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+            </div>
+        </fieldset>
+        <!-- YENİ BÖLÜM SONU -->
+
+        <!-- 
+            NOT: "Tedarikçi Seçimi" alanı, sizin uyarınız üzerine 
+            bu forma (filo) değil, kiralama formuna eklenecek.
+            Bu yüzden burada (duzelt.html) o alan YOKTUR.
+        -->
+
+
+  <!-- Butonlar (Sizin stilinize göre) -->
+    <div class="butonlar">
+         <!-- Buton metni "Güncelle" olarak değiştirildi -->
+    {{ form.submit(class="buton", value="Güncelle") }}
+    <a href="{{ url_for('filo.index') }}" class="buton iptal">İptal</a>
+    </div>
+  </form>
 </div>
+
+<!-- JavaScript (Sizin kodunuz) -->
+<script>
+    // Bu script, 'duzelt' sayfasında 'uretim_tarihi' dolu geleceği için
+    // if kontrolü sayesinde mevcut yılı ezmez.
+  const yilInput = document.getElementById('uretim_tarihi');
+  if (yilInput && !yilInput.value) { 
+    const bugunYil = new Date().getFullYear();
+    yilInput.value = bugunYil; 
+    }
+</script>
 {% endblock %}

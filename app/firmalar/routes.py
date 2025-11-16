@@ -1,72 +1,90 @@
 from app.firmalar import firmalar_bp
 from app import db
-from flask import render_template, url_for, redirect, flash
+# DÜZELTME: 'request' ve 'or_' eklendi
+from flask import render_template, url_for, redirect, flash, request
+from sqlalchemy import or_ # 'VEYA' sorgusu için eklendi
 from sqlalchemy.exc import IntegrityError
 import traceback
 
 # --- GÜNCELLENEN IMPORTLAR ---
-# 'Musteri' silindi, 'Firma' geldi. 'Ekipman' bu dosyada kullanılmıyor.
-# Gelecekteki Cari Hesap sayfası için diğer modelleri de ekliyoruz.
 from app.models import Firma, Kiralama, Ekipman, Odeme, HizmetKaydi, KiralamaKalemi
-# 'EkipmanForm' bu dosyada kullanılmıyor.
 from app.forms import FirmaForm
-# Gelecekteki 'bilgi' sayfası için 'eager loading' importları
 from sqlalchemy.orm import joinedload, subqueryload
 # --- GÜNCELLENEN IMPORTLAR SONU ---
 
 # -------------------------------------------------------------------------
-# 1. Firma Listeleme Sayfası (GÜNCELLENDİ)
+# 1. Firma Listeleme Sayfası (ARAMA VE SAYFALAMA EKLENDİ)
 # -------------------------------------------------------------------------
 @firmalar_bp.route('/')
 @firmalar_bp.route('/index')
 def index():
     """
     Tüm firmaları (müşteriler VE tedarikçiler) listeler.
+    GELİŞMİŞ ARAMA (Firma Adı VEYA Yetkili Adı) ve Sayfalama destekler.
     """
     try:
-        # 'Musteri.query.all()' -> 'Firma.query.all()'
-        firmalar = Firma.query.order_by(Firma.firma_adi).all()
-        return render_template('firmalar/index.html', firmalar=firmalar)
+        # 1. URL'den 'page' (sayfa) ve 'q' (arama) parametrelerini al
+        page = request.args.get('page', 1, type=int)
+        q = request.args.get('q', '', type=str) # Arama sorgusu
+        
+        # 2. Temel sorguyu başlat
+        base_query = Firma.query
+        
+        # 3. Eğer bir arama sorgusu (q) varsa, sorguyu filtrele
+        if q:
+            # --- DÜZELTME: Arama artık iki alanda (Firma Adı VEYA Yetkili Adı) çalışır ---
+            search_term = f'%{q}%'
+            base_query = base_query.filter(
+                or_(
+                    Firma.firma_adi.ilike(search_term),
+                    Firma.yetkili_adi.ilike(search_term)
+                    # Buraya (ileride) Firma.vergi_no.ilike(search_term) de eklenebilir
+                )
+            )
+            # --- DÜZELTME SONU ---
+            
+        # 4. Filtrelenmiş sorguyu, Sayfalama (paginate) yaparak çalıştır
+        # (Her sayfada 25 firma göster)
+        pagination = base_query.order_by(Firma.firma_adi).paginate(
+            page=page, per_page=25, error_out=False
+        )
+        # O sayfaya ait firmaları al
+        firmalar = pagination.items
+        
+        # 5. HTML'e 'firmalar' listesini, 'pagination' nesnesini ve 'q' (arama) sorgusunu gönder
+        return render_template('firmalar/index.html', 
+                               firmalar=firmalar, 
+                               pagination=pagination,
+                               q=q)
+                               
     except Exception as e:
         flash(f"Firmalar yüklenirken bir hata oluştu: {str(e)}", "danger")
         traceback.print_exc()
-        return render_template('firmalar/index.html', firmalar=[])
+        return render_template('firmalar/index.html', firmalar=[], pagination=None, q=q)
 
 # -------------------------------------------------------------------------
-# 2. Yeni Firma Ekleme Sayfası (GÜNCELLENDİ)
+# 2. Yeni Firma Ekleme Sayfası (Değişiklik yok)
 # -------------------------------------------------------------------------
 @firmalar_bp.route('/ekle', methods=['GET', 'POST'])
 def ekle():
-    """
-    Yeni firma ekler (Roller dahil: Müşteri ve/veya Tedarikçi).
-    """
     form = FirmaForm()
-    
     if form.validate_on_submit():
         try:
-            # 'Musteri(...)' -> 'Firma(...)'
             yeni_firma = Firma(
                 firma_adi=form.firma_adi.data,
                 yetkili_adi=form.yetkili_adi.data,
                 iletisim_bilgileri=form.iletisim_bilgileri.data,
                 vergi_dairesi=form.vergi_dairesi.data,
                 vergi_no=form.vergi_no.data,
-                
-                # --- YENİ ROL ALANLARI EKLENDİ ---
                 is_musteri=form.is_musteri.data,
                 is_tedarikci=form.is_tedarikci.data
-                # --- YENİ ROL ALANLARI SONU ---
             )
-        
             db.session.add(yeni_firma)
             db.session.commit()
-        
             flash('Yeni firma başarıyla eklendi!', 'success')
             return redirect(url_for('firmalar.index'))
-            
         except IntegrityError as e:
             db.session.rollback() 
-            # Tablo adını 'firma' olarak güncelledik
             if 'UNIQUE constraint failed: firma.vergi_no' in str(e):
                 flash(f'HATA: Girdiğiniz vergi numarası ({form.vergi_no.data}) zaten sistemde kayıtlı.', 'danger')
             else:
@@ -75,18 +93,13 @@ def ekle():
             db.session.rollback()
             flash(f"Firma eklenirken beklenmedik bir hata oluştu: {str(e)}", "danger")
             traceback.print_exc()
-
     return render_template('firmalar/ekle.html', form=form)
 
 # -------------------------------------------------------------------------
-# 3. Firma Silme İşlemi (GÜVENLİK KONTROLLÜ EKLENDİ)
+# 3. Firma Silme İşlemi (Değişiklik yok)
 # -------------------------------------------------------------------------
 @firmalar_bp.route('/sil/<int:id>', methods=['POST'])
 def sil(id):
-    """
-    ID'si verilen firmayı siler.
-    YENİ: Sadece hiçbir finansal kaydı yoksa siler.
-    """
     firma = Firma.query.options(
         joinedload(Firma.kiralamalar),
         joinedload(Firma.odemeler),
@@ -95,8 +108,6 @@ def sil(id):
         joinedload(Firma.saglanan_nakliye_hizmetleri)
     ).get_or_404(id)
     
-    # --- YENİ GÜVENLİK KONTROLÜ ---
-    # Bu firmanın ilişkili kayıtları varsa silmeyi engelle.
     if (firma.kiralamalar or 
         firma.odemeler or 
         firma.hizmet_kayitlari or 
@@ -106,7 +117,6 @@ def sil(id):
         flash(f"HATA: '{firma.firma_adi}' SİLİNEMEZ!", 'danger')
         flash("Bu firmanın ilişkili kiralama, ödeme, hizmet veya ekipman kayıtları bulunmaktadır.", 'warning')
         return redirect(url_for('firmalar.index'))
-    # --- GÜVENLİK KONTROLÜ SONU ---
     
     try:
         db.session.delete(firma)
@@ -120,17 +130,12 @@ def sil(id):
     return redirect(url_for('firmalar.index')) 
     
 # -------------------------------------------------------------------------
-# 4. Firma Düzenleme Sayfası (GÜNCELLENDİ)
+# 4. Firma Düzenleme Sayfası (Değişiklik yok)
 # -------------------------------------------------------------------------
 @firmalar_bp.route('/duzelt/<int:id>', methods=['GET', 'POST'])
 def duzelt(id):
-    """
-    Mevcut firmayı (roller dahil) düzenler.
-    """
-    # 'Musteri' -> 'Firma'
     firma = Firma.query.get_or_404(id)
     form = FirmaForm(obj=firma)
-    
     if form.validate_on_submit():
         try:
             firma.firma_adi = form.firma_adi.data
@@ -138,17 +143,11 @@ def duzelt(id):
             firma.iletisim_bilgileri = form.iletisim_bilgileri.data
             firma.vergi_dairesi = form.vergi_dairesi.data
             firma.vergi_no = form.vergi_no.data
-            
-            # --- YENİ ROL ALANLARI EKLENDİ ---
             firma.is_musteri = form.is_musteri.data
             firma.is_tedarikci = form.is_tedarikci.data
-            # --- YENİ ROL ALANLARI SONU ---
-            
             db.session.commit()
-            
             flash('Firma bilgileri başarıyla güncellendi!', 'success')
             return redirect(url_for('firmalar.index'))
-            
         except IntegrityError as e:
             db.session.rollback() 
             if 'UNIQUE constraint failed: firma.vergi_no' in str(e):
@@ -159,44 +158,29 @@ def duzelt(id):
             db.session.rollback()
             flash(f"Firma güncellenirken beklenmedik bir hata oluştu: {str(e)}", "danger")
             traceback.print_exc()
-    
-    # 'musteri=musteri' -> 'firma=firma'
     return render_template('firmalar/duzelt.html', form=form, firma=firma) 
 
 # -------------------------------------------------------------------------
-# 5. Firma Bilgi Sayfası (CARİ HESAP İÇİN GÜNCELLENDİ)
+# 5. Firma Bilgi Sayfası (Cari Bakiye için hazır)
 # -------------------------------------------------------------------------
 @firmalar_bp.route('/bilgi/<int:id>', methods=['GET'])
 def bilgi(id):
-    """
-    ID'si verilen firmanın detaylı bilgilerini gösterir.
-    (Gelecekteki 'Cari Hesap Ekstresi' için tüm verileri yükler)
-    """
     try:
-        # --- YENİ, GÜÇLÜ SORGU ---
-        # Cari Hesap Ekstresi için GEREKLİ TÜM verileri tek seferde yükle
         firma = Firma.query.options(
-            # Müşteri olduğu kiralamalar
             subqueryload(Firma.kiralamalar).options(
                 subqueryload(Kiralama.kalemler).options(
                     joinedload(KiralamaKalemi.ekipman)
                 )
             ),
-            # Yaptığı ödemeler
             subqueryload(Firma.odemeler),
-            # Bağımsız hizmet hareketleri (borç/alacak)
             subqueryload(Firma.hizmet_kayitlari),
-            # Tedarikçi olduğu ekipmanlar
             subqueryload(Firma.tedarik_edilen_ekipmanlar),
-            # Nakliye tedarikçisi olduğu kalemler
             subqueryload(Firma.saglanan_nakliye_hizmetleri)
         ).get_or_404(id)
-        # --- SORGU SONU ---
         
         # (İleride buraya Cari Bakiye hesaplama mantığı eklenecek)
         
         return render_template('firmalar/bilgi.html', firma=firma)
-        
     except Exception as e:
         flash(f"Firma bilgileri yüklenirken bir hata oluştu: {str(e)}", "danger")
         traceback.print_exc()
