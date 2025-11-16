@@ -4,7 +4,6 @@ import traceback
 from datetime import datetime, timezone, date
 from decimal import Decimal
 
-# DÜZELTME: 'request' ve 'or_' import edildi
 from flask import render_template, redirect, url_for, flash, jsonify, request
 from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
@@ -25,16 +24,23 @@ from app.forms import KiralamaForm, KiralamaKalemiForm
 # YARDIMCI FONKSİYONLAR (DÜZELTİLDİ: Placeholder '0' oldu)
 # -------------------------------------------------------------------------
 
-def get_pimaks_ekipman_choices(kiralama_objesi=None):
+def get_pimaks_ekipman_choices(kiralama_objesi=None, include_ids=None):
     """
-    SADECE BİZİM ('bosta' olan VEYA bu kiralamaya ait olan)
-    makinelerimizin listesini döndürür.
+    SADECE BİZİM ('bosta' olan VEYA bu kiralamaya ait olan VEYA 
+    URL'den 'include_ids' ile gelen) makinelerimizin listesini döndürür.
     """
+    if include_ids is None:
+        include_ids = []
+        
     try:
         # 1. Bizim ve 'bosta' olanlar
         query = Ekipman.query.filter(
             Ekipman.firma_tedarikci_id.is_(None), 
-            Ekipman.calisma_durumu == 'bosta'
+            or_(
+                Ekipman.calisma_durumu == 'bosta',
+                # URL'den gelen ID'yi, 'kirada' olsa bile listede göster
+                Ekipman.id.in_(include_ids) 
+            )
         )
         
         gecerli_ekipmanlar = query.order_by(Ekipman.kod).all()
@@ -80,21 +86,19 @@ def get_tedarikci_choices(include_pimaks=False):
         print(f"Hata (get_tedarikci_choices): {e}")
         return [('0', '--- Hata: Tedarikçiler Yüklenemedi ---')]
 
-def populate_kiralama_form_choices(form, kiralama_objesi=None):
+def populate_kiralama_form_choices(form, kiralama_objesi=None, include_ekipman_ids=None):
     """
     KiralamaForm'undaki tüm dinamik SelectField'ları doldurur.
     """
     try:
         musteri_choices = [(f.id, f.firma_adi) for f in Firma.query.filter_by(is_musteri=True).order_by(Firma.firma_adi).all()]
-        # --- DÜZELTME: Placeholder '' -> '0' ---
         musteri_choices.insert(0, ('0', '--- Müşteri Seçiniz ---'))
         form.firma_musteri_id.choices = musteri_choices
     except Exception as e:
         print(f"Hata (populate_kiralama_form_choices - Müşteriler): {e}")
         form.firma_musteri_id.choices = [('0', 'Hata: Müşteriler Yüklenemedi')]
 
-    # (Bu listeler artık '0' placeholder'ını içeriyor)
-    pimaks_ekipman_list = get_pimaks_ekipman_choices(kiralama_objesi)
+    pimaks_ekipman_list = get_pimaks_ekipman_choices(kiralama_objesi, include_ids=include_ekipman_ids)
     ekipman_tedarikci_list = get_tedarikci_choices(include_pimaks=False)
     nakliye_tedarikci_list = get_tedarikci_choices(include_pimaks=True)
     
@@ -104,7 +108,7 @@ def populate_kiralama_form_choices(form, kiralama_objesi=None):
         kalem_form_field.form.nakliye_tedarikci_id.choices = nakliye_tedarikci_list
 
 # -------------------------------------------------------------------------
-# 2. JINJA2 FİLTRESİ (Tarih Formatlama)
+# 2. JINJA2 FİLTRESİ (Değişiklik yok)
 # -------------------------------------------------------------------------
 @kiralama_bp.app_template_filter('tarihtr')
 def tarihtr(value):
@@ -119,54 +123,40 @@ def tarihtr(value):
     return value
 
 # -------------------------------------------------------------------------
-# 3. KİRALAMA LİSTELEME (NİHAİ - ARAMA, SAYFALAMA, KALEM BAZLI DURUM)
+# 3. KİRALAMA LİSTELEME (NİHAİ)
 # -------------------------------------------------------------------------
 @kiralama_bp.route('/index')
 @kiralama_bp.route('/') 
 def index():
-    """ 
-    Tüm kiralama kayıtlarını listeler.
-    YENİ: Arama (Form No, Firma Adı, Yetkili Adı) ve Sayfalama destekler.
-    YENİ: Her BİR KALEM için 'durum' hesaplar.
-    """
     try:
-        # 1. URL'den 'page' (sayfa) ve 'q' (arama) parametrelerini al
         page = request.args.get('page', 1, type=int)
-        q = request.args.get('q', '', type=str) # Arama sorgusu
+        q = request.args.get('q', '', type=str) 
 
-        # 2. Temel sorguyu başlat (ve hızlı yükleme için ilişkileri hazırla)
         base_query = Kiralama.query.options(
             joinedload(Kiralama.firma_musteri), 
             joinedload(Kiralama.kalemler).joinedload(KiralamaKalemi.ekipman).joinedload(Ekipman.firma_tedarikci),
             joinedload(Kiralama.kalemler).joinedload(KiralamaKalemi.nakliye_tedarikci)
         )
 
-        # 3. Eğer bir arama sorgusu (q) varsa, sorguyu filtrele
         if q:
             search_term = f'%{q}%'
-            # --- YENİ: İlişkili 'Firma' tablosuna sorgu için katıl (JOIN) ---
             base_query = base_query.join(
                 Firma, Kiralama.firma_musteri_id == Firma.id
             ).filter(
                 or_(
-                    Kiralama.kiralama_form_no.ilike(search_term), # Form No
-                    Firma.firma_adi.ilike(search_term),          # Firma Adı
-                    Firma.yetkili_adi.ilike(search_term)       # Yetkili Adı
+                    Kiralama.kiralama_form_no.ilike(search_term),
+                    Firma.firma_adi.ilike(search_term),         
+                    Firma.yetkili_adi.ilike(search_term)      
                 )
             )
 
-        # 4. Filtrelenmiş sorguyu, Sayfalama (paginate) yaparak çalıştır
         pagination = base_query.order_by(Kiralama.id.desc()).paginate(
             page=page, per_page=25, error_out=False
         )
         kiralamalar = pagination.items
         
-        # --- YENİ DÜZELTİLMİŞ DURUM HESAPLAMA (KALEM BAZLI) ---
         today = date.today()
-        
         for kiralama in kiralamalar:
-            # Artık kiralama.durum_mesaji YOK.
-            # Döngüyü 'kalem' seviyesine indiriyoruz:
             for kalem in kiralama.kalemler:
                 if kalem.sonlandirildi:
                     kalem.durum_mesaji = "Tamamlandı"
@@ -194,8 +184,7 @@ def index():
                     except Exception as e:
                         print(f"Tarih ayrıştırma hatası: {e}")
                         kalem.durum_mesaji = "Hatalı Tarih"
-                        kalem.durum_sinifi = "dark" # Hatalı veriyi göster
-        # --- DURUM HESAPLAMA SONU ---
+                        kalem.durum_sinifi = "dark" 
             
         return render_template(
             'kiralama/index.html', 
@@ -210,7 +199,7 @@ def index():
         return render_template('kiralama/index.html', kiralamalar=[], pagination=None, q=q)
 
 # -------------------------------------------------------------------------
-# 4. YENİ KİRALAMA EKLEME (KISAYOL MANTIĞI DÜZELTİLDİ)
+# 4. YENİ KİRALAMA EKLEME (KİRAYA VER KISAYOLU DÜZELTİLDİ)
 # -------------------------------------------------------------------------
 @kiralama_bp.route('/ekle', methods=['GET', 'POST'])
 def ekle():
@@ -220,20 +209,23 @@ def ekle():
     YENİ: URL'den 'ekipman_id' parametresini alarak formu önceden doldurur.
     """
     
-    # --- DÜZELTME: Form başlatma mantığı 'GET' ve 'POST' için ayrıldı ---
+    ekipman_id_from_url = None
+    include_ids = []
     
     if request.method == 'GET':
-        # --- YENİ EKLENEN KISAYOL MANTIĞI (DÜZELTİLDİ) ---
+        # --- DÜZELTME: Kısayol Mantiği Buraya Taşındı ---
         ekipman_id_from_url = request.args.get('ekipman_id', type=int)
-        pre_data = {} # Formu önceden doldurmak için veri
+        pre_data = {} 
         
         if ekipman_id_from_url:
-            # Formu, ilk kalemi bu ID ile dolu olarak başlat
+            # 1. Formu, ilk kalemi bu ID ile dolu olarak başlat
             pre_data = {
                 'kalemler': [{
                     'ekipman_id': ekipman_id_from_url
                 }]
             }
+            # 2. Seçeneklerin içine 'kirada' olsa bile bu ID'yi eklemesini sağla
+            include_ids = [ekipman_id_from_url]
         
         # Formu, bu 'pre_data' ile başlat
         form = KiralamaForm(data=pre_data) 
@@ -257,11 +249,11 @@ def ekle():
             flash(f"Form numarası oluşturulurken hata: {e}", "warning")
             
     else: # request.method == 'POST'
-        # Formu POST verisiyle başlat (boş)
         form = KiralamaForm() 
+        include_ids = [] # POST'ta kısayol bilgisine gerek yok
 
     # Formdaki tüm 'Select' alanlarını doldur (GET'te ve POST'ta da gerekli)
-    populate_kiralama_form_choices(form)
+    populate_kiralama_form_choices(form, include_ekipman_ids=include_ids)
     
     # --- POST MANTIĞI (NİHAİ) ---
     if form.validate_on_submit():
@@ -274,16 +266,14 @@ def ekle():
         
         try:
             secilen_pimaks_ekipman_idler = set()
-            kalemler_to_add = [] # (Ekipman objesi, KiralamaKalemi objesi)
+            kalemler_to_add = [] 
             
             for kalem_data in form.kalemler.data:
                 
                 ekipman_id_to_use = None
-                ekipman_to_update_status = None # Sadece Pimaks makinesiyse
+                ekipman_to_update_status = None 
 
-                # --- 1. EKİPMAN SEÇİMİ (DIŞ TEDARİK MANTIĞI) ---
                 if kalem_data['dis_tedarik_ekipman']:
-                    # --- DIŞ TEDARİK ---
                     tedarikci_id = kalem_data['harici_ekipman_tedarikci_id']
                     seri_no = (kalem_data['harici_ekipman_seri_no'] or '').strip()
                     tipi = (kalem_data['harici_ekipman_tipi'] or 'Bilinmiyor').strip()
@@ -311,12 +301,11 @@ def ekle():
                             calisma_durumu='harici'
                         )
                         db.session.add(harici_ekipman)
-                        db.session.flush() # ID'sini almak için
+                        db.session.flush() 
                     
                     ekipman_id_to_use = harici_ekipman.id
                     
-                else:
-                    # --- PİMAKS FİLOSU ---
+                else: # Pimaks Filosu
                     ekipman_id_to_use = kalem_data['ekipman_id']
                     if not (ekipman_id_to_use and ekipman_id_to_use > 0):
                         continue # Boş satırı ('0' seçili) atla
@@ -328,30 +317,25 @@ def ekle():
                     if not ekipman_to_update_status or ekipman_to_update_status.firma_tedarikci_id is not None:
                         raise ValueError(f"Pimaks filosu ekipmanı (ID: {ekipman_id_to_use}) bulunamadı veya harici bir makine.")
                     
-                    if ekipman_to_update_status.calisma_durumu != 'bosta':
+                    # Kontrol: Eğer makine 'bosta' değilse ve URL'den gelmiyorsa hata ver
+                    if ekipman_to_update_status.calisma_durumu != 'bosta' and ekipman_id_to_use != request.args.get('ekipman_id', type=int):
                          raise ValueError(f"Ekipman ({ekipman_to_update_status.kod}) 'boşta' değil, kiralanamaz.")
                 
-                # --- 2. TARİH KONTROLÜ ---
                 baslangic = kalem_data['kiralama_baslangıcı']
                 bitis = kalem_data['kiralama_bitis']
-                if not baslangic:
-                    raise ValueError(f"Ekipman {ekipman_id_to_use} için Başlangıç Tarihi zorunludur.")
-                if not bitis:
-                    raise ValueError(f"Ekipman {ekipman_id_to_use} için Bitiş Tarihi zorunludur.")
-                if bitis < baslangic:
-                    raise ValueError(f"Hata: Bitiş Tarihi, Başlangıç Tarihinden önce olamaz.")
+                if not baslangic: raise ValueError(f"Ekipman {ekipman_id_to_use} için Başlangıç Tarihi zorunludur.")
+                if not bitis: raise ValueError(f"Ekipman {ekipman_id_to_use} için Bitiş Tarihi zorunludur.")
+                if bitis < baslangic: raise ValueError(f"Hata: Bitiş Tarihi, Başlangıç Tarihinden önce olamaz.")
                 
                 baslangic_str = baslangic.strftime("%Y-%m-%d")
                 bitis_str = bitis.strftime("%Y-%m-%d")
                 
-                # --- 3. NAKLİYE KONTROLÜ ---
                 nakliye_ted_id_data = kalem_data['nakliye_tedarikci_id']
                 nakliye_ted_id = nakliye_ted_id_data if nakliye_ted_id_data != 0 else None
                 
                 if kalem_data['dis_tedarik_nakliye'] and not nakliye_ted_id:
                      raise ValueError(f"Harici Nakliye seçildi ancak Nakliye Tedarikçisi seçilmedi.")
                 
-                # --- 4. KİRALAMA KALEMİNİ OLUŞTUR ---
                 yeni_kalem = KiralamaKalemi(
                     ekipman_id=ekipman_id_to_use,
                     kiralama_baslangıcı=baslangic_str,
@@ -361,14 +345,13 @@ def ekle():
                     nakliye_satis_fiyat=str(kalem_data['nakliye_satis_fiyat'] or 0),
                     nakliye_alis_fiyat=str(kalem_data['nakliye_alis_fiyat'] or 0),
                     nakliye_tedarikci_id=nakliye_ted_id if kalem_data['dis_tedarik_nakliye'] else None,
-                    sonlandirildi=False # Yeni kalem
+                    sonlandirildi=False 
                 )
                 
                 kalemler_to_add.append((ekipman_to_update_status, yeni_kalem)) 
-                if ekipman_to_update_status: # Sadece Pimaks ID'lerini takip et
+                if ekipman_to_update_status: 
                     secilen_pimaks_ekipman_idler.add(ekipman_id_to_use)
 
-            # --- 5. KAYDET VE EKİPMAN DURUMLARINI GÜNCELLE ---
             if not kalemler_to_add:
                 flash("En az bir geçerli kiralama kalemi eklemelisiniz.", "danger")
                 db.session.rollback()
@@ -376,7 +359,7 @@ def ekle():
                 for ekipman, kalem in kalemler_to_add:
                     kalem.kiralama = yeni_kiralama 
                     
-                    if ekipman: # (Ekipman None ise harici makinedir)
+                    if ekipman: 
                         ekipman.calisma_durumu = "kirada"
                         
                     db.session.add(kalem)
@@ -388,7 +371,7 @@ def ekle():
         except (ValueError, TypeError) as e:
             db.session.rollback()
             flash(f"Veri doğrulama hatası: {str(e)}", "danger")
-        except IntegrityError as e: # 'UniqueConstraint' hatasını yakala
+        except IntegrityError as e: 
             db.session.rollback()
             flash(f"Veritabanı benzersizlik hatası: {str(e)}", "danger")
         except Exception as e:
@@ -401,46 +384,46 @@ def ekle():
             flash("Formda hatalar var, lütfen kontrol edin.", "warning")
             print("FORM HATALARI:", form.errors)
 
-    # --- JSON VERİLERİNİ TEMPLATE'E GÖNDER (HATAYI ÇÖZER) ---
-    ekipman_choices_json = json.dumps(get_pimaks_ekipman_choices())
+    # --- JSON VERİLERİNİ TEMPLATE'E GÖNDER (DÜZELTİLDİ) ---
+    ekipman_choices_json = json.dumps(get_pimaks_ekipman_choices(include_ids=include_ids))
     tedarikci_choices_json = json.dumps(get_tedarikci_choices(include_pimaks=False))
     nakliye_tedarikci_choices_json = json.dumps(get_tedarikci_choices(include_pimaks=True))
     # --- JSON VERİLERİ SONU ---
+    
+    # Navigasyon parametrelerini al
+    next_url = request.args.get('next', 'kiralama.index')
+    page = request.args.get('page')
+    q = request.args.get('q')
 
     return render_template(
         'kiralama/ekle.html', 
         form=form, 
         ekipman_choices_json=ekipman_choices_json,
-        tedarikci_choices_json=tedarikci_choices_json, # Harici Ekipman için
-        nakliye_tedarikci_choices_json=nakliye_tedarikci_choices_json # Harici Nakliye için
+        tedarikci_choices_json=tedarikci_choices_json, 
+        nakliye_tedarikci_choices_json=nakliye_tedarikci_choices_json,
+        next_url=next_url, 
+        page=page,
+        q=q
     )
 
 # -------------------------------------------------------------------------
-# 5. KİRALAMA KAYDI DÜZENLEME (NİHAİ VE TAMAMLANMIŞ)
+# 5. KİRALAMA KAYDI DÜZENLEME (Değişiklik yok)
 # -------------------------------------------------------------------------
 @kiralama_bp.route('/duzenle/<int:kiralama_id>', methods=['GET', 'POST'])
 def duzenle(kiralama_id):
-    """ 
-    Mevcut bir kiralama kaydını düzenler.
-    'ekle' fonksiyonundaki tüm "Dış Tedarik" mantığını destekler.
-    """
-    
     kiralama = Kiralama.query.options(
         joinedload(Kiralama.firma_musteri),
         joinedload(Kiralama.kalemler).joinedload(KiralamaKalemi.ekipman),
         joinedload(Kiralama.kalemler).joinedload(KiralamaKalemi.nakliye_tedarikci)
     ).get_or_404(kiralama_id)
 
-    # DÜZELTME: 'obj=kiralama'yı 'POST'ta kullanma
     if request.method == 'POST':
         form = KiralamaForm()
-    else: # 'GET' isteği
+    else: 
         form = KiralamaForm(obj=kiralama)
     
-    # Formdaki tüm 'Select' alanlarını doldur
     populate_kiralama_form_choices(form, kiralama_objesi=kiralama)
     
-    # --- GET İsteği (Formu Doldurma) ---
     if request.method == 'GET':
         try:
             form.firma_musteri_id.data = kiralama.firma_musteri_id
@@ -452,13 +435,11 @@ def duzenle(kiralama_id):
                     
                     ekipman_obj = kalem.ekipman
                     if ekipman_obj and ekipman_obj.firma_tedarikci_id is not None:
-                        # Bu HARİCİ bir ekipman
                         kalem_form.dis_tedarik_ekipman.data = True
                         kalem_form.harici_ekipman_tedarikci_id.data = ekipman_obj.firma_tedarikci_id
                         kalem_form.harici_ekipman_tipi.data = ekipman_obj.tipi
                         kalem_form.harici_ekipman_seri_no.data = ekipman_obj.seri_no
                     else:
-                        # Bu PİMAKS ekipmanı
                         kalem_form.dis_tedarik_ekipman.data = False
                         kalem_form.ekipman_id.data = kalem.ekipman_id
                     
@@ -467,7 +448,7 @@ def duzenle(kiralama_id):
                         kalem_form.nakliye_tedarikci_id.data = kalem.nakliye_tedarikci_id
                     else:
                         kalem_form.dis_tedarik_nakliye.data = False
-                        kalem_form.nakliye_tedarikci_id.data = 0 # 0 = Pimaks
+                        kalem_form.nakliye_tedarikci_id.data = 0 
                     
                     if isinstance(kalem.kiralama_baslangıcı, str):
                         kalem_form.kiralama_baslangıcı.data = datetime.strptime(kalem.kiralama_baslangıcı, '%Y-%m-%d').date()
@@ -482,9 +463,7 @@ def duzenle(kiralama_id):
         except Exception as e:
             flash(f"Form verileri yüklenirken bir hata oluştu: {e}", "danger")
             traceback.print_exc()
-    # --- GET İsteği Sonu ---
 
-    # --- POST ISTEGI (Formu Kaydetme) ---
     if form.validate_on_submit():
         
         original_db_kalemler = {k.id: k for k in kiralama.kalemler if not k.sonlandirildi}
@@ -494,31 +473,26 @@ def duzenle(kiralama_id):
         }
         
         try:
-            # 1. Ana Kiralama Formunu Güncelle
             kiralama.kiralama_form_no = form.kiralama_form_no.data
             kiralama.firma_musteri_id = form.firma_musteri_id.data
             kiralama.kdv_orani = form.kdv_orani.data
             
-            form_kalemler_map = {} # Formdan gelen {kalem_id: ekipman_id}
+            form_kalemler_map = {} 
             yeni_pimaks_ekipman_idler = set()
-            ekipmanlar_to_update_status = {} # {ekipman_id: 'durum'}
+            ekipmanlar_to_update_status = {} 
             
-            # Formdan gelen kalemleri işle
             for kalem_data in form.kalemler.data:
                 
                 db_kalem = None
                 kalem_id_str = str(kalem_data.get('id') or '')
                 
-                # A. Kilitli (sonlandırılmış) bir kalem mi?
                 if kalem_id_str.isdigit() and int(kalem_id_str) > 0:
                     db_kalem = KiralamaKalemi.query.get(int(kalem_id_str))
                     if db_kalem and db_kalem.sonlandirildi:
-                        # Kilitli kalemi atla, durumunu koru
                         if db_kalem.ekipman and db_kalem.ekipman.firma_tedarikci_id is None:
                             yeni_pimaks_ekipman_idler.add(db_kalem.ekipman_id)
                         continue 
 
-                # B. Ekipman Seçimini İşle ('ekle' fonksiyonundaki gibi)
                 ekipman_id_to_use = None
                 ekipman_to_update = None
                 
@@ -545,9 +519,9 @@ def duzenle(kiralama_id):
                 else: # Pimaks Filosu
                     ekipman_id_to_use = kalem_data['ekipman_id']
                     if not (ekipman_id_to_use and ekipman_id_to_use > 0):
-                        continue # Boş satırı atla
+                        continue 
                     
-                    if ekipman_id_to_use in yeni_pimaks_ekipman_idler: # Bu formda çift seçimi engelle
+                    if ekipman_id_to_use in yeni_pimaks_ekipman_idler: 
                         raise ValueError(f"Ekipmanı (ID: {ekipman_id_to_use}) aynı formda birden fazla seçemezsiniz.")
                     
                     ekipman_to_update = Ekipman.query.get(ekipman_id_to_use)
@@ -561,7 +535,6 @@ def duzenle(kiralama_id):
                     yeni_pimaks_ekipman_idler.add(ekipman_id_to_use)
                     ekipmanlar_to_update_status[ekipman_id_to_use] = 'kirada'
                 
-                # C. Tarih ve Finansal Verileri Hazırla
                 baslangic = kalem_data['kiralama_baslangıcı']
                 bitis = kalem_data['kiralama_bitis']
                 if not baslangic or not bitis: raise ValueError("Tarih alanları zorunludur.")
@@ -574,7 +547,6 @@ def duzenle(kiralama_id):
                 if kalem_data['dis_tedarik_nakliye'] and not nakliye_ted_id:
                      raise ValueError(f"Harici Nakliye seçildi ancak Nakliye Tedarikçisi seçilmedi.")
 
-                # D. Yeni mi, Güncelleme mi?
                 if db_kalem and db_kalem.id in original_db_kalemler:
                     # --- GÜNCELLEME ---
                     db_kalem.ekipman_id = ekipman_id_to_use
@@ -590,7 +562,7 @@ def duzenle(kiralama_id):
                 else:
                     # --- YENİ KALEM ---
                     yeni_kalem = KiralamaKalemi(
-                        kiralama=kiralama, # Doğrudan ana kiralamaya bağla
+                        kiralama=kiralama, 
                         ekipman_id=ekipman_id_to_use,
                         kiralama_baslangıcı=baslangic_str,
                         kiralama_bitis=bitis_str,
@@ -639,7 +611,7 @@ def duzenle(kiralama_id):
         flash("Formda hatalar var. Lütfen kontrol ediniz.", "danger")
         print("FORM HATALARI:", form.errors)
         
-    ekipman_choices_json = json.dumps(get_pimaks_ekipman_choices(kiralama))
+    ekipman_choices_json = json.dumps(get_pimaks_ekipman_choices(kiralama, include_ids=[k.ekipman_id for k in kiralama.kalemler]))
     tedarikci_choices_json = json.dumps(get_tedarikci_choices(include_pimaks=False))
     nakliye_tedarikci_choices_json = json.dumps(get_tedarikci_choices(include_pimaks=True))
     
@@ -658,6 +630,8 @@ def duzenle(kiralama_id):
 @kiralama_bp.route('/sil/<int:kiralama_id>', methods=['POST'])
 def sil(kiralama_id):
     kiralama = Kiralama.query.get_or_404(kiralama_id)
+    page = request.args.get('page', 1, type=int)
+    q = request.args.get('q', '')
     try:
         for kalem in kiralama.kalemler:
             if kalem.ekipman and kalem.ekipman.firma_tedarikci_id is None and not kalem.sonlandirildi:
@@ -672,8 +646,7 @@ def sil(kiralama_id):
         flash(f'Kiralama silinirken bir hata oluştu: {str(e)}', 'danger')
         traceback.print_exc() 
 
-    # Silme işleminden sonra arama/sayfalama bilgisi olmadan ana sayfaya dön
-    return redirect(url_for('kiralama.index'))
+    return redirect(url_for('kiralama.index', page=page, q=q))
 
 # -------------------------------------------------------------------------
 # 7. EKİPMAN FİLTRELEME API (NİHAİ GÜNCELLEME)
