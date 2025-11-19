@@ -120,7 +120,14 @@
             <legend style="font-size: 1.2em; font-weight: 500; width: auto; padding: 0 10px; margin-left: 5px;">Makine Maliyeti</legend>
             <div class="form-group">
                 {{ form.giris_maliyeti.label(text="Giriş Maliyeti (Satın Alma Fiyatı):") }}
-                {{ form.giris_maliyeti(class="form-control", placeholder="0.00") }} 
+                
+                <input type="text" name="{{ form.giris_maliyeti.name }}" 
+                        id="{{ form.giris_maliyeti.id }}" 
+                        class="form-control" 
+                        value="{{ '{:,.2f}'.format(form.giris_maliyeti.data).replace(',', 'X').replace('.', ',').replace('X','.') }}">
+                
+                
+               
                 <small style="color: #555; margin-top: 5px; display: block;">
                     Bu makinenin filonuza giriş maliyetini (analiz için) girin.
                 </small>

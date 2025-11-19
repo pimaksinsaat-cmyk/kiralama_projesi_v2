@@ -10,6 +10,8 @@ from sqlalchemy import or_
 
 from app.models import Ekipman, Firma, Kiralama, KiralamaKalemi
 from app.forms import EkipmanForm 
+import locale
+locale.setlocale(locale.LC_ALL, 'tr_TR.UTF-8')  # Türk Lirası formatı
 
 # -------------------------------------------------------------------------
 # 1. Makine Parkı Listeleme Sayfası
@@ -158,18 +160,16 @@ def duzelt(id):
     # --- GET İsteği (Sayfa Yükleme) ---
     if request.method == 'GET':
         # Maliyet verisini String'den Decimal'e güvenli şekilde çevir
-        try:
-            maliyet_str = ekipman.giris_maliyeti
-            if maliyet_str:
-                # Eğer "1.250,00" gibi bir format varsa temizle (ne olur ne olmaz)
+        if request.method == 'GET':
+            try:
+                maliyet_str = ekipman.giris_maliyeti or "0.0"
                 maliyet_clean = maliyet_str.replace('.', '').replace(',', '.')
-                form.giris_maliyeti.data = Decimal(maliyet_clean)
-            else:
+                maliyet_decimal = Decimal(maliyet_clean)
+                form.giris_maliyeti.data = maliyet_decimal
+                # Kullanıcıya gösterilecek format
+                form.giris_maliyeti.data = float(maliyet_decimal)
+            except (ValueError, InvalidOperation) as e:
                 form.giris_maliyeti.data = Decimal(0.0)
-        except (ValueError, InvalidOperation) as e:
-            print(f"Maliyet dönüştürme hatası: {e}")
-            form.giris_maliyeti.data = Decimal(0.0)
-
     # --- POST İsteği (Kaydetme) ---
     if form.validate_on_submit():
         try:
