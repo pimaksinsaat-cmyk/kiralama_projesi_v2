@@ -3,7 +3,6 @@ from datetime import datetime, date
 
 # -------------------------------------------------------------------------
 # 1. ANA MODEL: 'Firma'
-# 'Musteri' ve 'Tedarikci' tablolarının yerini alan ana varlık.
 # -------------------------------------------------------------------------
 class Firma(db.Model):
     """
@@ -11,7 +10,7 @@ class Firma(db.Model):
     Bu firma hem müşteri (is_musteri) hem de tedarikçi (is_tedarikci)
     ya da her ikisi birden olabilir.
     """
-    __tablename__ = 'firma' # ÖNEMLİ: Tablo adı 'musteri' idi, 'firma' oldu.
+    __tablename__ = 'firma'
 
     id = db.Column(db.Integer, primary_key=True)
     firma_adi = db.Column(db.String(150), nullable=False, index=True)
@@ -20,42 +19,33 @@ class Firma(db.Model):
     vergi_dairesi = db.Column(db.String(100), nullable=False)
     vergi_no = db.Column(db.String(50), unique=True, nullable=False, index=True)
 
-    # --- ROL SÜTUNLARI (Çift Yönlü Çalışma İçin) ---
+    # --- ROL SÜTUNLARI ---
     is_musteri = db.Column(db.Boolean, default=True, nullable=False, index=True)
     is_tedarikci = db.Column(db.Boolean, default=False, nullable=False, index=True)
 
-    # --- İLİŞKİLER (Tüm Modüllere Bağlantı) ---
-    
-    # 1. Bu firmanın 'MÜŞTERİ' olarak yaptığı kiralamalar
+    # --- İLİŞKİLER ---
     kiralamalar = db.relationship('Kiralama', 
                                   back_populates='firma_musteri', 
                                   foreign_keys='Kiralama.firma_musteri_id',
                                   cascade="all, delete-orphan")
 
-    # 2. Bu firmanın 'TEDARİKÇİ' olarak sağladığı ekipman kayıtları
     tedarik_edilen_ekipmanlar = db.relationship('Ekipman', 
                                                 back_populates='firma_tedarikci', 
                                                 foreign_keys='Ekipman.firma_tedarikci_id')
     
-    # 3. Bu firmanın 'MÜŞTERİ' olarak yaptığı ödemeler (Cari Modülü Alacak)
     odemeler = db.relationship('Odeme', 
                                back_populates='firma_musteri',
                                foreign_keys='Odeme.firma_musteri_id',
                                cascade="all, delete-orphan")
 
-    # 4. Bu firmanın 'NAKLİYE TEDARİKÇİSİ' olduğu kalemler
-    saglanan_nakliye_hizmetleri = db.relationship(
-        'KiralamaKalemi', 
-        back_populates='nakliye_tedarikci', 
-        foreign_keys='KiralamaKalemi.nakliye_tedarikci_id'
-    )
+    saglanan_nakliye_hizmetleri = db.relationship('KiralamaKalemi', 
+                                                  back_populates='nakliye_tedarikci', 
+                                                  foreign_keys='KiralamaKalemi.nakliye_tedarikci_id')
     
-    # 5. Bu firmanın dahil olduğu 'Bağımsız Hizmet' kayıtları
     hizmet_kayitlari = db.relationship('HizmetKaydi', 
                                        back_populates='firma', 
                                        foreign_keys='HizmetKaydi.firma_id')
                                        
-    # 6. (YENİ) Bu firmanın 'TEDARİKÇİ' olduğu stok kartları
     tedarik_edilen_parcalar = db.relationship('StokKarti', 
                                               back_populates='varsayilan_tedarikci', 
                                               foreign_keys='StokKarti.varsayilan_tedarikci_id')
@@ -66,13 +56,8 @@ class Firma(db.Model):
 
 # -------------------------------------------------------------------------
 # 2. GÜNCELLENEN MODEL: 'Ekipman'
-# (Benzersizlik kısıtlaması (UNIQUE) düzeltildi)
 # -------------------------------------------------------------------------
 class Ekipman(db.Model):
-    """
-    Filodaki her bir makineyi temsil eder.
-    'firma_tedarikci_id' alanı sayesinde harici makineleri de tutabilir.
-    """
     __tablename__ = 'ekipman'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -80,46 +65,40 @@ class Ekipman(db.Model):
     yakit = db.Column(db.String(50), nullable=False, default='')
     tipi = db.Column(db.String(100), nullable=False, default='')
     marka = db.Column(db.String(100), nullable=False)
+    
+    # --- KRİTİK EKSİK ALAN EKLENDİ ---
+    model = db.Column(db.String(100), nullable=True, default='') 
+    # ---------------------------------
 
-    # --- DÜZELTME (UNIQUE Hatası) ---
-    # 'unique=True' parametresi bu satırdan KALDIRILDI.
+    # 'unique=True' kaldırıldı (UniqueConstraint kullanılıyor)
     seri_no = db.Column(db.String(100), nullable=False, index=True) 
-    # --- DÜZELTME SONU ---
 
     calisma_yuksekligi = db.Column(db.Integer, nullable=False)
     kaldirma_kapasitesi = db.Column(db.Integer, nullable=False)
     uretim_tarihi = db.Column(db.String(100), nullable=False)
     
-    # Durumlar: 'bosta', 'kirada', 'serviste', 'harici'
     calisma_durumu = db.Column(db.String(50), nullable=False, default='bosta') 
-
     giris_maliyeti = db.Column(db.String(50), nullable=True, default='0')
     firma_tedarikci_id = db.Column(db.Integer, db.ForeignKey('firma.id'), nullable=True)
     
     # --- İlişkiler ---
     firma_tedarikci = db.relationship('Firma', back_populates='tedarik_edilen_ekipmanlar', foreign_keys=[firma_tedarikci_id])
-    kiralama_kalemleri = db.relationship('KiralamaKalemi', 
-                                         back_populates='ekipman', 
-                                         cascade="all, delete-orphan")
-                                         
-    # DÜZELTME (Mapper Hatası): Henüz tanımlanmayan 'BakimKaydi' için string referansı ('') kullanıldı
-    bakim_kayitlari = db.relationship('BakimKaydi', 
-                                      back_populates='ekipman', 
-                                      cascade="all, delete-orphan")
+    kiralama_kalemleri = db.relationship('KiralamaKalemi', back_populates='ekipman', cascade="all, delete-orphan")
+    
+    # String referans kullanılarak Mapper hatası önlendi
+    bakim_kayitlari = db.relationship('BakimKaydi', back_populates='ekipman', cascade="all, delete-orphan")
 
-    # --- YENİ EKLENEN KISITLAMA (UNIQUE Hatası Düzeltmesi) ---
-    # (Tedarikçi ID, Seri No) çiftinin benzersiz olmasını sağlar.
+    # Tedarikçi ID ve Seri No çifti benzersiz olmalı
     __table_args__ = (
         db.UniqueConstraint('firma_tedarikci_id', 'seri_no', name='_tedarikci_seri_no_uc'),
     )
-    # --- YENİ KISITLAMA SONU ---
 
     def __repr__(self):
         return f'<Ekipman {self.kod}>'
 
 
 # -------------------------------------------------------------------------
-# 3. GÜNCELLENEN MODEL: 'Kiralama' (Ana Form)
+# 3. Kiralama
 # -------------------------------------------------------------------------
 class Kiralama(db.Model):
     __tablename__ = 'kiralama'
@@ -129,19 +108,16 @@ class Kiralama(db.Model):
     firma_musteri_id = db.Column(db.Integer, db.ForeignKey('firma.id'), nullable=False)
     
     firma_musteri = db.relationship('Firma', back_populates='kiralamalar', foreign_keys=[firma_musteri_id])
-    kalemler = db.relationship('KiralamaKalemi', 
-                               back_populates='kiralama', 
-                               cascade="all, delete-orphan")
+    kalemler = db.relationship('KiralamaKalemi', back_populates='kiralama', cascade="all, delete-orphan")
 
     def __repr__(self):
-        # 'firma_musteri' yüklenmemiş olabilir (örn: silinmiş), None kontrolü eklendi
         if getattr(self, 'firma_musteri', None):
             return f'<Kiralama {self.kiralama_form_no or ""} - {self.firma_musteri.firma_adi}>'
         return f'<Kiralama {self.kiralama_form_no or ""}>'
 
 
 # -------------------------------------------------------------------------
-# 4. NİHAİ MODEL: 'KiralamaKalemi' (En Kritik Tablo)
+# 4. KiralamaKalemi
 # -------------------------------------------------------------------------
 class KiralamaKalemi(db.Model):
     __tablename__ = 'kiralama_kalemi'
@@ -152,11 +128,11 @@ class KiralamaKalemi(db.Model):
     kiralama_baslangıcı = db.Column(db.String(50), nullable=False)
     kiralama_bitis = db.Column(db.String(50), nullable=False)
 
-    kiralama_brm_fiyat = db.Column(db.String(50), nullable=False, default='0') # SATIŞ (Müşteriye)
-    kiralama_alis_fiyat = db.Column(db.String(50), nullable=True, default='0') # ALIŞ (Ekipman tedarikçisine)
+    kiralama_brm_fiyat = db.Column(db.String(50), nullable=False, default='0') 
+    kiralama_alis_fiyat = db.Column(db.String(50), nullable=True, default='0') 
 
-    nakliye_satis_fiyat = db.Column(db.String(50), nullable=True, default='0') # SATIŞ (Müşteriye)
-    nakliye_alis_fiyat = db.Column(db.String(50), nullable=True, default='0') # ALIŞ (Nakliye tedarikçisine)
+    nakliye_satis_fiyat = db.Column(db.String(50), nullable=True, default='0') 
+    nakliye_alis_fiyat = db.Column(db.String(50), nullable=True, default='0') 
     nakliye_tedarikci_id = db.Column(db.Integer, db.ForeignKey('firma.id'), nullable=True)
 
     sonlandirildi = db.Column(db.Boolean, default=False, nullable=False)
@@ -170,7 +146,7 @@ class KiralamaKalemi(db.Model):
 
 
 # -------------------------------------------------------------------------
-# 5. YENİ MODEL: 'Odeme' (Cari Hesap - Alacak)
+# 5. Odeme
 # -------------------------------------------------------------------------
 class Odeme(db.Model):
     __tablename__ = 'odeme'
@@ -188,7 +164,7 @@ class Odeme(db.Model):
 
 
 # -------------------------------------------------------------------------
-# 6. YENİ MODEL: 'HizmetKaydi' (Cari Hesap - Borç/Alacak Jokeri)
+# 6. HizmetKaydi
 # -------------------------------------------------------------------------
 class HizmetKaydi(db.Model):
     __tablename__ = 'hizmet_kaydi'
@@ -198,7 +174,7 @@ class HizmetKaydi(db.Model):
     tarih = db.Column(db.String(50), nullable=False)
     aciklama = db.Column(db.String(250), nullable=True)
     tutar = db.Column(db.String(50), nullable=False)
-    yon = db.Column(db.String(10), nullable=False, default='giden') # 'giden' veya 'gelen'
+    yon = db.Column(db.String(10), nullable=False, default='giden') 
 
     def __repr__(self):
         if getattr(self, 'firma', None):
@@ -206,66 +182,48 @@ class HizmetKaydi(db.Model):
         return f'<HizmetKaydi {self.yon} - {self.tutar}>'
 
 # -------------------------------------------------------------------------
-# 7. YENİ MODEL: 'StokKarti' (Stok Modülü - Ana Tablo)
+# 7. StokKarti
 # -------------------------------------------------------------------------
 class StokKarti(db.Model):
-    """
-    Stoktaki yedek parçaları (filtre, yağ vb.) tanımlar.
-    """
     __tablename__ = 'stok_karti'
     id = db.Column(db.Integer, primary_key=True)
     parca_kodu = db.Column(db.String(100), unique=True, nullable=False, index=True)
     parca_adi = db.Column(db.String(250), nullable=False)
     mevcut_stok = db.Column(db.Integer, nullable=False, default=0)
     
-    # Bu parçayı genellikle kimden aldığımızı bilmek için
     varsayilan_tedarikci_id = db.Column(db.Integer, db.ForeignKey('firma.id'), nullable=True)
     varsayilan_tedarikci = db.relationship('Firma', back_populates='tedarik_edilen_parcalar', foreign_keys=[varsayilan_tedarikci_id])
     
-    # Bu parçanın kullanıldığı tüm bakım kayıtları
-    # DÜZELTME (Mapper Hatası): Henüz tanımlanmayan 'KullanilanParca' için string referansı ('') kullanıldı
+    # String referans kullanılarak Mapper hatası önlendi
     kullanim_kayitlari = db.relationship('KullanilanParca', back_populates='stok_karti')
 
     def __repr__(self):
         return f'<StokKarti {self.parca_kodu} (Adet: {self.mevcut_stok})>'
 
 # -------------------------------------------------------------------------
-# 8. YENİ MODEL: 'BakimKaydi' (Servis Modülü - Ana Tablo)
+# 8. BakimKaydi
 # -------------------------------------------------------------------------
 class BakimKaydi(db.Model):
-    """
-    Bir ekipmana yapılan her bir servis/bakım işlemini temsil eder.
-    'HizmetKaydi'ndan farklıdır; bu, iç operasyonel bir kayıttır.
-    """
     __tablename__ = 'bakim_kaydi'
     id = db.Column(db.Integer, primary_key=True)
     
-    # Hangi ekipmana bakım yapıldı?
     ekipman_id = db.Column(db.Integer, db.ForeignKey('ekipman.id'), nullable=False)
     ekipman = db.relationship('Ekipman', back_populates='bakim_kayitlari')
 
     tarih = db.Column(db.String(50), nullable=False)
-    aciklama = db.Column(db.String(500), nullable=True) # "Periyodik Bakım Yapıldı"
-    calisma_saati = db.Column(db.Integer, nullable=True) # Bakım yapıldığındaki saat
+    aciklama = db.Column(db.String(500), nullable=True) 
+    calisma_saati = db.Column(db.Integer, nullable=True) 
     
-    # Bu bakımda hangi parçalar kullanıldı?
-    # DÜZELTME (Mapper Hatası): Henüz tanımlanmayan 'KullanilanParca' için string referansı ('') kullanıldı
-    kullanilan_parcalar = db.relationship('KullanilanParca', 
-                                          back_populates='bakim_kaydi', 
-                                          cascade="all, delete-orphan")
+    # String referans kullanılarak Mapper hatası önlendi
+    kullanilan_parcalar = db.relationship('KullanilanParca', back_populates='bakim_kaydi', cascade="all, delete-orphan")
 
     def __repr__(self):
         return f'<BakimKaydi Ekipman:{self.ekipman_id} - {self.tarih}>'
 
 # -------------------------------------------------------------------------
-# 9. YENİ MODEL: 'KullanilanParca' (İlişki Nesnesi)
-# Stok ve Servis modüllerini birbirine bağlar.
+# 9. KullanilanParca
 # -------------------------------------------------------------------------
 class KullanilanParca(db.Model):
-    """
-    Bir 'BakimKaydi'nda, 'StokKarti'ndan kaç adet kullanıldığını
-    tutan ilişki tablosu (Association Object).
-    """
     __tablename__ = 'kullanilan_parca'
     id = db.Column(db.Integer, primary_key=True)
     
@@ -274,8 +232,6 @@ class KullanilanParca(db.Model):
     
     kullanilan_adet = db.Column(db.Integer, nullable=False, default=1)
     
-    # İlişkiler (Bu sınıflar yukarıda tanımlandığı için string'e gerek yok,
-    # ancak tutarlılık için string kullanmak en iyisidir)
     bakim_kaydi = db.relationship('BakimKaydi', back_populates='kullanilan_parcalar')
     stok_karti = db.relationship('StokKarti', back_populates='kullanim_kayitlari')
 

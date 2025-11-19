@@ -1,8 +1,8 @@
-"""Seri no benzersizlik kısıtlaması düzeltildi
+"""Nihai mimari mapper hatası düzeltildi
 
-Revision ID: c74abfa333fb
+Revision ID: 0296fc04fce3
 Revises: 
-Create Date: 2025-11-16 22:29:55.388479
+Create Date: 2025-11-19 00:23:02.042088
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'c74abfa333fb'
+revision = '0296fc04fce3'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -41,6 +41,7 @@ def upgrade():
     sa.Column('yakit', sa.String(length=50), nullable=False),
     sa.Column('tipi', sa.String(length=100), nullable=False),
     sa.Column('marka', sa.String(length=100), nullable=False),
+    sa.Column('model', sa.String(length=100), nullable=True),
     sa.Column('seri_no', sa.String(length=100), nullable=False),
     sa.Column('calisma_yuksekligi', sa.Integer(), nullable=False),
     sa.Column('kaldirma_kapasitesi', sa.Integer(), nullable=False),
