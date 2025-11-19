@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+    
+    <h2>"{{ekipman.kod }}" Ekipman Bilgi Kartı</h2>
+    
+    {% if form %}
+    <form action="" method="POST" novalidate>
+        {{ form.hidden_tag() }}
+    </form>
+    {% endif %}
+
+    <div class="info-group">
+        <strong>Ekipman Kodu:</strong> {{ekipman.kod }}
+    </div>
+
+    <div class="info-group">
+        <strong>Yakıt Tipi:</strong> {{ ekipman.yakit }}
+    </div>
+
+    <div class="info-group">
+        <strong>Marka:</strong> {{ ekipman.marka }}
+    </div>
+
+    <div class="info-group">
+        <strong>Seri No:</strong> {{ ekipman.seri_no }}
+    </div>
+
+    <div class="info-group">
+        <strong>Çalışma Yüksekliği:</strong> {{ ekipman.calisma_yuksekligi }} 
+    </div>
+     <div class="info-group">
+        <strong>Kalıdırma Kapasitesi:</strong> {{ ekipman.kaldirma_kapasitesi }} 
+    </div>
+    <div class="info-group">
+        <strong>Üretim Tarihi:</strong> {{ ekipman.uretim_tarihi }} 
+    </div>
+
+        
+    
+        <div class="btn-container">
+          
+               
+                    
+        <a href="{{ url_for('filo.duzelt', id=ekipman.id) }}" >Düzelt</a>
+         &nbsp; | &nbsp; 
+        <form action="{{ url_for('filo.sil', id=ekipman.id) }}" method="POST" style="display:inline;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="submit" class="btn-danger" value="Sil" onclick="return confirm('Bu ekipmanı silmek istediğinizden emin misiniz?')">
+        </form>
+          &nbsp; | &nbsp; 
+          <a href="{{ url_for('filo.index') }}" >Geri Dön</a>
+        </div>   
+</div>
+
+{% endblock %}

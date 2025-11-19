@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Firma Bilgilerini Düzelt{% endblock %}
+
+{% block content %}
+<!-- 
+    NOT: Bu sayfaya özel stilleri buraya taşıdım.
+    'base.html' dosyanızda bir 'head_style' bloğu varsa,
+    bu <style> etiketini oraya taşımak daha iyidir.
+-->
+<style>
+    /* Sayfanın ana stilleri */
+    .container { max-width: 550px; margin: auto; padding: 25px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    h2 { color: #343a40; text-align: center; margin-bottom: 20px;}
+    .form-group { margin-bottom: 0.7rem; }
+    label { display: block; margin-bottom: .4rem; font-weight: 500; color: #495057; }
+    
+    /* WTForms'un üreteceği etiketlere stil uygulamak */
+    .form-control { 
+        width: 100%; 
+        max-width: 700px;
+        padding: 1rem; 
+        border: 1px solid #ced4da; 
+        border-radius: .25rem; 
+        box-sizing: border-box; 
+        font-size: 1rem; 
+    }
+    input[type="text"].form-control, 
+    input[type="number"].form-control, 
+    input[type="tel"].form-control, /* 'vergi_no' için eklendi */
+    textarea.form-control {
+            width: 100%; 
+    }
+    
+    /* Checkbox stilleri (Yeni Roller için) */
+    .form-check-input {
+            margin-right: 10px;
+    }
+    .form-check-label {
+            display: inline;
+            font-weight: normal;
+    }
+
+    /* Buton stilleri */
+    .butonlar {
+        display: flex;
+        justify-content: flex-start; /* sola hizala */
+        gap: 40px; /* butonlar arası boşluk */
+        margin-top: 30px;
+    }
+    .buton {
+        display: inline-block;
+        padding: 10px 10px;
+        background-color: #007BFF;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        font-size: 1.1rem; /* Buton fontunu eşleştirdim */
+    }
+    .buton:hover {
+        background-color: #0056b3;
+    }
+    .buton.iptal {
+        background-color: #6c757d; /* gri */
+    }
+    .buton.iptal:hover {
+        background-color: #5a6268;
+    }
+</style>
+
+<div class="container">
+  
+    <!-- 'musteri' -> 'firma' olarak güncellendi -->
+  <h2>"{{ firma.firma_adi }}" Bilgilerini Düzelt</h2>
+
+    <!-- Flash mesajları (ekle.html'den kopyaladım, burada yoktu) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+  <form action="" method="POST" novalidate>
+    {{ form.hidden_tag() }}
+   
+    <div class="form-group">
+            <!-- 'value' attribute'ü kaldırıldı, WTForms veriyi otomatik doldurur -->
+      {{ form.firma_adi.label(text="Firma Adı :") }}
+            {{ form.firma_adi(class="form-control") }}
+            {% for error in form.firma_adi.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ form.yetkili_adi.label(text="Yetkili Kişi :") }}
+      {{ form.yetkili_adi(class="form-control") }}
+            {% for error in form.yetkili_adi.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+
+   <div class="form-group">
+      {{ form.iletisim_bilgileri.label(text="Adres :") }}  
+            <!-- Bu, 'forms.py'da TextAreaField olduğu için otomatik <textarea> olur -->
+      {{ form.iletisim_bilgileri(class="form-control", rows=3) }}
+            {% for error in form.iletisim_bilgileri.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+    <div class="form-group">
+      {{ form.vergi_dairesi.label(text="Vergi Dairesi :") }}
+      {{ form.vergi_dairesi(class="form-control") }}   
+            {% for error in form.vergi_dairesi.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+    <div class="form-group">
+      {{ form.vergi_no.label(text="Vergi No:") }}
+      {{ form.vergi_no(class="form-control") }}   
+            {% for error in form.vergi_no.errors %}<span style="color: red; font-size: 0.9em;">[{{ error }}]</span>{% endfor %}
+    </div>
+
+        <!-- 
+        ---------------------------------------------------------------
+        YENİ EKLENEN FİRMA ROLÜ BÖLÜMÜ
+        (Veriler 'obj=firma' sayesinde otomatik olarak dolu gelir)
+        ---------------------------------------------------------------
+        -->
+        <fieldset class="form-group" style="border: 1px solid #dee2e6; padding: 1.5rem; margin-top: 20px; border-radius: 5px;">
+            <legend style="font-size: 1.2em; font-weight: 500; width: auto; padding: 0 10px; margin-left: 5px;">Firma Rolleri</legend>
+            
+            <div class="form-check form-switch mb-2">
+                <!-- 'is_musteri' (CheckBox) alanı -->
+                {{ form.is_musteri(id="is_musteri", class="form-check-input") }}
+                {{ form.is_musteri.label(for="is_musteri", class="form-check-label") }}
+                <br>
+                <small class="text-muted">(Bu firmaya kiralama faturası kesilecekse işaretleyin.)</small>
+            </div>
+
+            <div class="form-check form-switch">
+                <!-- 'is_tedarikci' (CheckBox) alanı -->
+                {{ form.is_tedarikci(id="is_tedarikci", class="form-check-input") }}
+                {{ form.is_tedarikci.label(for="is_tedarikci", class="form-check-label") }}
+                <br>
+                <small class="text-muted">(Bu firmadan makine, parça veya hizmet alınacaksa işaretleyin.)</small>
+            </div>
+        </fieldset>
+        <!-- YENİ BÖLÜM SONU -->
+
+    <!-- Butonlar (Sizin stillerinize uyduruldu) -->
+    <div class="butonlar">
+         <!-- 'form.submit' kullanarak 'Kaydet' butonunu render ettim -->
+    {{ form.submit(class="buton", value="Kaydet") }}
+    <a href="{{ url_for('firmalar.index') }}" class="buton iptal">İptal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
