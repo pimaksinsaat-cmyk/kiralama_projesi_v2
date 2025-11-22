@@ -65,7 +65,7 @@
 
     <!-- Arama Formu -->
     <form method="GET" action="{{ url_for('filo.harici') }}" class="search-form">
-        <input type="text" name="q" placeholder="Makine Kodu, Tipi veya Seri No ile ara..." value="{{ q or '' }}">
+        <input type="text" name="q" placeholder="Makine Kodu, Marka, Model veya Seri No ile ara..." value="{{ q or '' }}">
         <button type="submit">Bul</button>
     </form>
 
@@ -77,9 +77,9 @@
                     <br>
                     <small class="text-muted" style="font-weight: normal;">(Seçenekler için sağ tık)</small>
                 </th>
-                <th>Marka / Tip</th>
+                <!-- GÜNCELLEME: Marka ve Model Başlığı Eklendi -->
+                <th>Marka / Model / Tip</th>
                 <th>Seri No</th>
-                <!-- YENİ: Tedarikçi Sütunu -->
                 <th>Tedarikçi Firma</th>
                 <th>Durum</th>
             </tr>
@@ -97,10 +97,23 @@
                 <td>
                     <strong>{{ ekipman.kod }}</strong>
                 </td> 
-                <td>{{ ekipman.marka }} / {{ ekipman.tipi }}</td>
+                
+                <!-- GÜNCELLEME: Marka ve Model Gösterimi Eklendi -->
+                <td>
+                    {% if ekipman.marka and ekipman.marka != 'Bilinmiyor' %}
+                        <strong>{{ ekipman.marka }}</strong>
+                    {% endif %}
+                    
+                    {% if ekipman.model %}
+                        {{ ekipman.model }}
+                    {% endif %}
+                    
+                    <br>
+                    <small class="text-muted">({{ ekipman.tipi }})</small>
+                </td>
+                
                 <td>{{ ekipman.seri_no }}</td>
                 
-                <!-- YENİ: Tedarikçi Bilgisi -->
                 <td>
                     {% if ekipman.firma_tedarikci %}
                         <a href="{{ url_for('firmalar.bilgi', id=ekipman.firma_tedarikci.id) }}">
