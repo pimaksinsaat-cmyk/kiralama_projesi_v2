@@ -4,29 +4,34 @@
 
 {% block content %}
 <style>
-    /* ... (Stiller aynı) ... */
     .container { max-width: 1500px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
     th, td { padding: 12px; border: 1px solid #dee2e6; text-align: left; vertical-align: middle;}
     th { background-color: #e9ecef; position: sticky; top: 0; z-index: 10; }
     a { color: #007bff; text-decoration: none; }
     a:hover { text-decoration: underline; }
+
+    /* Buton Stilleri */
     .btn { display: inline-block; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; color: white; transition: background-color 0.2s; margin-bottom: 5px; border: none; cursor: pointer; font-size: 0.9em; }
     .btn-danger { background-color: #c82333; }
     .btn-warning { background-color: #ffc107; color: #343a40; }
     .btn-warning:hover { background-color: #e0a800; }
     .btn-primary { background-color: #007bff; }
     .btn-secondary { background-color: #6c757d; }
+    
     .alert { padding: 1rem; margin-bottom: 1rem; border: 1px solid transparent; border-radius: .25rem; }
     .alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
     .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+
+    /* Durum Etiketleri */
     .badge { display: inline-block; padding: .45em .75em; font-size: .8em; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25rem; }
     .bg-success { background-color: #28a745; }
     .bg-primary { background-color: #007bff; }
     .bg-secondary { background-color: #6c757d; }
-    
-    .context-menu { display: none; position: absolute; background-color: white; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-radius: 5px; z-index: 1000; min-width: 200px; padding: 5px 0; }
-    .context-menu-item { display: block; padding: 12px 15px; color: #333; text-decoration: none; font-size: 1em; }
+
+    /* Sağ Tık Menüsü */
+    .context-menu { display: none; position: absolute; background-color: white; border: 1px solid #ccc; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 5px; z-index: 1000; min-width: 180px; padding: 5px 0; }
+    .context-menu-item { display: block; padding: 8px 15px; color: #333; text-decoration: none; font-size: 0.9em; }
     .context-menu-item:hover { background-color: #f5f5f5; color: #000; text-decoration: none; }
     .context-menu-item.delete { color: #dc3545; font-weight: bold; }
     .context-menu-item.delete:hover { background-color: #dc3545; color: white; }
@@ -51,7 +56,60 @@
         table { font-size: 0.8em; }
         th, td { padding: 8px; }
     }
+
+    /* ---------------------------------------------------------- */
+    /* YENİ: MOBİL DÖNDÜRME UYARISI (ORIENTATION WARNING)         */
+    /* ---------------------------------------------------------- */
+    #rotate-device-overlay {
+        display: none; /* Varsayılan gizli */
+    }
+
+    /* Sadece Mobil ve Dikey (Portrait) Modda Görünür */
+    @media only screen and (max-width: 768px) and (orientation: portrait) {
+        #rotate-device-overlay {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9); /* Koyu arka plan */
+            z-index: 99999; /* En üstte */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        /* İkon Animasyonu */
+        .rotate-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: rotate-phone 2s infinite ease-in-out;
+        }
+        
+        @keyframes rotate-phone {
+            0%, 10% { transform: rotate(0deg); }
+            40%, 60% { transform: rotate(90deg); }
+            90%, 100% { transform: rotate(0deg); }
+        }
+        
+        /* Arka planı biraz bulanıklaştır */
+        .container {
+            filter: blur(5px);
+        }
+    }
 </style>
+
+<!-- MOBİL UYARI EKRANI -->
+<div id="rotate-device-overlay">
+    <i class="fa fa-mobile-screen-button rotate-icon"></i>
+    <h3>Lütfen Ekranı Yan Çevirin</h3>
+    <p>Tabloları rahat görüntülemek ve işlem yapabilmek için cihazınızı yatay konuma getiriniz.</p>
+    <button class="btn btn-outline-light btn-sm mt-3" onclick="document.getElementById('rotate-device-overlay').style.display='none'; document.querySelector('.container').style.filter='none';">Yine de Devam Et</button>
+</div>
 
 <div class="container">
     <h1>Makine Parkı (Pimaks Filosu)</h1>
@@ -74,6 +132,7 @@
         <a href="{{ url_for('main.index') }}">Ana Sayfaya Dön</a>
     </p>
 
+    <!-- Arama Formu -->
     <form method="GET" action="{{ url_for('filo.index') }}" class="search-form">
         <input type="text" name="q" placeholder="Makine Kodu, Tipi veya Seri No ile ara..." value="{{ q or '' }}">
         <button type="submit">Bul</button>
@@ -182,7 +241,6 @@
 
 <div id="modal-backdrop" class="modal-backdrop"></div>
 <div id="sonlandir-modal" class="modal-dialog">
-    <!-- DÜZELTME: 'type=int' ifadesi url_for'dan kaldırıldı -->
     <form id="sonlandir-ekipman-form" method="POST" action="{{ url_for('filo.sonlandir', q=q, page=request.args.get('page', 1)) }}">
         <h3>Kiralamayı Sonlandır</h3>
         <p>Lütfen <strong id="modal-ekipman-kod"></strong> için bir bitiş tarihi seçin.</p>
@@ -318,4 +376,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
 {% endblock %}
