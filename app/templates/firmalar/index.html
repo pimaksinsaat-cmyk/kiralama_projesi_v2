@@ -3,84 +3,59 @@
 {% block title %}Firma Listesi{% endblock %}
 
 {% block content %}
-<!-- 
-CSS, 'content' bloğunun içine taşındı ve
-'Sağ Tık Menüsü' (Context Menu) için gerekli stiller eklendi.
--->
 <style>
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 20px; background-color: #f8f9fa; }
-.container { max-width: 1500px; margin: auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-h1 { color: #343a40; }
-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
-th, td { padding: 12px; border: 1px solid #dee2e6; text-align: left; vertical-align: middle;}
-th { background-color: #e9ecef; position: sticky; top: 0; z-index: 10; } /* Sabit Başlık */
-a { color: #007bff; text-decoration: none; }
-a:hover { text-decoration: underline; }
-.btn-danger { background-color: #c82333; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.9em; }
-.alert { padding: 1rem; margin-bottom: 1rem; border: 1px solid transparent; border-radius: .25rem; }
-.alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
-.alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
-.badge { display: inline-block; padding: .35em .65em; font-size: .75em; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25rem; margin-right: 5px; }
-.bg-primary { background-color: #007bff; }
-.bg-warning { background-color: #ffc107; color: #343a40; }
-.bg-secondary { background-color: #6c757d; }
-.context-menu { display: none; position: absolute; background-color: white; border: 1px solid #ccc; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 5px; z-index: 1000; min-width: 160px; padding: 5px 0; }
-.context-menu-item { display: block; padding: 8px 15px; color: #333; text-decoration: none; font-size: 0.9em; }
-.context-menu-item:hover { background-color: #f5f5f5; color: #000; text-decoration: none; }
-.context-menu-item.delete { color: #dc3545; font-weight: bold; }
-.context-menu-item.delete:hover { background-color: #dc3545; color: white; }
-.context-menu-divider { height: 1px; margin: 5px 0; background-color: #eee; }
+    /* Genel Stil */
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 20px; background-color: #f8f9fa; }
+    .container { max-width: 1500px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    
+    /* Tablo Stilleri */
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
+    th, td { padding: 12px; border: 1px solid #dee2e6; text-align: left; vertical-align: middle; }
+    th { background-color: #e9ecef; position: sticky; top: 0; z-index: 10; }
+    
+    /* Link ve Butonlar */
+    a { color: #007bff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .btn-danger { background-color: #c82333; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.9em; }
+    
+    /* Alert Stilleri */
+    .alert { padding: 1rem; margin-bottom: 1rem; border: 1px solid transparent; border-radius: .25rem; }
+    .alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+    .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+    
+    /* Badge (Rol) Stilleri */
+    .badge { display: inline-block; padding: .35em .65em; font-size: .75em; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25rem; margin-right: 5px; }
+    .bg-primary { background-color: #007bff; }
+    .bg-warning { background-color: #ffc107; color: #343a40; }
+    .bg-secondary { background-color: #6c757d; }
 
-/* Arama Formu Stilleri */
-.search-form {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-.search-form input[type="text"] {
-    flex-grow: 1; /* Genişliği doldur */
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 1em;
-}
-.search-form button {
-    padding: 8px 15px;
-    border: none;
-    border-radius: 5px;
-    background-color: #007bff;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-}
-.search-form button:hover { background-color: #0056b3; }
+    /* Context Menu (Sağ Tık) */
+    .context-menu { display: none; position: absolute; background-color: white; border: 1px solid #ccc; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 5px; z-index: 1000; min-width: 180px; padding: 5px 0; }
+    .context-menu-item { display: block; padding: 8px 15px; color: #333; text-decoration: none; font-size: 0.9em; }
+    .context-menu-item:hover { background-color: #f5f5f5; color: #000; text-decoration: none; }
+    .context-menu-item.delete { color: #dc3545; font-weight: bold; }
+    .context-menu-item.delete:hover { background-color: #dc3545; color: white; }
+    .context-menu-divider { height: 1px; margin: 5px 0; background-color: #eee; }
+    
+    /* Arama Formu */
+    .search-form { display: flex; gap: 10px; margin-bottom: 15px; }
+    .search-form input[type="text"] { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 1em; }
+    .search-form button { padding: 8px 15px; border: none; border-radius: 5px; background-color: #007bff; color: white; font-weight: bold; cursor: pointer; }
+    .search-form button:hover { background-color: #0056b3; }
 
-/* Sayfalama (Pagination) Stilleri */
-.pagination {
-    margin-top: 20px;
-    text-align: center;
-}
-.pagination a, .pagination span {
-    display: inline-block;
-    padding: 8px 12px;
-    margin: 0 3px;
-    border: 1px solid #dee2e6;
-    border-radius: 5px;
-    text-decoration: none;
-    color: #007bff;
-}
-.pagination a:hover {
-    background-color: #e9ecef;
-}
-.pagination .active {
-    background-color: #007bff;
-    color: white;
-    border-color: #007bff;
-}
-.pagination .disabled {
-    color: #6c757d;
-    pointer-events: none;
-}
+    /* Sayfalama */
+    .pagination { margin-top: 20px; text-align: center; }
+    .pagination a, .pagination span { display: inline-block; padding: 8px 12px; margin: 0 3px; border: 1px solid #dee2e6; border-radius: 5px; text-decoration: none; color: #007bff; }
+    .pagination a:hover { background-color: #e9ecef; }
+    .pagination .active { background-color: #007bff; color: white; border-color: #007bff; }
+    .pagination .disabled { color: #6c757d; pointer-events: none; }
+    
+    /* Mobil Uyumluluk */
+    @media (max-width: 768px) {
+        .container { padding: 10px; }
+        table { font-size: 0.8em; }
+        th, td { padding: 8px; }
+    }
 </style>
 
 <div class="container">
@@ -103,95 +78,79 @@ a:hover { text-decoration: underline; }
         <a href="{{ url_for('main.index') }}">Ana Sayfaya Dön</a>
     </p>
 
-    <!-- 
-    ---------------------------------------------------------------
-    Arama Formu
-    'q' parametresini (routes.py'dan) alarak kutuyu dolu tutar.
-    ---------------------------------------------------------------
-    -->
+    <!-- Arama Formu -->
     <form method="GET" action="{{ url_for('firmalar.index') }}" class="search-form">
-        <input type="text" name="q" placeholder="Firma adında ara..." value="{{ q or '' }}">
+        <input type="text" name="q" placeholder="Firma Adı veya Yetkili Kişi ile ara..." value="{{ q or '' }}">
         <button type="submit">Bul</button>
     </form>
 
-    <table>
-        <thead>
-            <tr>
-                <!-- DÜZELTME: 'sağ tık' uyarısı başlığa eklendi -->
-                <th>
-                    Firma Adı
-                    <br>
-                    <small class="text-muted" style="font-weight: normal;">(Seçenekler için sağ tık)</small>
-                </th>
-                <th>Yetkili Kişi</th>
-                <th>Adres</th>
-                <th>Vergi Numarası</th>
-                <th>Rolü</th>
-                <!-- DÜZELTME: 'İşlemler' sütunu kaldırıldı -->
-            </tr>
-        </thead>
-        <tbody>
-            <!-- DÜZELTME: 'firmalar' artık 'pagination.items' oldu -->
-            {% for firma in firmalar %}
-            <!-- 
-            DÜZELTME:
-            'firma-satiri' sınıfı ve 'data-*' öznitelikleri
-            JavaScript'in sağ tık menüsünü doldurması için eklendi.
-            -->
-            <tr class="firma-satiri"
-                data-firma-id="{{ firma.id }}"
-                data-duzenle-url="{{ url_for('firmalar.duzelt', id=firma.id) }}"
-                data-sil-url="{{ url_for('firmalar.sil', id=firma.id) }}"
-                data-bilgi-url="{{ url_for('firmalar.bilgi', id=firma.id) }}"
-                data-csrf-token="{{ csrf_token() }}"
-                data-firma-adi="{{ firma.firma_adi }}"
-                >
-                <td>
-                    <!-- DÜZELTME: 'bilgi' linki ve 'sağ tık' uyarısı kaldırıldı -->
-                    <strong>{{ firma.firma_adi }}</strong>
-                </td> 
-                <td>{{ firma.yetkili_adi }}</td>
-                <td>{{ firma.iletisim_bilgileri }}</td>
-                <td>{{ firma.vergi_no }}</td>
-                
-                <td>
-                    {% if firma.is_musteri %}<span class="badge bg-primary">Müşteri</span>{% endif %}
-                    {% if firma.is_tedarikci %}<span class="badge bg-warning">Tedarikçi</span>{% endif %}
-                    {% if not firma.is_musteri and not firma.is_tedarikci %}<span class="badge bg-secondary">Tanımsız</span>{% endif %}
-                </td>
-                
-                <!-- DÜZELTME: 'İşlemler' <td> hücresi tamamen kaldırıldı -->
-            </tr>
-            {% else %}
-            <tr>
-                <!-- 'colspan' 6'dan 5'e düşürüldü -->
-                <td colspan="5">
-                    {% if q %}
-                        "'{{ q }}'" için arama sonucu bulunamadı.
-                    {% else %}
-                        Kayıtlı firma bulunamadı.
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>
+                        Firma Adı
+                        <br>
+                        <small class="text-muted" style="font-weight: normal;">(Seçenekler için sağ tık/basılı tut)</small>
+                    </th>
+                    <th>Yetkili Kişi</th>
+                    <th>Adres</th>
+                    <th>Vergi Numarası</th>
+                    <th>Rolü</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for firma in firmalar %}
+                <tr class="firma-satiri"
+                    data-firma-id="{{ firma.id }}"
+                    data-duzenle-url="{{ url_for('firmalar.duzelt', id=firma.id) }}"
+                    data-sil-url="{{ url_for('firmalar.sil', id=firma.id) }}"
+                    data-bilgi-url="{{ url_for('firmalar.bilgi', id=firma.id) }}"
+                    data-csrf-token="{{ csrf_token() }}"
+                    data-firma-adi="{{ firma.firma_adi }}"
+                    >
+                    <td>
+                        <strong>{{ firma.firma_adi }}</strong>
+                    </td> 
+                    <td>{{ firma.yetkili_adi }}</td>
+                    <td>{{ firma.iletisim_bilgileri }}</td>
+                    <td>{{ firma.vergi_no }}</td>
+                    
+                    <td>
+                        {% if firma.is_musteri %}
+                            <span class="badge bg-primary">Müşteri</span>
+                        {% endif %}
+                        {% if firma.is_tedarikci %}
+                            <span class="badge bg-warning">Tedarikçi</span>
+                        {% endif %}
+                        {% if not firma.is_musteri and not firma.is_tedarikci %}
+                            <span class="badge bg-secondary">Tanımsız</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">
+                        {% if q %}
+                            "'{{ q }}'" için kayıt bulunamadı.
+                        {% else %}
+                            Kayıtlı firma bulunamadı.
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-    <!-- 
-    ---------------------------------------------------------------
-    YENİ EKLENDİ: Sayfalama (Pagination) Linkleri
-    'pagination' nesnesini (routes.py'dan) kullanarak linkleri oluşturur.
-    ---------------------------------------------------------------
-    -->
+    <!-- Sayfalama -->
     {% if pagination %}
     <div class="pagination">
-        <!-- Önceki Sayfa Linki -->
         <a href="{{ url_for('firmalar.index', page=pagination.prev_num, q=q) if pagination.has_prev else '#' }}"
            class="{{ 'disabled' if not pagination.has_prev else '' }}">
            &laquo; Önceki
         </a>
         
-        <!-- Sayfa Numaraları -->
         {% for page_num in pagination.iter_pages() %}
             {% if page_num %}
                 {% if page_num != pagination.page %}
@@ -204,7 +163,6 @@ a:hover { text-decoration: underline; }
             {% endif %}
         {% endfor %}
         
-        <!-- Sonraki Sayfa Linki -->
         <a href="{{ url_for('firmalar.index', page=pagination.next_num, q=q) if pagination.has_next else '#' }}"
            class="{{ 'disabled' if not pagination.has_next else '' }}">
            Sonraki &raquo;
@@ -217,12 +175,18 @@ a:hover { text-decoration: underline; }
 
 </div>
 
-<!-- Gizli Sağ Tık Menüsü (Context Menu) -->
+<!-- Gizli Sağ Tık Menüsü -->
 <div id="context-menu" class="context-menu">
-    <a href="#" class="context-menu-item" id="menu-bilgi">Cari Detayı Görüntüle</a>
-    <a href="#" class="context-menu-item" id="menu-duzenle">Firmayı Düzenle</a>
+    <a href="#" class="context-menu-item" id="menu-bilgi">
+        <i class="fa fa-eye"></i> Cari Detayı Görüntüle
+    </a>
+    <a href="#" class="context-menu-item" id="menu-duzenle">
+        <i class="fa fa-pencil"></i> Firmayı Düzenle
+    </a>
     <div class="context-menu-divider"></div>
-    <a href="#" class="context-menu-item delete" id="menu-sil">Firmayı Sil</a>
+    <a href="#" class="context-menu-item delete" id="menu-sil">
+        <i class="fa fa-trash"></i> Firmayı Sil
+    </a>
 </div>
 
 <!-- Gizli Silme Formu -->
@@ -230,43 +194,90 @@ a:hover { text-decoration: underline; }
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 </form>
 
-
 <script>
-// Sağ tık menüsü için JavaScript (Aynı, değişiklik yok)
 document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- ORTAK: LONG PRESS HANDLER (Mobil) ---
+    function addLongPressListener(element, callback) {
+        let timer;
+        element.addEventListener('touchstart', function(e) {
+            timer = setTimeout(function() {
+                timer = null;
+                const touch = e.touches[0];
+                const mockEvent = {
+                    preventDefault: () => e.preventDefault(),
+                    stopPropagation: () => e.stopPropagation(),
+                    pageX: touch.pageX,
+                    pageY: touch.pageY
+                };
+                callback(mockEvent, element);
+            }, 600);
+        }, {passive: false});
+        
+        function clear() { if (timer) { clearTimeout(timer); timer = null; } }
+        element.addEventListener('touchend', clear);
+        element.addEventListener('touchmove', clear);
+    }
+
     const contextMenu = document.getElementById('context-menu');
     const deleteForm = document.getElementById('delete-form');
     const menuBilgi = document.getElementById('menu-bilgi');
     const menuDuzenle = document.getElementById('menu-duzenle');
     const menuSil = document.getElementById('menu-sil');
+    
     let currentSilUrl = null;
     let currentCsrfToken = null;
     let currentFirmaAdi = null;
 
+    const showMenu = (event, row) => {
+        event.preventDefault();
+        
+        // Tıklanan satırdan verileri al
+        currentSilUrl = row.dataset.silUrl;
+        currentCsrfToken = row.dataset.csrfToken;
+        currentFirmaAdi = row.dataset.firmaAdi;
+        const duzenleUrl = row.dataset.duzenleUrl;
+        const bilgiUrl = row.dataset.bilgiUrl;
+
+        // Menü linklerini güncelle
+        menuBilgi.href = bilgiUrl;
+        menuDuzenle.href = duzenleUrl;
+
+        // Menüyü göster
+        contextMenu.style.left = event.pageX + 'px';
+        contextMenu.style.top = event.pageY + 'px';
+        contextMenu.style.display = 'block';
+    };
+
+    // 1. Tablo satırlarına dinleyici ekle
     document.querySelectorAll('.firma-satiri').forEach(row => {
-        row.addEventListener('contextmenu', function(event) {
-            event.preventDefault();
-            currentSilUrl = row.dataset.silUrl;
-            currentCsrfToken = row.dataset.csrfToken;
-            currentFirmaAdi = row.dataset.firmaAdi;
-            menuBilgi.href = row.dataset.bilgiUrl;
-            menuDuzenle.href = row.dataset.duzenleUrl;
-            contextMenu.style.left = event.pageX + 'px';
-            contextMenu.style.top = event.pageY + 'px';
-            contextMenu.style.display = 'block';
-        });
+        // Masaüstü sağ tık
+        row.addEventListener('contextmenu', (e) => showMenu(e, row));
+        // Mobil basılı tut
+        addLongPressListener(row, showMenu);
     });
 
+    // 2. Menü dışına tıklayınca gizle
     window.addEventListener('click', function() {
         if (contextMenu.style.display === 'block') {
             contextMenu.style.display = 'none';
         }
     });
+    
+    // Mobilde boşluğa tıklayınca menüyü kapat
+    window.addEventListener('touchstart', function(event) {
+         if (!event.target.closest('.context-menu')) {
+             contextMenu.style.display = 'none';
+         }
+    });
 
+    // 3. Silme işlemi
     menuSil.addEventListener('click', function(event) {
         event.preventDefault();
+        
         if (currentSilUrl && currentFirmaAdi) {
             const onay = confirm("'" + currentFirmaAdi + "' firmasını silmek istediğinizden emin misiniz? Bu firmanın ilişkili kayıtları varsa silinmeyecektir.");
+            
             if (onay) {
                 deleteForm.action = currentSilUrl;
                 deleteForm.querySelector('input[name="csrf_token"]').value = currentCsrfToken;
@@ -277,5 +288,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
 {% endblock %}
