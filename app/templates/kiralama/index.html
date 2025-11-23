@@ -4,6 +4,7 @@
 
 {% block content %}
 <style>
+    /* ... (CSS Stilleri Aynen Kalır) ... */
     .container { max-width: 1500px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
     th, td { padding: 12px; border: 1px solid #dee2e6; text-align: left; vertical-align: top; }
@@ -26,13 +27,15 @@
     .bg-success { background-color: #28a745; }
     .bg-danger { background-color: #dc3545; }
     .bg-light { background-color: #f8f9fa; color: #343a40; border: 1px solid #ccc;}
-    .bg-dark { background-color: #343a40; }
+    .bg-dark { background-color: #343a40; } 
     .kalem-listesi { list-style-type: none; padding-left: 0; margin-bottom: 0; }
     .kalem-listesi li { padding: 5px; border-bottom: 1px dashed #eee; }
     .kalem-listesi li:last-child { border-bottom: none; }
+    
+    /* Mobil dokunma alanını belirtmek için */
     .kalem-listesi-item:hover { background-color: #f8f9fa; cursor: context-menu; }
     
-    /* Menü stilleri - Mobilde daha kolay basılabilsin diye biraz büyüttük */
+    /* Menü stilleri */
     .context-menu, .context-menu-kalem { display: none; position: absolute; background-color: white; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-radius: 5px; z-index: 1000; min-width: 200px; padding: 5px 0; }
     .context-menu-kalem { z-index: 1001; }
     .context-menu-item { display: block; padding: 12px 15px; color: #333; text-decoration: none; font-size: 1em; }
@@ -57,7 +60,6 @@
     .modal-dialog .form-group input[type="date"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     .modal-actions { text-align: right; margin-top: 20px; }
     
-    /* Mobilde tablo taşmasını engellemek için */
     @media (max-width: 768px) {
         .container { padding: 10px; }
         table { font-size: 0.8em; }
@@ -98,7 +100,6 @@
         <button type="submit">Bul</button>
     </form>
 
-    <!-- Tabloya yatay kaydırma eklendi (Mobil için) -->
     <div style="overflow-x: auto;">
         <table>
             <thead>
@@ -112,7 +113,7 @@
                     <th>
                         Kiralama Kalemleri
                         <br>
-                        <small class="text-muted" style="font-weight: normal;">(Sonlandırma için basılı tut)</small>
+                        <small class="text-muted" style="font-weight: normal;">(Sonlandırma için Sağ tık/ Basılı tut)</small>
                     </th>
                     <th>Kalem Durumları</th>
                 </tr>
@@ -239,15 +240,19 @@
 document.addEventListener('DOMContentLoaded', function() {
     
     // --- ORTAK: DOKUNMATİK EKRAN (LONG PRESS) DESTEĞİ ---
-    function addLongPressListener(element, callback) {
+    // DÜZELTME: stopBubbling parametresi eklendi (Çakışmayı Önlemek İçin)
+    function addLongPressListener(element, callback, stopBubbling = false) {
         let timer;
         
         element.addEventListener('touchstart', function(e) {
+            // Eğer içteki öğe ise (kalem), olayın yukarı (satıra) gitmesini engelle
+            if (stopBubbling) {
+                e.stopPropagation(); 
+            }
+            
             timer = setTimeout(function() {
                 timer = null;
-                // Dokunmatik pozisyonunu al
                 const touch = e.touches[0];
-                // Sahte bir 'contextmenu' olayına benzer veri oluştur
                 const mockEvent = {
                     preventDefault: () => e.preventDefault(),
                     stopPropagation: () => e.stopPropagation(),
@@ -255,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     pageY: touch.pageY
                 };
                 callback(mockEvent, element);
-            }, 600); // 600ms basılı tutunca tetikle
+            }, 600); // 600ms
         }, {passive: false});
 
         function clear() {
@@ -289,8 +294,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.kiralama-satiri').forEach(row => {
         // Masaüstü sağ tık
         row.addEventListener('contextmenu', (e) => showRowMenu(e, row));
-        // Mobil basılı tut
-        addLongPressListener(row, showRowMenu);
+        // Mobil basılı tut (stopBubbling = false, çünkü bu en dış katman)
+        addLongPressListener(row, showRowMenu, false);
     });
 
     menuSil.addEventListener('click', function(event) {
@@ -318,7 +323,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentKalemId = null, currentEkipmanKod = null, currentKalemCsrfToken = null;
 
     const showKalemMenu = (event, item) => {
-        event.stopPropagation(); event.preventDefault();
+        // Masaüstü için bubbling engelleme
+        event.stopPropagation(); 
+        event.preventDefault();
         hideRowMenu();
         
         if (item.dataset.sonlandirilmis === '1') return;
@@ -335,8 +342,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.kalem-listesi-item').forEach(item => {
         // Masaüstü sağ tık
         item.addEventListener('contextmenu', (e) => showKalemMenu(e, item));
-        // Mobil basılı tut
-        addLongPressListener(item, showKalemMenu);
+        // Mobil basılı tut (DÜZELTME: stopBubbling = true yapıldı)
+        // Bu sayede kaleme basınca satırın menüsü açılmayacak!
+        addLongPressListener(item, showKalemMenu, true);
     });
 
     menuSonlandir.addEventListener('click', function(event) {
@@ -364,9 +372,7 @@ document.addEventListener('DOMContentLoaded', function() {
         hideKalemMenu();
     });
     window.addEventListener('touchstart', function(event) {
-        // Mobilde boşluğa dokununca menüleri kapat
         if (event.target === modalBackdrop) hideSonlandirModal();
-        // Menüye dokunulmadıysa kapat (basit kontrol)
         if (!event.target.closest('.context-menu') && !event.target.closest('.context-menu-kalem')) {
              hideRowMenu();
              hideKalemMenu();
