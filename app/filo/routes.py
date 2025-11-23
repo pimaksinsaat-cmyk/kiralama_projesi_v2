@@ -1,24 +1,21 @@
 from app.filo import filo_bp
 from app import db 
+from decimal import Decimal, InvalidOperation 
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from sqlalchemy.orm import joinedload, subqueryload
 from sqlalchemy.exc import IntegrityError 
 import traceback 
-from sqlalchemy import or_
-from decimal import Decimal, InvalidOperation
-import locale
+from sqlalchemy import or_, and_
 
 from app.models import Ekipman, Firma, Kiralama, KiralamaKalemi
 from app.forms import EkipmanForm 
+import locale
 
-# Türkçe yerel ayarlarını dene (Linux/Windows uyumlu)
+# Türkçe yerel ayarlarını dene
 try:
     locale.setlocale(locale.LC_ALL, 'tr_TR.UTF-8')
 except:
-    try:
-        locale.setlocale(locale.LC_ALL, 'Turkish_Turkey.1254')
-    except:
-        pass
+    pass
 
 # -------------------------------------------------------------------------
 # YARDIMCI FONKSİYON: Para Birimi Temizleme
@@ -40,9 +37,6 @@ def clean_currency_input(value_str):
         # Sonra virgülü noktaya çevir (15000,50 -> 15000.50)
         val = val.replace(',', '.')
     
-    # Eğer virgül yoksa ve nokta varsa, Python bunu ondalık kabul eder.
-    # (15000.50 -> 15000.50) - Değişiklik yapma.
-    
     return val
 
 # -------------------------------------------------------------------------
@@ -55,14 +49,19 @@ def index():
         page = request.args.get('page', 1, type=int)
         q = request.args.get('q', '', type=str)
         
+        # 1. SADECE AKTİF VE BİZİM OLANLAR
         base_query = Ekipman.query.filter(
-            Ekipman.firma_tedarikci_id.is_(None)
+            and_(
+                Ekipman.firma_tedarikci_id.is_(None),
+                Ekipman.is_active == True # Sadece aktifler
+            )
         ).options(
             subqueryload(Ekipman.kiralama_kalemleri).options(
                 joinedload(KiralamaKalemi.kiralama).joinedload(Kiralama.firma_musteri)
             )
         )
         
+        # 2. Arama
         if q:
             search_term = f'%{q}%'
             base_query = base_query.filter(
@@ -81,9 +80,7 @@ def index():
         for ekipman in ekipmanlar:
             ekipman.aktif_kiralama_bilgisi = None 
             if ekipman.calisma_durumu == 'kirada':
-                aktif_kalemler = [
-                    k for k in ekipman.kiralama_kalemleri if not k.sonlandirildi
-                ]
+                aktif_kalemler = [k for k in ekipman.kiralama_kalemleri if not k.sonlandirildi]
                 if aktif_kalemler:
                     ekipman.aktif_kiralama_bilgisi = max(aktif_kalemler, key=lambda k: k.id)
     
@@ -116,33 +113,29 @@ def ekle():
             # --- MALİYET TEMİZLEME ---
             maliyet_raw = form.giris_maliyeti.data
             maliyet_db = clean_currency_input(maliyet_raw)
-            # -------------------------
 
             yeni_ekipman = Ekipman(
                 kod=form.kod.data,
                 yakit=form.yakit.data,
                 tipi=form.tipi.data,
                 marka=form.marka.data,
-                
-                # Model Kaydı
                 model=form.model.data,
-                
                 seri_no=form.seri_no.data,
                 calisma_yuksekligi=int(form.calisma_yuksekligi.data),
                 kaldirma_kapasitesi=int(form.kaldirma_kapasitesi.data), 
                 uretim_tarihi=form.uretim_tarihi.data,
                 
-                # Temizlenmiş Maliyet Kaydı
-                giris_maliyeti=maliyet_db, 
+                giris_maliyeti=maliyet_db, # Temizlenmiş veri
                 para_birimi=form.para_birimi.data,
                 
                 firma_tedarikci_id=None,
-                calisma_durumu='bosta'
+                calisma_durumu='bosta',
+                is_active=True
             )
             
             db.session.add(yeni_ekipman)
             db.session.commit()
-            flash('Yeni makine başarıyla filoya eklendi!', 'success')
+            flash('Yeni makine eklendi!', 'success')
             return redirect(url_for('filo.index'))
             
         except Exception as e:
@@ -153,21 +146,25 @@ def ekle():
     return render_template('filo/ekle.html', form=form, son_kod=son_kod)
 
 # -------------------------------------------------------------------------
-# 3. Makine Silme
+# 3. Makine Silme (SOFT DELETE)
 # -------------------------------------------------------------------------
 @filo_bp.route('/sil/<int:id>', methods=['POST'])
 def sil(id):
     ekipman = Ekipman.query.get_or_404(id)
+    
     if ekipman.calisma_durumu == 'kirada':
         flash('Kirada olan makine silinemez!', 'danger')
         return redirect(url_for('filo.index', page=request.args.get('page', 1, type=int), q=request.args.get('q', '')))
+        
     try:
-        db.session.delete(ekipman)
+        # FİZİKSEL SİLME YERİNE PASİFE ALMA
+        ekipman.is_active = False
         db.session.commit()
-        flash('Silindi.', 'success')
+        flash('Makine silindi (arşive kaldırıldı).', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Hata: {str(e)}', 'danger')
+    
     return redirect(url_for('filo.index', page=request.args.get('page', 1, type=int), q=request.args.get('q', '')))
 
 # -------------------------------------------------------------------------
@@ -175,38 +172,23 @@ def sil(id):
 # -------------------------------------------------------------------------
 @filo_bp.route('/duzelt/<int:id>', methods=['GET', 'POST'])
 def duzelt(id):
+    # Sadece aktif olanları düzenle
     ekipman = Ekipman.query.filter(
         Ekipman.id == id,
-        Ekipman.firma_tedarikci_id.is_(None) 
+        Ekipman.firma_tedarikci_id.is_(None),
+        Ekipman.is_active == True
     ).first_or_404()
     
     form = EkipmanForm(obj=ekipman)
     
-    # --- GET İsteği: VERİ DÖNÜŞTÜRME ---
-    # Veritabanından String ("15000.50") gelir.
-    # Form (DecimalField olsaydı sorun olurdu, ama StringField yaptık).
-    # Ancak 'duzelt.html'deki JavaScript için bunun temiz bir sayı olması iyidir.
-    # Eğer StringField ise doğrudan atama yeterlidir, ancak Decimal dönüşümü
-    # formda sayısal doğrulama yapıyorsa gerekebilir.
+    # GET: DB'den gelen noktali veriyi forma ver (String olarak)
+    # JS bunu alıp formatlayacak.
     if request.method == 'GET':
-        # Eğer form.giris_maliyeti bir DecimalField ise bu blok zorunludur.
-        # Eğer StringField ise de zararı olmaz, veriyi temizler.
-        try:
-            maliyet_str = ekipman.giris_maliyeti
-            if maliyet_str:
-                # Veritabanında "1.250,00" gibi bozuk format varsa temizle
-                if ',' in maliyet_str:
-                    maliyet_str = maliyet_str.replace('.', '').replace(',', '.')
-                
-                # Decimal'e çevirip forma ver (Form StringField olsa bile str() ile alır)
-                form.giris_maliyeti.data = Decimal(maliyet_str)
-            else:
-                form.giris_maliyeti.data = Decimal(0.0)
-        except (ValueError, InvalidOperation) as e:
-            # Çevrilemezse 0.0 yap
-            form.giris_maliyeti.data = Decimal(0.0)
+        # Eğer form.giris_maliyeti DecimalField ise burada dönüşüm gerekirdi.
+        # StringField olduğu için doğrudan atama yapabiliriz, ancak
+        # temiz olması için virgül varsa noktaya çevirebiliriz (gerçi DB'de nokta olmalı).
+        pass 
 
-    # --- POST İsteği: KAYDETME ---
     if form.validate_on_submit():
         try:
             ekipman.marka = form.marka.data
@@ -238,25 +220,48 @@ def duzelt(id):
 
     return render_template('filo/duzelt.html', form=form, ekipman=ekipman)
 
-# ... (Diğer fonksiyonlar aynı kalır) ...
+# -------------------------------------------------------------------------
+# 5. Makine Bilgi Sayfası
+# -------------------------------------------------------------------------
 @filo_bp.route('/bilgi/<int:id>', methods=['GET'])
 def bilgi(id):
-    ekipman = Ekipman.query.filter(Ekipman.id == id, Ekipman.firma_tedarikci_id.is_(None)).options(subqueryload(Ekipman.kiralama_kalemleri).options(joinedload(KiralamaKalemi.kiralama).joinedload(Kiralama.firma_musteri))).first_or_404()
+    ekipman = Ekipman.query.filter(
+        Ekipman.id == id,
+        Ekipman.firma_tedarikci_id.is_(None) 
+    ).options(
+        subqueryload(Ekipman.kiralama_kalemleri).options(
+            joinedload(KiralamaKalemi.kiralama).joinedload(Kiralama.firma_musteri)
+        )
+    ).first_or_404()
+    
     kalemler = sorted(ekipman.kiralama_kalemleri, key=lambda k: k.id, reverse=True)
+    
     return render_template('filo/bilgi.html', ekipman=ekipman, kalemler=kalemler)
 
+# -------------------------------------------------------------------------
+# 6. KİRALAMA SONLANDIRMA (Modal için)
+# -------------------------------------------------------------------------
 @filo_bp.route('/sonlandir', methods=['POST'])
 def sonlandir():
     try:
         ekipman_id = request.form.get('ekipman_id', type=int)
         bitis_tarihi_str = request.form.get('bitis_tarihi') 
         if not (ekipman_id and bitis_tarihi_str):
-            flash('Eksik bilgi!', 'danger'); return redirect(url_for('filo.index'))
+            flash('Eksik bilgi!', 'danger')
+            return redirect(url_for('filo.index'))
+        
         ekipman = Ekipman.query.get_or_404(ekipman_id)
+        
         if ekipman.firma_tedarikci_id is not None:
-             flash(f"Hata: Harici makine.", 'danger'); return redirect(url_for('filo.index'))
+             flash(f"Hata: Harici makine.", 'danger')
+             return redirect(url_for('filo.index'))
+
         if ekipman.calisma_durumu == 'kirada':
-            aktif_kalem = KiralamaKalemi.query.filter_by(ekipman_id=ekipman.id, sonlandirildi=False).order_by(KiralamaKalemi.id.desc()).first()
+            aktif_kalem = KiralamaKalemi.query.filter_by(
+                ekipman_id=ekipman.id,
+                sonlandirildi=False
+            ).order_by(KiralamaKalemi.id.desc()).first()
+            
             if aktif_kalem:
                 try:
                     baslangic_dt = datetime.strptime(aktif_kalem.kiralama_baslangıcı, "%Y-%m-%d").date()
@@ -267,22 +272,45 @@ def sonlandir():
                 except ValueError:
                     flash("Tarih formatı geçersiz.", 'danger')
                     return redirect(url_for('filo.index'))
+                
                 aktif_kalem.kiralama_bitis = bitis_tarihi_str
                 ekipman.calisma_durumu = 'bosta'
                 aktif_kalem.sonlandirildi = True 
+                
                 db.session.commit()
                 flash(f"Sonlandırıldı.", 'success')
             else:
-                ekipman.calisma_durumu = 'bosta'; db.session.commit()
+                ekipman.calisma_durumu = 'bosta'
+                db.session.commit()
                 flash(f"Kalem bulunamadı, boşa alındı.", 'warning')
-        else: flash(f"Kirada değil.", 'info')
+        else:
+            flash(f"Makine zaten kirada değil.", 'info')
+    
     except Exception as e:
-        db.session.rollback(); flash(f"Hata: {str(e)}", 'danger')
+        db.session.rollback()
+        flash(f"Hata: {str(e)}", 'danger')
+        traceback.print_exc()
+        
     return redirect(url_for('filo.index', page=request.args.get('page', 1, type=int), q=request.args.get('q', '')))
 
+# -------------------------------------------------------------------------
+# 7. Harici Ekipman Listeleme
+# -------------------------------------------------------------------------
 @filo_bp.route('/harici')
 def harici():
     try:
-        ekipmanlar = Ekipman.query.filter(Ekipman.firma_tedarikci_id.isnot(None)).options(joinedload(Ekipman.firma_tedarikci)).order_by(Ekipman.kod).all()
-    except: ekipmanlar = []
+        # Haricilerde de aktif olanları göster
+        ekipmanlar = Ekipman.query.filter(
+            and_(
+                Ekipman.firma_tedarikci_id.isnot(None),
+                Ekipman.is_active == True
+            )
+        ).options(
+            joinedload(Ekipman.firma_tedarikci) 
+        ).order_by(Ekipman.kod).all()
+        
+    except Exception as e:
+        flash(f"Hata: {str(e)}", "danger")
+        ekipmanlar = []
+
     return render_template('filo/harici.html', ekipmanlar=ekipmanlar)

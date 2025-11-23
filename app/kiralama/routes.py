@@ -163,7 +163,6 @@ def ekle():
         if ekipman_id_from_url:
             pre_data['kalemler'] = [{'ekipman_id': ekipman_id_from_url}]
         
-        # Kurları forma manuel olarak atıyoruz
         form = KiralamaForm(data=pre_data) 
         form.doviz_kuru_usd.data = Decimal(kurlar['USD'])
         form.doviz_kuru_eur.data = Decimal(kurlar['EUR'])
@@ -203,7 +202,6 @@ def ekle():
                 ekipman_to_update_status = None 
 
                 if kalem_data['dis_tedarik_ekipman']:
-                    # --- DIŞ TEDARİK ---
                     tedarikci_id = kalem_data['harici_ekipman_tedarikci_id']
                     seri_no = (kalem_data['harici_ekipman_seri_no'] or '').strip()
                     tipi = (kalem_data['harici_ekipman_tipi'] or 'Bilinmiyor').strip()
@@ -221,26 +219,21 @@ def ekle():
                         harici_ekipman = Ekipman(
                             kod=f"HARICI-{seri_no}", seri_no=seri_no, tipi=tipi, marka=marka, model=model,
                             yakit="Bilinmiyor", calisma_yuksekligi=yukseklik, kaldirma_kapasitesi=kapasite,
-                            uretim_tarihi="Bilinmiyor", giris_maliyeti='0', 
-                            firma_tedarikci_id=tedarikci_id, calisma_durumu='harici'
+                            uretim_tarihi="Bilinmiyor", giris_maliyeti='0', firma_tedarikci_id=tedarikci_id, calisma_durumu='harici',
+                            is_active=True
                         )
                         db.session.add(harici_ekipman)
                         db.session.flush()
                     else:
-                        # Mevcutsa özelliklerini güncelle
-                        harici_ekipman.marka = marka
-                        harici_ekipman.model = model
-                        harici_ekipman.tipi = tipi
-                        harici_ekipman.calisma_yuksekligi = yukseklik
-                        harici_ekipman.kaldirma_kapasitesi = kapasite
-
+                        # Mevcutsa güncelle (Pasifse aktifleştir)
+                        if not harici_ekipman.is_active: harici_ekipman.is_active = True
+                        harici_ekipman.marka = marka; harici_ekipman.model = model; harici_ekipman.tipi = tipi
+                        harici_ekipman.calisma_yuksekligi = yukseklik; harici_ekipman.kaldirma_kapasitesi = kapasite
                     ekipman_id_to_use = harici_ekipman.id
                 else:
-                    # --- PİMAKS FİLOSU ---
                     ekipman_id_to_use = kalem_data['ekipman_id']
                     if not (ekipman_id_to_use and ekipman_id_to_use > 0): continue
                     if ekipman_id_to_use in secilen_pimaks_ekipman_idler: raise ValueError(f"Ekipman çakışması.")
-                    
                     ekipman_to_update_status = Ekipman.query.get(ekipman_id_to_use)
                     if not ekipman_to_update_status or ekipman_to_update_status.firma_tedarikci_id is not None: raise ValueError("Pimaks ekipmanı bulunamadı.")
                     if ekipman_to_update_status.calisma_durumu != 'bosta' and ekipman_id_to_use != request.args.get('ekipman_id', type=int): raise ValueError("Ekipman boşta değil.")
@@ -275,8 +268,11 @@ def ekle():
                 db.session.commit()
                 flash(f"{len(kalemler_to_add)} kalem kiralandı! (Kurlar: USD={yeni_kiralama.doviz_kuru_usd}, EUR={yeni_kiralama.doviz_kuru_eur})", "success")
                 return redirect(url_for('kiralama.index')) 
+
         except Exception as e:
-            db.session.rollback(); flash(f"Hata: {str(e)}", "danger"); traceback.print_exc()
+            db.session.rollback()
+            flash(f"Hata: {str(e)}", "danger")
+            traceback.print_exc()
     else:
         if request.method == 'POST' and form.errors: flash("Form hatası.", "warning")
 
@@ -326,7 +322,7 @@ def duzenle(kiralama_id):
                         kalem_form.harici_ekipman_marka.data = ekipman_obj.marka
                         kalem_form.harici_ekipman_model.data = ekipman_obj.model
                         kalem_form.harici_ekipman_seri_no.data = ekipman_obj.seri_no
-                        # YENİ: Yükseklik ve Kapasite
+                        # YENİ: Yükseklik ve Kapasite GET
                         kalem_form.harici_ekipman_calisma_yuksekligi.data = ekipman_obj.calisma_yuksekligi
                         kalem_form.harici_ekipman_kaldirma_kapasitesi.data = ekipman_obj.kaldirma_kapasitesi
                     else:
@@ -382,7 +378,7 @@ def duzenle(kiralama_id):
                     tipi = (kalem_data['harici_ekipman_tipi'] or 'Bilinmiyor').strip()
                     marka = (kalem_data['harici_ekipman_marka'] or 'Bilinmiyor').strip()
                     model = (kalem_data['harici_ekipman_model'] or '').strip()
-                    # YENİ: Yükseklik ve Kapasite
+                    # YENİ: Yükseklik ve Kapasite (DÜZENLEME)
                     yukseklik = int(kalem_data.get('harici_ekipman_calisma_yuksekligi') or 0)
                     kapasite = int(kalem_data.get('harici_ekipman_kaldirma_kapasitesi') or 0)
                     
@@ -393,11 +389,13 @@ def duzenle(kiralama_id):
                         harici_ekipman = Ekipman(
                             kod=f"HARICI-{seri_no}", seri_no=seri_no, tipi=tipi, marka=marka, model=model,
                             yakit="Bilinmiyor", calisma_yuksekligi=yukseklik, kaldirma_kapasitesi=kapasite,
-                            uretim_tarihi="Bilinmiyor", giris_maliyeti='0', firma_tedarikci_id=tedarikci_id, calisma_durumu='harici'
+                            uretim_tarihi="Bilinmiyor", giris_maliyeti='0', firma_tedarikci_id=tedarikci_id, calisma_durumu='harici',
+                            is_active=True
                         )
                         db.session.add(harici_ekipman)
                         db.session.flush()
                     else:
+                        if not harici_ekipman.is_active: harici_ekipman.is_active = True
                         harici_ekipman.marka = marka; harici_ekipman.model = model; harici_ekipman.tipi = tipi
                         harici_ekipman.calisma_yuksekligi = yukseklik; harici_ekipman.kaldirma_kapasitesi = kapasite
                     ekipman_id_to_use = harici_ekipman.id
@@ -456,7 +454,7 @@ def duzenle(kiralama_id):
             if ids_to_delete: KiralamaKalemi.query.filter(KiralamaKalemi.id.in_(ids_to_delete)).delete(synchronize_session=False)
 
             db.session.commit()
-            flash('Kiralama kaydı başarıyla güncellendi.', 'success')
+            flash('Güncellendi.', 'success')
             return redirect(url_for('kiralama.index'))
 
         except Exception as e:

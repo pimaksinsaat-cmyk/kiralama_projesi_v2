@@ -25,12 +25,8 @@
         margin-top: 1rem;
     }
     
-    /* GİZLEME MANTIĞININ ANAHTARI */
-    .gizli-alan {
-        display: none;
-    }
+    .gizli-alan { display: none; }
 
-    /* Silme butonu (sağ üst köşe) */
     .remove-kalem {
         position: absolute;
         top: 10px;
@@ -46,44 +42,59 @@
         padding: 0;
         text-align: center;
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        cursor: pointer;
     }
-    .remove-kalem:hover {
-        background-color: #c82333;
-    }
+    .remove-kalem:hover { background-color: #c82333; }
 
-    /* Bootstrap 'form-check' stillerini manuel ekleyelim */
-    .form-check { display: block; margin-bottom: .5rem; }
-    .form-check-input { float: left; margin-left: -1.5em; }
-    .form-check-label { padding-left: 1.5em; }
-    .form-switch .form-check-input {
-        width: 2em;
-        margin-left: -2.5em;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,0.25)'/%3e%3c/svg%3e");
-        background-position: left center;
-        border-radius: 2em;
-        transition: background-position .15s ease-in-out;
+    /* Daha Sade ve Hizalı Checkbox Kutuları */
+    .checkbox-wrapper {
+        border: 1px solid #e9ecef;
+        background-color: #fff;
+        padding: 10px 15px;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s;
+        height: 100%; 
+        cursor: pointer;
     }
-    .form-switch .form-check-input:checked {
-        background-position: right center;
-        background-color: #0d6efd;
-        border-color: #0d6efd;
+    .checkbox-wrapper:hover {
+        border-color: #007bff;
+        background-color: #f8f9fa;
+    }
+    /* Switch stili */
+    .form-check-input { margin-top: 0.3rem; cursor: pointer; }
+    .form-switch .form-check-input { width: 2.5em; height: 1.25em; margin-left: -.5em; }
+    .form-check-label { margin-left: 10px; font-weight: 500; cursor: pointer; user-select: none; }
+
+    /* Tarih Etiketi Hizalaması */
+    .label-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end; 
+        margin-bottom: 0.5rem;
+        min-height: 25px; 
     }
     
     /* Genel buton stilleri */
-    .btn {
-        display: inline-block;
-        padding: 8px 12px;
-        border-radius: 5px;
-        text-decoration: none;
-        font-weight: bold;
-        color: white;
-        transition: background-color 0.2s;
-        border: none;
-        cursor: pointer;
-    }
+    .btn { display: inline-block; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; color: white; transition: background-color 0.2s; border: none; cursor: pointer; }
     .btn-primary { background-color: #007bff; }
     .btn-secondary { background-color: #6c757d; color: white; }
     .btn-success { background-color: #28a745; }
+    
+    /* Kur Bilgi Çubuğu */
+    .kur-bilgi-bar {
+        background-color: #e9ecef;
+        padding: 8px 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        font-size: 0.9em;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-left: 5px solid #17a2b8;
+    }
+    .kur-deger { font-weight: bold; margin-left: 5px; margin-right: 15px; }
 </style>
 
 <div class="container">
@@ -102,6 +113,22 @@
     <form method="POST" id="kiralama-form">
         {{ form.hidden_tag() }}
 
+        <!-- DÖVİZ KURLARI (SADE GÖSTERİM) -->
+        <div class="kur-bilgi-bar">
+            <div>
+                <span class="text-muted mr-2">SÖZLEŞME TARİHİNDEKİ KURLAR (SABİT):</span>
+                <!-- Python format fonksiyonu ile 4 hane gösteriyoruz -->
+                <span style="color: #28a745;">USD: <span class="kur-deger">{{ "{:,.4f}".format(form.doviz_kuru_usd.data).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺</span></span>
+                <span style="color: #007bff;">EUR: <span class="kur-deger">{{ "{:,.4f}".format(form.doviz_kuru_eur.data).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺</span></span>
+                
+                <!-- Gizli inputlar -->
+                <div style="display:none;">
+                    {{ form.doviz_kuru_usd() }}
+                    {{ form.doviz_kuru_eur() }}
+                </div>
+            </div>
+        </div>
+
         <!-- Ana Kiralama Bilgileri -->
         <div class="card card-body mb-3">
             <div class="form-row">
@@ -117,29 +144,6 @@
                     {{ form.kdv_orani.label }}
                     {{ form.kdv_orani(class="form-control") }}
                     {% for error in form.kdv_orani.errors %}<span class="text-danger">{{ error }}</span>{% endfor %}
-                </div>
-            </div>
-            
-            <!-- Döviz Kurları (Kayıtlı Veri) -->
-            <div class="form-row mt-2" style="background-color: #f9f9f9; padding: 10px; border-radius: 5px;">
-                <div class="col-md-12 mb-2">
-                    <strong class="text-muted small" style="text-transform: uppercase;">Sözleşme Tarihindeki Kurlar (Sabit)</strong>
-                </div>
-                <div class="form-group col-md-6">
-                    <div class="input-group input-group-sm">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text" style="font-weight: bold; color: #28a745;">USD ($)</span>
-                        </div>
-                        {{ form.doviz_kuru_usd(class="form-control", readonly=true, style="background-color: #fff;") }}
-                    </div>
-                </div>
-                <div class="form-group col-md-6">
-                    <div class="input-group input-group-sm">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text" style="font-weight: bold; color: #007bff;">EUR (€)</span>
-                        </div>
-                        {{ form.doviz_kuru_eur(class="form-control", readonly=true, style="background-color: #fff;") }}
-                    </div>
                 </div>
             </div>
         </div>
@@ -182,80 +186,91 @@
                 <button type="button" class="btn btn-danger2 btn-sm remove-kalem" title="Bu Satırı Sil">&times;</button>
                 
                 <!-- Satır 1: Tedarik Seçenekleri -->
-                <div class="form-row">
-                    <div class="form-group col-md-4">
-                        <div class="form-check form-switch">
-                            {{ kalem_form.dis_tedarik_ekipman(class="form-check-input ekipman-anahtar") }}
-                            {{ kalem_form.dis_tedarik_ekipman.label(class="form-check-label") }}
-                        </div>
+                <div class="form-row mb-3">
+                    <div class="form-group col-md-6">
+                        <label class="checkbox-wrapper">
+                            <div class="form-check form-switch">
+                                {{ kalem_form.dis_tedarik_ekipman(class="form-check-input ekipman-anahtar") }}
+                            </div>
+                            <span class="form-check-label" style="color: #007bff;">Dış Tedarik Ekipman?</span>
+                        </label>
                     </div>
-                    <div class="form-group col-md-4">
-                        <div class="form-check form-switch">
-                            {{ kalem_form.dis_tedarik_nakliye(class="form-check-input nakliye-anahtar") }}
-                            {{ kalem_form.dis_tedarik_nakliye.label(class="form-check-label") }}
-                        </div>
+                    <div class="form-group col-md-6">
+                        <label class="checkbox-wrapper">
+                            <div class="form-check form-switch">
+                                {{ kalem_form.dis_tedarik_nakliye(class="form-check-input nakliye-anahtar") }}
+                            </div>
+                            <span class="form-check-label" style="color: #17a2b8;">Harici Nakliye?</span>
+                        </label>
                     </div>
                 </div>
 
                 <!-- Satır 2: Ekipman Bilgileri -->
                 <div class="form-row">
-                    <!-- Pimaks -->
+                    <!-- Pimaks (Varsayılan) -->
                     <div class="form-group col-md-12 pimaks-ekipman-alani">
                         {{ kalem_form.ekipman_id.label }}
                         {{ kalem_form.ekipman_id(class="form-control ekipman-select") }}
                     </div>
+                </div>
 
-                    <!-- Harici (GÜNCELLENDİ) -->
-                    <div class="form-group col-md-3 harici-ekipman-alani gizli-alan">
+                    <!-- Harici (GÜNCELLENDİ: IZGARA HİZALAMASI) -->
+                 <div class="form-group col-md-1 harici-ekipman-alani gizli-alan">
                         {{ kalem_form.harici_ekipman_tedarikci_id.label }}
                         {{ kalem_form.harici_ekipman_tedarikci_id(class="form-control") }}
-                    </div>
-                    <div class="form-group col-md-3 harici-ekipman-alani gizli-alan">
+                 </div>
+
+                <div class="form-row harici-ekipman-alani gizli-alan">
+                    <div class="form-group col-md-4 harici-ekipman-alani gizli-alan">
                         {{ kalem_form.harici_ekipman_tipi.label }}
                         {{ kalem_form.harici_ekipman_tipi(class="form-control", list="tip-listesi") }}
                     </div>
-                    <div class="form-group col-md-2 harici-ekipman-alani gizli-alan">
+                    <div class="form-group col-md-4 harici-ekipman-alani gizli-alan">
                         {{ kalem_form.harici_ekipman_marka.label }}
                         {{ kalem_form.harici_ekipman_marka(class="form-control", list="marka-listesi") }}
                     </div>
-                    <div class="form-group col-md-2 harici-ekipman-alani gizli-alan">
+                    <div class="form-group col-md-4 harici-ekipman-alani gizli-alan">
                         {{ kalem_form.harici_ekipman_model.label }}
                         {{ kalem_form.harici_ekipman_model(class="form-control") }}
                     </div>
-                    <div class="form-group col-md-2 harici-ekipman-alani gizli-alan">
-                        {{ kalem_form.harici_ekipman_seri_no.label }}
-                        {{ kalem_form.harici_ekipman_seri_no(class="form-control") }}
-                    </div>
                 </div>
                 
-                <!-- YENİ: Satır 2b - Harici Teknik Özellikler (EKLE.HTML İLE EŞİTLENDİ) -->
+                <!-- Alt Satır: Seri No, Yükseklik, Kapasite -->
                 <div class="form-row harici-ekipman-alani gizli-alan">
-                     <div class="form-group col-md-6">
+                     <div class="form-group col-md-4">
+                        {{ kalem_form.harici_ekipman_seri_no.label }}
+                        {{ kalem_form.harici_ekipman_seri_no(class="form-control", placeholder="Seri No") }}
+                    </div>
+                     <div class="form-group col-md-4">
                         {{ kalem_form.harici_ekipman_calisma_yuksekligi.label }}
                         {{ kalem_form.harici_ekipman_calisma_yuksekligi(class="form-control", type="number", placeholder="m") }}
                     </div>
-                    <div class="form-group col-md-6">
+                    <div class="form-group col-md-4">
                         {{ kalem_form.harici_ekipman_kaldirma_kapasitesi.label }}
                         {{ kalem_form.harici_ekipman_kaldirma_kapasitesi(class="form-control", type="number", placeholder="kg") }}
                     </div>
                 </div>
 
-                <!-- Satır 3: Tarihler -->
-                <div class="form-row">
+                <!-- Satır 3: Tarihler (GÜNCELLENDİ: HİZALAMA) -->
+                <div class="form-row mt-2">
                     <div class="form-group col-md-6">
-                        {{ kalem_form.kiralama_baslangıcı.label }}
-                        {{ kalem_form.kiralama_baslangıcı(class="form-control", type="date") }}
+                         <div class="label-container">
+                            {{ kalem_form.kiralama_baslangıcı.label }}
+                        </div>
+                        {{ kalem_form.kiralama_baslangıcı(class="form-control tarih-input baslangic", type="date") }}
                     </div>
                     <div class="form-group col-md-6">
-                        {{ kalem_form.kiralama_bitis.label }}
-                        {{ kalem_form.kiralama_bitis(class="form-control", type="date") }}
+                         <div class="label-container">
+                            {{ kalem_form.kiralama_bitis.label }}
+                            <span class="badge bg-info gun-farki-badge" style="display:none;">0 Gün</span>
+                        </div>
+                        {{ kalem_form.kiralama_bitis(class="form-control tarih-input bitis", type="date") }}
                     </div>
                 </div>
                 
                 <!-- Satır 4: Finansallar -->
                 <div class="kalem-bolumu">
                     <div class="form-row">
-                        <!-- Ekipman Fiyatları -->
                         <div class="form-group col-md-6">
                             {{ kalem_form.kiralama_brm_fiyat.label }}
                             {{ kalem_form.kiralama_brm_fiyat(class="form-control", placeholder="0.00") }}
@@ -264,8 +279,6 @@
                             {{ kalem_form.kiralama_alis_fiyat.label }}
                             {{ kalem_form.kiralama_alis_fiyat(class="form-control", placeholder="0.00") }}
                         </div>
-
-                        <!-- Nakliye Fiyatları -->
                         <div class="form-group col-md-6">
                             {{ kalem_form.nakliye_satis_fiyat.label }}
                             {{ kalem_form.nakliye_satis_fiyat(class="form-control", placeholder="0.00") }}
@@ -297,7 +310,6 @@
     </form>
 </div>
 
-<!-- Script: ekle.html ile AYNI -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const pimaksEkipmanChoices = {{ ekipman_choices_json|safe if ekipman_choices_json else '[]' }};
@@ -306,6 +318,38 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const kalemListesi = document.getElementById('kalemler-listesi');
     const addKalemButton = document.getElementById('add-kalem');
+
+    // --- TARİH HESAPLAMA FONKSİYONU ---
+    function setupDateCalculation(row) {
+        const startInput = row.querySelector('.tarih-input.baslangic');
+        const endInput = row.querySelector('.tarih-input.bitis');
+        const badge = row.querySelector('.gun-farki-badge');
+
+        function calculateDiff() {
+            if (startInput.value && endInput.value) {
+                const start = new Date(startInput.value);
+                const end = new Date(endInput.value);
+                const diffTime = end - start; 
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                
+                if (!isNaN(diffDays)) {
+                    badge.textContent = diffDays + " Gün";
+                    if (diffDays <= 0) {
+                        badge.className = "badge bg-danger gun-farki-badge";
+                        badge.textContent = diffDays < 0 ? "Hatalı Tarih" : "1 Gün";
+                    } else {
+                        badge.className = "badge bg-info gun-farki-badge";
+                    }
+                    badge.style.display = 'inline-block';
+                }
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        startInput.addEventListener('change', calculateDiff);
+        endInput.addEventListener('change', calculateDiff);
+        calculateDiff();
+    }
 
     addKalemButton.addEventListener('click', function() {
         const templateKalem = kalemListesi.querySelector('.kiralama-kalemi');
@@ -326,6 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
         kalemListesi.appendChild(newKalem);
         populateSelectOptions(newKalem);
         updateKalemVisibility(newKalem);
+        setupDateCalculation(newKalem);
     });
 
     kalemListesi.addEventListener('click', function(event) {
@@ -391,6 +436,7 @@ document.addEventListener('DOMContentLoaded', function() {
     kalemListesi.querySelectorAll('.kiralama-kalemi').forEach(kalem => {
         populateSelectOptions(kalem);
         updateKalemVisibility(kalem);
+        setupDateCalculation(kalem);
     });
 });
 </script>

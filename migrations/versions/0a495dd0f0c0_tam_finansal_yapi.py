@@ -1,8 +1,8 @@
 """Tam finansal yapi
 
-Revision ID: e9fdf971974c
+Revision ID: 0a495dd0f0c0
 Revises: 
-Create Date: 2025-11-21 23:33:18.081904
+Create Date: 2025-11-23 21:16:48.288116
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'e9fdf971974c'
+revision = '0a495dd0f0c0'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -27,6 +27,7 @@ def upgrade():
     sa.Column('vergi_no', sa.String(length=50), nullable=False),
     sa.Column('is_musteri', sa.Boolean(), nullable=False),
     sa.Column('is_tedarikci', sa.Boolean(), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('firma', schema=None) as batch_op:
@@ -57,6 +58,7 @@ def upgrade():
     sa.Column('calisma_durumu', sa.String(length=50), nullable=False),
     sa.Column('giris_maliyeti', sa.String(length=50), nullable=True),
     sa.Column('para_birimi', sa.String(length=3), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('firma_tedarikci_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['firma_tedarikci_id'], ['firma.id'], ),
     sa.PrimaryKeyConstraint('id'),

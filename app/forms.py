@@ -74,7 +74,7 @@ class KiralamaKalemiForm(FlaskForm):
     dis_tedarik_nakliye = BooleanField("Harici Nakliye?")
     nakliye_satis_fiyat = DecimalField('Nakliye Satış Fiyatı (Gelir)', validators=[Optional()], default=0.0)
     nakliye_alis_fiyat = DecimalField('Nakliye Alış Fiyatı (Maliyet)', validators=[Optional()], default=0.0)
-    nakliye_tedarikci_id = SelectField('Nakliye Tedarikçisi', coerce=int, default='0', validators=[Optional()])
+    nakliye_tedarikci_id = SelectField('Nakliye Tedarik Firması', coerce=int, default='0', validators=[Optional()])
 
 # 4. KiralamaForm
 class KiralamaForm(FlaskForm):
