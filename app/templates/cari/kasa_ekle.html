@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Yeni Kasa/Banka Tanımla{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 600px; margin-top: 20px;">
+    <h2 class="mb-4">Yeni Kasa veya Banka Hesabı</h2>
+    
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        
+        <div class="mb-3">
+            {{ form.kasa_adi.label(class="form-label") }}
+            {{ form.kasa_adi(class="form-control", placeholder="Örn: Akbank TL Hesabı") }}
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col">
+                {{ form.tipi.label(class="form-label") }}
+                {{ form.tipi(class="form-select") }}
+            </div>
+            <div class="col">
+                {{ form.para_birimi.label(class="form-label") }}
+                {{ form.para_birimi(class="form-select") }}
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            {{ form.bakiye.label(class="form-label") }}
+            {{ form.bakiye(class="form-control", placeholder="0.00") }}
+            <small class="text-muted">Mevcut bakiye varsa giriniz (Açılış Bakiyesi)</small>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+        <a href="{{ url_for('cari.kasa_listesi') }}" class="btn btn-secondary">İptal</a>
+    </form>
+</div>
+{% endblock %}

@@ -74,6 +74,13 @@
         <a href="{{ url_for('firmalar.index') }}">MÜŞTERİLER & FİRMALAR</a>
         <a href="{{ url_for('kiralama.index') }}">KİRALAMALAR</a>
         
+        <hr style="margin: 20px 0; border-top: 1px dashed #ccc;">
+        
+        <!-- YENİ: Kasa ve Banka Tanımları -->
+        <a href="{{ url_for('cari.kasa_listesi') }}" style="color: #17a2b8; border-color: #17a2b8;">KASA & BANKA HESAPLARI</a>
+        
+        <!-- Finansal İşlemler -->
+        <a href="{{ url_for('cari.odeme_ekle') }}" style="border-color: #28a745; color: #28a745;">FİNANSAL İŞLEMLER (Ödeme Al)</a>
         
     </nav>
     

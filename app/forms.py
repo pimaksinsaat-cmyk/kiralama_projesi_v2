@@ -46,27 +46,20 @@ class EkipmanForm(FlaskForm):
     )
     submit = SubmitField('Kaydet')
 
-# 3. KiralamaKalemiForm (GÜNCELLENDİ)
+# 3. KiralamaKalemiForm
 class KiralamaKalemiForm(FlaskForm):
     class Meta:
         csrf = False 
     id = HiddenField('Kalem ID')
     dis_tedarik_ekipman = BooleanField("Dış Tedarik Ekipman?")
-
-    # --- Bizim Filomuz ---
     ekipman_id = SelectField('Pimaks Filosu', coerce=int, default='0', validators=[Optional()])
-    
-    # --- Harici Ekipman Bilgileri (YENİ ALANLAR EKLENDİ) ---
     harici_ekipman_tedarikci_id = SelectField('Ekipman Tedarikçisi', coerce=int, default='0', validators=[Optional()])
     harici_ekipman_tipi = StringField('Harici Ekipman Tipi', validators=[Optional()])
     harici_ekipman_marka = StringField('Harici Ekipman Markası', validators=[Optional()])
     harici_ekipman_model = StringField('Harici Ekipman Modeli', validators=[Optional()])
     harici_ekipman_seri_no = StringField('Harici Seri No', validators=[Optional()])
-    
-    # YENİ: Analiz için gerekli teknik veriler
     harici_ekipman_calisma_yuksekligi = IntegerField('Çalışma Yüksekliği (m)', validators=[Optional()])
     harici_ekipman_kaldirma_kapasitesi = IntegerField('Kaldırma Kapasitesi (kg)', validators=[Optional()])
-
     kiralama_baslangıcı = DateField('Başlangıç Tarihi', format='%Y-%m-%d', validators=[InputRequired()])
     kiralama_bitis = DateField('Bitiş Tarihi', format='%Y-%m-%d', validators=[InputRequired()])
     kiralama_brm_fiyat = DecimalField('Ekipman Satış Fiyatı (Gelir)', validators=[InputRequired()], default=0.0)
@@ -74,7 +67,7 @@ class KiralamaKalemiForm(FlaskForm):
     dis_tedarik_nakliye = BooleanField("Harici Nakliye?")
     nakliye_satis_fiyat = DecimalField('Nakliye Satış Fiyatı (Gelir)', validators=[Optional()], default=0.0)
     nakliye_alis_fiyat = DecimalField('Nakliye Alış Fiyatı (Maliyet)', validators=[Optional()], default=0.0)
-    nakliye_tedarikci_id = SelectField('Nakliye Tedarik Firması', coerce=int, default='0', validators=[Optional()])
+    nakliye_tedarikci_id = SelectField('Nakliye Tedarikçisi', coerce=int, default='0', validators=[Optional()])
 
 # 4. KiralamaForm
 class KiralamaForm(FlaskForm):
@@ -131,3 +124,23 @@ class BakimKaydiForm(FlaskForm):
     calisma_saati = IntegerField('Ekipman Çalışma Saati (Opsiyonel)', validators=[Optional()])
     kullanilan_parcalar = FieldList(FormField(KullanilanParcaForm), min_entries=0)
     submit = SubmitField('Bakım Kaydını Tamamla')
+
+# -------------------------------------------------------------------------
+# 10. YENİ: KasaForm (Banka/Kasa Tanımlama)
+# -------------------------------------------------------------------------
+class KasaForm(FlaskForm):
+    kasa_adi = StringField('Hesap Adı (Örn: Merkez Kasa, Garanti TL)', validators=[InputRequired()])
+    tipi = SelectField(
+        'Hesap Tipi', 
+        choices=[('nakit', 'Nakit Kasa'), ('banka', 'Banka Hesabı')],
+        default='banka',
+        validators=[InputRequired()]
+    )
+    para_birimi = SelectField(
+        'Para Birimi', 
+        choices=[('TRY', 'TL (Türk Lirası)'), ('USD', 'USD (Dolar)'), ('EUR', 'EUR (Euro)')],
+        default='TRY',
+        validators=[InputRequired()]
+    )
+    bakiye = DecimalField('Açılış Bakiyesi', default=0.0, validators=[Optional()])
+    submit = SubmitField('Kaydet')
