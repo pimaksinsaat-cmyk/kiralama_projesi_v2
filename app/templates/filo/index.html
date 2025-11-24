@@ -43,8 +43,6 @@
     .pagination a:hover { background-color: #e9ecef; }
     .pagination .active { background-color: #007bff; color: white; border-color: #007bff; }
     .pagination .disabled { color: #6c757d; pointer-events: none; }
-    
-    /* Modallar */
     .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.5); z-index: 1040; }
     .modal-dialog { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 1050; width: 90%; max-width: 400px; }
     .modal-dialog h3 { margin-top: 0; }
@@ -53,28 +51,70 @@
     .modal-dialog .form-group input[type="date"], .modal-dialog .form-group input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     .modal-actions { text-align: right; margin-top: 20px; }
     
-    /* Mobil Uyumluluk */
     @media (max-width: 768px) {
-        .container { padding: 10px; }
         table { font-size: 0.8em; }
         th, td { padding: 8px; }
     }
 
-    /* Ekran Döndürme Uyarısı */
-    #rotate-device-overlay { display: none; }
-    @media only screen and (max-width: 768px) and (orientation: portrait) {
-        #rotate-device-overlay { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); z-index: 99999; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; padding: 20px; }
-        .rotate-icon { font-size: 60px; margin-bottom: 20px; animation: rotate-phone 2s infinite ease-in-out; }
-        @keyframes rotate-phone { 0%, 10% { transform: rotate(0deg); } 40%, 60% { transform: rotate(90deg); } 90%, 100% { transform: rotate(0deg); } }
-        .container { filter: blur(5px); }
+    /* ---------------------------------------------------------- */
+    /* YENİ VE GÜÇLÜ MOBİL DÖNDÜRME MANTIĞI (ORIENTATION)         */
+    /* ---------------------------------------------------------- */
+    
+    /* Varsayılan: Uyarı gizli, İçerik açık */
+    #rotate-device-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background-color: #212529;
+        z-index: 99999;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        text-align: center;
+        padding: 20px;
     }
+
+    /* Sadece MOBİL ve DİKEY (Portrait) modda çalışır */
+    @media only screen and (max-width: 991px) and (orientation: portrait) {
+        #rotate-device-overlay {
+            display: flex !important; /* Uyarıyı göster */
+        }
+        .container {
+            display: none !important; /* Ana içeriği GİZLE */
+        }
+    }
+
+    /* YATAY (Landscape) Modda Her Şey Normale Döner */
+    @media only screen and (orientation: landscape) {
+        #rotate-device-overlay {
+            display: none !important;
+        }
+        .container {
+            display: block !important;
+        }
+    }
+    
+    .rotate-icon { font-size: 60px; margin-bottom: 20px; animation: rotate-phone 2s infinite ease-in-out; }
+    @keyframes rotate-phone { 
+        0%, 10% { transform: rotate(0deg); } 
+        40%, 60% { transform: rotate(90deg); } 
+        90%, 100% { transform: rotate(0deg); } 
+    }
+
 </style>
 
+<!-- MOBİL UYARI EKRANI -->
 <div id="rotate-device-overlay">
     <i class="fa fa-mobile-screen-button rotate-icon"></i>
     <h3>Lütfen Ekranı Yan Çevirin</h3>
-    <p>Tabloları rahat görüntülemek ve işlem yapabilmek için cihazınızı yatay konuma getiriniz.</p>
-    <button class="btn btn-outline-light btn-sm mt-3" onclick="document.getElementById('rotate-device-overlay').style.display='none'; document.querySelector('.container').style.filter='none';">Yine de Devam Et</button>
+    <p class="mt-3">Tabloları rahat görüntülemek ve işlem yapabilmek için cihazınızı yatay konuma getiriniz.</p>
+    
+    <!-- Acil durum butonu: Yine de görmek isterse -->
+    <button class="btn btn-outline-light btn-sm mt-4" onclick="document.getElementById('rotate-device-overlay').style.display='none'; document.querySelector('.container').style.display='block';">
+        Yine de Devam Et
+    </button>
 </div>
 
 <div class="container">
