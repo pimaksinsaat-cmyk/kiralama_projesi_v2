@@ -10,35 +10,31 @@
     th { background-color: #e9ecef; position: sticky; top: 0; z-index: 10; }
     a { color: #007bff; text-decoration: none; }
     a:hover { text-decoration: underline; }
-
-    /* Buton Stilleri */
     .btn { display: inline-block; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; color: white; transition: background-color 0.2s; margin-bottom: 5px; border: none; cursor: pointer; font-size: 0.9em; }
     .btn-danger { background-color: #c82333; }
     .btn-warning { background-color: #ffc107; color: #343a40; }
     .btn-warning:hover { background-color: #e0a800; }
     .btn-primary { background-color: #007bff; }
     .btn-secondary { background-color: #6c757d; }
-    
     .alert { padding: 1rem; margin-bottom: 1rem; border: 1px solid transparent; border-radius: .25rem; }
     .alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
     .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
-
-    /* Durum Etiketleri */
     .badge { display: inline-block; padding: .45em .75em; font-size: .8em; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25rem; }
     .bg-success { background-color: #28a745; }
     .bg-primary { background-color: #007bff; }
     .bg-secondary { background-color: #6c757d; }
-
-    /* Sağ Tık Menüsü */
-    .context-menu { display: none; position: absolute; background-color: white; border: 1px solid #ccc; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 5px; z-index: 1000; min-width: 180px; padding: 5px 0; }
-    .context-menu-item { display: block; padding: 8px 15px; color: #333; text-decoration: none; font-size: 0.9em; }
+    
+    .context-menu { display: none; position: absolute; background-color: white; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-radius: 5px; z-index: 1000; min-width: 200px; padding: 5px 0; }
+    .context-menu-item { display: block; padding: 12px 15px; color: #333; text-decoration: none; font-size: 1em; }
     .context-menu-item:hover { background-color: #f5f5f5; color: #000; text-decoration: none; }
     .context-menu-item.delete { color: #dc3545; font-weight: bold; }
     .context-menu-item.delete:hover { background-color: #dc3545; color: white; }
     .context-menu-item.kirala { color: #007bff; font-weight: bold; }
     .context-menu-item.kirala:hover { background-color: #f5f5f5; color: #0056b3; }
-    .context-menu-divider { height: 1px; margin: 5px 0; background-color: #eee; }
+    .context-menu-item.bakim { color: #e0a800; font-weight: bold; }
+    .context-menu-item.bakim:hover { background-color: #fff3cd; color: #856404; }
     
+    .context-menu-divider { height: 1px; margin: 5px 0; background-color: #eee; }
     .search-form { display: flex; gap: 10px; margin-bottom: 15px; }
     .search-form input[type="text"] { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 1em; }
     .search-form button { padding: 8px 15px; border: none; border-radius: 5px; background-color: #007bff; color: white; font-weight: bold; cursor: pointer; }
@@ -47,63 +43,33 @@
     .pagination a:hover { background-color: #e9ecef; }
     .pagination .active { background-color: #007bff; color: white; border-color: #007bff; }
     .pagination .disabled { color: #6c757d; pointer-events: none; }
+    
+    /* Modallar */
     .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.5); z-index: 1040; }
     .modal-dialog { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 1050; width: 90%; max-width: 400px; }
+    .modal-dialog h3 { margin-top: 0; }
+    .modal-dialog .form-group { margin-bottom: 15px; }
+    .modal-dialog .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+    .modal-dialog .form-group input[type="date"], .modal-dialog .form-group input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     .modal-actions { text-align: right; margin-top: 20px; }
     
+    /* Mobil Uyumluluk */
     @media (max-width: 768px) {
         .container { padding: 10px; }
         table { font-size: 0.8em; }
         th, td { padding: 8px; }
     }
 
-    /* ---------------------------------------------------------- */
-    /* YENİ: MOBİL DÖNDÜRME UYARISI (ORIENTATION WARNING)         */
-    /* ---------------------------------------------------------- */
-    #rotate-device-overlay {
-        display: none; /* Varsayılan gizli */
-    }
-
-    /* Sadece Mobil ve Dikey (Portrait) Modda Görünür */
+    /* Ekran Döndürme Uyarısı */
+    #rotate-device-overlay { display: none; }
     @media only screen and (max-width: 768px) and (orientation: portrait) {
-        #rotate-device-overlay {
-            display: flex;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.9); /* Koyu arka plan */
-            z-index: 99999; /* En üstte */
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            text-align: center;
-            padding: 20px;
-        }
-        
-        /* İkon Animasyonu */
-        .rotate-icon {
-            font-size: 60px;
-            margin-bottom: 20px;
-            animation: rotate-phone 2s infinite ease-in-out;
-        }
-        
-        @keyframes rotate-phone {
-            0%, 10% { transform: rotate(0deg); }
-            40%, 60% { transform: rotate(90deg); }
-            90%, 100% { transform: rotate(0deg); }
-        }
-        
-        /* Arka planı biraz bulanıklaştır */
-        .container {
-            filter: blur(5px);
-        }
+        #rotate-device-overlay { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); z-index: 99999; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; padding: 20px; }
+        .rotate-icon { font-size: 60px; margin-bottom: 20px; animation: rotate-phone 2s infinite ease-in-out; }
+        @keyframes rotate-phone { 0%, 10% { transform: rotate(0deg); } 40%, 60% { transform: rotate(90deg); } 90%, 100% { transform: rotate(0deg); } }
+        .container { filter: blur(5px); }
     }
 </style>
 
-<!-- MOBİL UYARI EKRANI -->
 <div id="rotate-device-overlay">
     <i class="fa fa-mobile-screen-button rotate-icon"></i>
     <h3>Lütfen Ekranı Yan Çevirin</h3>
@@ -129,10 +95,13 @@
          &nbsp; | &nbsp; 
         <a href="{{ url_for('filo.harici') }}">Harici Ekipmanları Gör</a>
          &nbsp; | &nbsp; 
+        <a href="{{ url_for('filo.arsiv') }}" style="color: #6c757d;">Pasif Makineler (Arşiv)</a>
+         &nbsp; | &nbsp; 
+        <a href="{{ url_for('filo.bakimda') }}" style="color: #e0a800; font-weight: bold;">Bakımdaki Makineler</a>
+         &nbsp; | &nbsp; 
         <a href="{{ url_for('main.index') }}">Ana Sayfaya Dön</a>
     </p>
 
-    <!-- Arama Formu -->
     <form method="GET" action="{{ url_for('filo.index') }}" class="search-form">
         <input type="text" name="q" placeholder="Makine Kodu, Tipi veya Seri No ile ara..." value="{{ q or '' }}">
         <button type="submit">Bul</button>
@@ -225,9 +194,10 @@
 
 </div>
 
-<!-- GİZLİ MENÜLER -->
+<!-- GİZLİ MENÜLER VE FORMLAR -->
 <div id="context-menu" class="context-menu">
     <a href="#" class="context-menu-item kirala" id="menu-kirala" style="display: none;"><i class="fa fa-plus"></i> Ekipmanı Kiraya Ver</a>
+    <a href="#" class="context-menu-item bakim" id="menu-bakim" style="display: none;"><i class="fa fa-wrench"></i> Makineyi Bakıma Al</a>
     <div class="context-menu-divider" id="menu-kirala-divider" style="display: none;"></div>
     <a href="#" class="context-menu-item" id="menu-bilgi"><i class="fa fa-eye"></i> Detay/Bakım Geçmişi</a>
     <a href="#" class="context-menu-item" id="menu-duzenle"><i class="fa fa-pencil"></i> Ekipmanı Düzenle</a>
@@ -239,6 +209,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 </form>
 
+<!-- Kiralama Sonlandırma Modalı -->
 <div id="modal-backdrop" class="modal-backdrop"></div>
 <div id="sonlandir-modal" class="modal-dialog">
     <form id="sonlandir-ekipman-form" method="POST" action="{{ url_for('filo.sonlandir', q=q, page=request.args.get('page', 1)) }}">
@@ -253,6 +224,29 @@
         <div class="modal-actions">
             <button type="button" class="btn btn-secondary" id="modal-iptal">İptal</button>
             <button type="submit" class="btn btn-primary">Sonlandır</button>
+        </div>
+    </form>
+</div>
+
+<!-- Bakıma Alma Modalı -->
+<div id="bakim-modal" class="modal-dialog">
+    <form id="bakim-ekipman-form" method="POST" action="{{ url_for('filo.bakima_al', q=q, page=request.args.get('page', 1)) }}">
+        <h3>Makineyi Bakıma Al</h3>
+        <p>Lütfen <strong id="bakim-ekipman-kod"></strong> için bilgileri giriniz.</p>
+        <input type="hidden" name="csrf_token" id="bakim-csrf-token">
+        <input type="hidden" name="ekipman_id" id="bakim-ekipman-id">
+        
+        <div class="form-group">
+            <label for="bakim-tarihi">Bakım Başlangıç Tarihi:</label>
+            <input type="date" id="bakim-tarihi" name="tarih" required>
+        </div>
+        <div class="form-group">
+            <label for="bakim-aciklama">Açıklama / Arıza Nedeni:</label>
+            <input type="text" id="bakim-aciklama" name="aciklama" class="form-control" placeholder="Örn: Yıllık bakım, lastik değişimi..." required>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" id="bakim-iptal">İptal</button>
+            <button type="submit" class="btn btn-primary" style="background-color: #e0a800; border-color: #e0a800;">Bakıma Al</button>
         </div>
     </form>
 </div>
@@ -275,7 +269,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 callback(mockEvent, element);
             }, 600); 
         }, {passive: false});
-        
         function clear() { if (timer) { clearTimeout(timer); timer = null; } }
         element.addEventListener('touchend', clear);
         element.addEventListener('touchmove', clear);
@@ -287,19 +280,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const menuDuzenle = document.getElementById('menu-duzenle');
     const menuSil = document.getElementById('menu-sil');
     const menuKirala = document.getElementById('menu-kirala');
+    const menuBakim = document.getElementById('menu-bakim');
     const menuKiralaDivider = document.getElementById('menu-kirala-divider');
     
     let currentSilUrl = null;
     let currentCsrfToken = null;
     let currentEkipmanKod = null;
+    let currentEkipmanId = null;
 
     const showMenu = (event, row) => {
         event.preventDefault();
-        hideSonlandirModal(); 
+        hideSonlandirModal(); hideBakimModal();
 
         currentSilUrl = row.dataset.silUrl;
         currentCsrfToken = row.dataset.csrfToken;
         currentEkipmanKod = row.dataset.ekipmanKod;
+        currentEkipmanId = row.dataset.ekipmanId;
         const durum = row.dataset.durum;
         const kiralaUrl = row.dataset.kiralaUrl;
         
@@ -309,9 +305,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (durum === 'bosta') {
             menuKirala.href = kiralaUrl;
             menuKirala.style.display = 'block';
+            menuBakim.style.display = 'block';
             menuKiralaDivider.style.display = 'block';
         } else {
             menuKirala.style.display = 'none';
+            menuBakim.style.display = 'none';
             menuKiralaDivider.style.display = 'none';
         }
 
@@ -337,6 +335,25 @@ document.addEventListener('DOMContentLoaded', function() {
         hideRowMenu();
     });
 
+    // --- BAKIM MENÜSÜ TIKLAMA ---
+    menuBakim.addEventListener('click', function(event) {
+        event.preventDefault();
+        hideRowMenu();
+        
+        if (currentEkipmanId) {
+            document.getElementById('bakim-ekipman-id').value = currentEkipmanId;
+            document.getElementById('bakim-ekipman-kod').textContent = currentEkipmanKod;
+            document.getElementById('bakim-csrf-token').value = currentCsrfToken;
+            document.getElementById('bakim-tarihi').value = new Date().toISOString().split('T')[0];
+            
+            document.getElementById('modal-backdrop').style.display = 'block';
+            document.getElementById('bakim-modal').style.display = 'block';
+        }
+    });
+    
+    document.getElementById('bakim-iptal').addEventListener('click', hideBakimModal);
+
+    // --- SONLANDIRMA MODALI ---
     const modalBackdrop = document.getElementById('modal-backdrop');
     const sonlandirModal = document.getElementById('sonlandir-modal');
     const modalKalemIdInput = document.getElementById('modal-ekipman-id');
@@ -364,17 +381,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function hideRowMenu() { contextMenu.style.display = 'none'; }
     function hideSonlandirModal() { modalBackdrop.style.display = 'none'; sonlandirModal.style.display = 'none'; }
+    function hideBakimModal() { modalBackdrop.style.display = 'none'; document.getElementById('bakim-modal').style.display = 'none'; }
 
     window.addEventListener('click', function(event) {
-        if (event.target === modalBackdrop) hideSonlandirModal();
+        if (event.target === modalBackdrop) {
+            hideSonlandirModal();
+            hideBakimModal();
+        }
         hideRowMenu();
     });
     
     window.addEventListener('touchstart', function(event) {
-         if (event.target === modalBackdrop) hideSonlandirModal();
+         if (event.target === modalBackdrop) {
+             hideSonlandirModal();
+             hideBakimModal();
+         }
          if (!event.target.closest('.context-menu')) hideRowMenu();
     });
 });
 </script>
-
 {% endblock %}
