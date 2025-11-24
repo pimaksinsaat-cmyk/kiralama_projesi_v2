@@ -4,6 +4,7 @@
 
 {% block content %}
 <style>
+    /* ... (Mevcut stiller aynı) ... */
     .container { max-width: 1500px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
     th, td { padding: 12px; border: 1px solid #dee2e6; text-align: left; vertical-align: middle;}
@@ -57,32 +58,46 @@
     }
 
     /* ---------------------------------------------------------- */
-    /* YENİ VE GÜÇLÜ MOBİL DÖNDÜRME MANTIĞI (ORIENTATION)         */
+    /* YENİ: ŞIK BLUR EFEKTLİ MOBİL UYARI (GLASSMORPHISM)         */
     /* ---------------------------------------------------------- */
     
-    /* Varsayılan: Uyarı gizli, İçerik açık */
     #rotate-device-overlay {
         display: none;
         position: fixed;
         top: 0; left: 0;
         width: 100%; height: 100%;
-        background-color: #212529;
+        /* Yarı saydam koyu arka plan */
+        background-color: rgba(33, 37, 41, 0.85); 
         z-index: 99999;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         color: white;
         text-align: center;
-        padding: 20px;
+        padding: 30px;
+        /* Modern tarayıcılar için arka plan bulanıklığı */
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
     }
 
     /* Sadece MOBİL ve DİKEY (Portrait) modda çalışır */
     @media only screen and (max-width: 991px) and (orientation: portrait) {
         #rotate-device-overlay {
-            display: flex !important; /* Uyarıyı göster */
+            display: flex !important;
         }
+        /* DÜZELTME: İçeriği gizlemek (display:none) yerine 
+           bulanıklaştırıyoruz (blur) ve tıklamayı engelliyoruz.
+        */
         .container {
-            display: none !important; /* Ana içeriği GİZLE */
+            filter: blur(5px);
+            pointer-events: none; /* Arkaya tıklanmasını engeller */
+            user-select: none;    /* Seçimi engeller */
+        }
+        
+        /* Navbar'ı da bulanıklaştır */
+        nav.navbar {
+            filter: blur(5px);
+            pointer-events: none;
         }
     }
 
@@ -91,12 +106,20 @@
         #rotate-device-overlay {
             display: none !important;
         }
-        .container {
-            display: block !important;
+        .container, nav.navbar {
+            filter: none !important;
+            pointer-events: auto !important;
+            user-select: auto !important;
         }
     }
     
-    .rotate-icon { font-size: 60px; margin-bottom: 20px; animation: rotate-phone 2s infinite ease-in-out; }
+    .rotate-icon { 
+        font-size: 60px; 
+        margin-bottom: 20px; 
+        animation: rotate-phone 2s infinite ease-in-out;
+        color: #ffc107; /* Dikkat çekici sarı renk */
+    }
+    
     @keyframes rotate-phone { 
         0%, 10% { transform: rotate(0deg); } 
         40%, 60% { transform: rotate(90deg); } 
@@ -108,11 +131,13 @@
 <!-- MOBİL UYARI EKRANI -->
 <div id="rotate-device-overlay">
     <i class="fa fa-mobile-screen-button rotate-icon"></i>
-    <h3>Lütfen Ekranı Yan Çevirin</h3>
-    <p class="mt-3">Tabloları rahat görüntülemek ve işlem yapabilmek için cihazınızı yatay konuma getiriniz.</p>
+    <h3 style="font-weight: bold; margin-bottom: 15px;">Lütfen Ekranı Yan Çevirin</h3>
+    <p style="font-size: 1.1em; line-height: 1.6;">
+        Tabloları rahat görüntülemek ve işlem yapabilmek için cihazınızı yatay konuma getiriniz.
+    </p>
     
     <!-- Acil durum butonu: Yine de görmek isterse -->
-    <button class="btn btn-outline-light btn-sm mt-4" onclick="document.getElementById('rotate-device-overlay').style.display='none'; document.querySelector('.container').style.display='block';">
+    <button class="btn btn-outline-light btn-sm mt-4" onclick="closeRotateOverlay()">
         Yine de Devam Et
     </button>
 </div>
@@ -292,6 +317,15 @@
 </div>
 
 <script>
+    // Global fonksiyon: HTML içindeki onclick için gerekli
+    function closeRotateOverlay() {
+        document.getElementById('rotate-device-overlay').style.setProperty('display', 'none', 'important');
+        document.querySelector('.container').style.setProperty('filter', 'none', 'important');
+        document.querySelector('.container').style.setProperty('pointer-events', 'auto', 'important');
+        document.querySelector('.container').style.setProperty('user-select', 'auto', 'important');
+        document.querySelector('nav.navbar').style.setProperty('filter', 'none', 'important');
+    }
+
 document.addEventListener('DOMContentLoaded', function() {
     
     function addLongPressListener(element, callback) {
