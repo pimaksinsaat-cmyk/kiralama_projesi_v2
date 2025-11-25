@@ -1,229 +1,239 @@
 {% extends "base.html" %}
 
-{% block title %}"{{ firma.firma_adi }}" Firma Detayı{% endblock %}
+{% block title %}{{ firma.firma_adi }} - Detay{% endblock %}
 
 {% block content %}
-
-<!-- Bu sayfaya özel stilleri ekledim (index.html'den) -->
 <style>
-    .info-group {
-        margin-bottom: 1rem;
-        padding: 10px;
-        background-color: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 5px;
-    }
-    .badge {
-        display: inline-block;
-        padding: .35em .65em;
-        font-size: .75em;
-        font-weight: 700;
-        line-height: 1;
-        color: #fff;
-        text-align: center;
-        white-space: nowrap;
-        vertical-align: baseline;
-        border-radius: .25rem;
-        margin-right: 5px;
-    }
-    .bg-primary { background-color: #007bff; }
-    .bg-warning { background-color: #ffc107; color: #343a40; }
-    .bg-secondary { background-color: #6c757d; }
-    .btn-danger { background-color: #c82333; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.9em; }
-    .btn-container { margin-top: 20px; padding-top: 20px; border-top: 1px solid #dee2e6; }
+    .container { max-width: 1500px; margin: 20px auto; }
+    .table { font-size: 0.9em; }
     
-    /* Cari Hesap Tabloları için Stil */
-    .cari-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
-        font-size: 0.9em;
+    /* Butonlar */
+    .action-buttons .btn { margin-right: 5px; margin-bottom: 5px; }
+    
+    /* Tablo Alt Toplam Satırı Stili */
+    tfoot tr {
+        background-color: #e9ecef;
+        font-weight: bold;
+        border-top: 2px solid #6c757d; 
+        font-size: 1.1em;
     }
-    .cari-table th, .cari-table td {
-        padding: 10px;
+
+    /* YATAY BİLGİ ŞERİDİ (INFO BAR) */
+    .info-card {
+        background-color: #fff;
         border: 1px solid #dee2e6;
-        text-align: left;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
     }
-    .cari-table th { background-color: #e9ecef; }
-    .kredi { color: #28a745; font-weight: bold; }
-    .borc { color: #c82333; font-weight: bold; }
+    .info-item {
+        border-right: 1px solid #eee;
+        padding-right: 15px;
+        margin-right: 15px;
+    }
+    .info-item:last-child {
+        border-right: none;
+        padding-right: 0;
+        margin-right: 0;
+    }
+    .info-label {
+        font-size: 0.75em;
+        color: #6c757d;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        display: block;
+        margin-bottom: 2px;
+    }
+    .info-value {
+        font-size: 1em;
+        font-weight: 500;
+        color: #212529;
+    }
 </style>
 
 <div class="container">
-    
-    <!-- 'musteri' -> 'firma' olarak güncellendi -->
-    <h2>"{{ firma.firma_adi }}" Cari Kartı</h2>
-    
-    <!-- Flash mesajlar için bir alan ekledim -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                {{ message }}
+    <!-- Başlık ve Butonlar -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <h1 class="mb-2 mb-md-0">{{ firma.firma_adi }}</h1>
+        <div class="action-buttons">
+            <a href="{{ url_for('cari.odeme_ekle', musteri_id=firma.id) }}" class="btn btn-success">
+                <i class="fa fa-money-bill-wave"></i> Ödeme Al
+            </a>
+            <a href="{{ url_for('cari.hizmet_ekle', firma_id=firma.id) }}" class="btn btn-primary">
+                <i class="fa fa-file-invoice"></i> Fatura/Hizmet Gir
+            </a>
+            <a href="{{ url_for('firmalar.duzelt', id=firma.id) }}" class="btn btn-warning">Düzenle</a>
+            <a href="{{ url_for('firmalar.index') }}" class="btn btn-secondary">Listeye Dön</a>
+        </div>
+    </div>
+
+    <!-- YATAY FİRMA BİLGİLERİ -->
+    <div class="card info-card">
+        <div class="card-body py-3">
+            <div class="d-flex flex-wrap align-items-center">
+                <!-- 1. Yetkili -->
+                <div class="info-item flex-fill">
+                    <span class="info-label">Yetkili Kişi</span>
+                    <div class="info-value">{{ firma.yetkili_adi }}</div>
+                </div>
+                
+                <!-- 2. Vergi -->
+                <div class="info-item flex-fill">
+                    <span class="info-label">Vergi Dairesi / No</span>
+                    <div class="info-value">{{ firma.vergi_dairesi }} / {{ firma.vergi_no }}</div>
+                </div>
+                
+                <!-- 3. İletişim -->
+                <div class="info-item flex-fill">
+                    <span class="info-label">İletişim & Adres</span>
+                    <div class="info-value text-truncate" style="max-width: 300px;" title="{{ firma.iletisim_bilgileri }}">
+                        {{ firma.iletisim_bilgileri }}
+                    </div>
+                </div>
+                
+                <!-- 4. Rol -->
+                <div class="info-item text-center">
+                    <span class="info-label mb-1">Firma Rolü</span>
+                    <div>
+                        {% if firma.is_musteri %}<span class="badge bg-primary">Müşteri</span>{% endif %}
+                        {% if firma.is_tedarikci %}<span class="badge bg-warning text-dark">Tedarikçi</span>{% endif %}
+                    </div>
+                </div>
             </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    <!-- Kullanılmayan 'form' etiketini kaldırdım -->
-
-    <div class="info-group">
-        <strong>Firma Adı:</strong> {{ firma.firma_adi }}
+        </div>
     </div>
 
-    <div class="info-group">
-        <strong>Yetkili Kişi:</strong> {{ firma.yetkili_adi }}
+    <!-- CARİ HESAP EKSTRESİ TABLOSU -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <i class="fa fa-list-alt me-2"></i> <strong>Cari Hesap Ekstresi</strong>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Form No</th>
+                            <th>İşlem Türü</th>
+                            <th style="width: 30%;">Açıklama</th>
+                            <th class="text-end">Borç (Giden)</th>
+                            <th class="text-end">Alacak (Gelen)</th>
+                            <th class="text-end" style="min-width: 150px;">Bakiye (Kümülatif)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- JINJA2: Verileri Hazırla ve Sırala -->
+                        {% set tum_hareketler = (firma.hizmet_kayitlari + firma.odemeler) | sort(attribute='tarih') %}
+                        
+                        <!-- NAMESPACE: Değişkenleri döngü içinde güncellemek için -->
+                        {% set ns = namespace(running_balance=0.0, total_borc=0.0, total_alacak=0.0) %}
+                        
+                        {% for islem in tum_hareketler %}
+                            {% set tutar = islem.tutar|float %}
+                            {% set satir_tutar_borc = 0 %}
+                            {% set satir_tutar_alacak = 0 %}
+
+                            <!-- İŞLEM TİPİ VE BAKİYE HESABI -->
+                            {% if islem.__tablename__ == 'hizmet_kaydi' %}
+                                {% if islem.yon == 'giden' %}
+                                    <!-- Borç (Satış) -->
+                                    {% set ns.running_balance = ns.running_balance + tutar %}
+                                    {% set ns.total_borc = ns.total_borc + tutar %}
+                                    {% set satir_tutar_borc = tutar %}
+                                {% else %}
+                                    <!-- Alacak (Alış) -->
+                                    {% set ns.running_balance = ns.running_balance - tutar %}
+                                    {% set ns.total_alacak = ns.total_alacak + tutar %}
+                                    {% set satir_tutar_alacak = tutar %}
+                                {% endif %}
+                            {% else %} 
+                                <!-- Ödeme (Her zaman Alacak) -->
+                                {% set ns.running_balance = ns.running_balance - tutar %}
+                                {% set ns.total_alacak = ns.total_alacak + tutar %}
+                                {% set satir_tutar_alacak = tutar %}
+                            {% endif %}
+
+                            <tr>
+                                <!-- Tarih -->
+                                <td>{{ islem.tarih | tarihtr }}</td>
+                                
+                                <!-- Form No -->
+                                <td class="text-center">
+                                    {% if islem.fatura_no %}
+                                        <span class="badge bg-light text-dark border">{{ islem.fatura_no }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                
+                                <!-- Tür -->
+                                <td>
+                                    {% if islem.__tablename__ == 'odeme' %}
+                                        <span class="badge bg-success">Tahsilat</span>
+                                    {% else %}
+                                        <span class="badge bg-info text-dark">Fatura</span>
+                                    {% endif %}
+                                </td>
+                                
+                                <!-- Açıklama -->
+                                <td>
+                                    {{ islem.aciklama }}
+                                    {% if islem.__tablename__ == 'odeme' and islem.kasa %}
+                                        <br><small class="text-muted"><i class="fa fa-wallet"></i> {{ islem.kasa.kasa_adi }}</small>
+                                    {% endif %}
+                                </td>
+                                
+                                <!-- Borç -->
+                                <td class="text-end text-danger">
+                                    {{ "{:,.2f}".format(satir_tutar_borc).replace(',', 'X').replace('.', ',').replace('X', '.') if satir_tutar_borc > 0 else '-' }}
+                                </td>
+                                
+                                <!-- Alacak -->
+                                <td class="text-end text-success">
+                                    {{ "{:,.2f}".format(satir_tutar_alacak).replace(',', 'X').replace('.', ',').replace('X', '.') if satir_tutar_alacak > 0 else '-' }}
+                                </td>
+                                
+                                <!-- Kümülatif Bakiye -->
+                                <td class="text-end fw-bold {{ 'text-danger' if ns.running_balance > 0.001 else 'text-success' }}">
+                                    {{ "{:,.2f}".format(ns.running_balance).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                                    <small class="text-muted fw-normal">
+                                        {% if ns.running_balance > 0.001 %} (B) {% elif ns.running_balance < -0.001 %} (A) {% endif %}
+                                    </small>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        
+                        {% if not tum_hareketler %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <i class="fa fa-folder-open fa-2x mb-3 text-secondary"></i><br>
+                                Henüz cari hareket kaydı bulunmamaktadır.
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                    
+                    <!-- DİP TOPLAM SATIRI -->
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="text-end text-uppercase py-3">GENEL TOPLAM:</td>
+                            <td class="text-end text-danger py-3">
+                                {{ "{:,.2f}".format(ns.total_borc).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                            </td>
+                            <td class="text-end text-success py-3">
+                                {{ "{:,.2f}".format(ns.total_alacak).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                            </td>
+                            <td class="text-end {{ 'text-danger' if ns.running_balance > 0.001 else 'text-success' }} py-3" style="background-color: #e2e6ea;">
+                                {{ "{:,.2f}".format(ns.running_balance).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                                {% if ns.running_balance > 0.001 %} (B) {% elif ns.running_balance < -0.001 %} (A) {% endif %}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
     </div>
-
-    <div class="info-group">
-        <strong>Adres:</strong> {{ firma.iletisim_bilgileri }}
-    </div>
-
-    <div class="info-group">
-        <strong>Vergi Dairesi:</strong> {{ firma.vergi_dairesi }}
-    </div>
-
-    <div class="info-group">
-        <strong>Vergi No:</strong> {{ firma.vergi_no }}
-    </div>
-
-    <!-- YENİ EKLENDİ: Firma Rolleri -->
-    <div class="info-group">
-        <strong>Firma Rolleri:</strong>
-        {% if firma.is_musteri %}
-            <span class="badge bg-primary">Müşteri</span>
-        {% endif %}
-        {% if firma.is_tedarikci %}
-            <span class="badge bg-warning">Tedarikçi</span>
-        {% endif %}
-        {% if not firma.is_musteri and not firma.is_tedarikci %}
-            <span class="badge bg-secondary">Tanımsız</span>
-        {% endif %}
-    </div>
-    
-    <!-- 'musteri.id' -> 'firma.id' olarak güncellendi -->
-    <div class="btn-container">
-        <a href="{{ url_for('firmalar.duzelt', id=firma.id) }}" class="btn btn-warning" style="color:#343a40; text-decoration: none;">Düzenle</a>
-         &nbsp; | &nbsp; 
-        <form action="{{ url_for('firmalar.sil', id=firma.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('\'{{ firma.firma_adi }}\' firmasını silmek istediğinizden emin misiniz? Bu firmanın ilişkili kayıtları varsa SİLİNMEYECEKTİR.');">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="submit" class="btn-danger" value="Sil">
-        </form>
-         &nbsp; | &nbsp; 
-         <a href="{{ url_for('firmalar.index') }}" >Firma Listesine Geri Dön</a>
-    </div> 
-
-    <!-- 
-    ---------------------------------------------------------------
-    YENİ EKLENDİ: CARİ HESAP VE HAREKETLER BÖLÜMÜ
-    (Burası, 'routes.py' dosyasında 'joinedload' ile yüklediğimiz 
-     verilerin gösterileceği yerdir)
-    ---------------------------------------------------------------
-    -->
-    <hr style="margin-top: 30px;">
-    
-    <!-- 1. KİRALAMALAR (MÜŞTERİ OLARAK) -->
-    <h3>Firmanın Müşteri Olarak Kiralama Geçmişi</h3>
-    {% if firma.kiralamalar %}
-        <table class="cari-table">
-            <thead>
-                <tr>
-                    <th>Form No</th>
-                    <th>Kalem Adedi</th>
-                    <th>KDV Oranı</th>
-                    <th>Durum</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for kiralama in firma.kiralamalar %}
-                <tr>
-                    <td>
-                        <a href="{{ url_for('kiralama.duzenle', kiralama_id=kiralama.id) }}">{{ kiralama.kiralama_form_no }}</a>
-                    </td>
-                    <td>{{ kiralama.kalemler | length }} adet makine</td>
-                    <td>%{{ kiralama.kdv_orani }}</td>
-                    <td>(Durum bilgisi eklenecek)</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p class="text-muted">Bu firmanın müşteri olarak yaptığı bir kiralama kaydı bulunamadı.</p>
-    {% endif %}
-
-    <!-- 2. CARİ HESAP HAREKETLERİ (ÖDEMELER VE HİZMETLER) -->
-    <h3 style="margin-top: 20px;">Cari Hesap Hareketleri (Ödemeler ve Hizmetler)</h3>
-    <p>
-        <a href="#" class="btn btn-success" style="font-size: 0.9em;">+ Ödeme Ekle (Tahsilat)</a>
-        <a href="#" class="btn btn-primary" style="font-size: 0.9em;">+ Hizmet Kaydı Ekle (Borç/Alacak)</a>
-    </p>
-    
-    <!-- 
-        İLERİDE BU BÖLÜM:
-        'firma.odemeler' ve 'firma.hizmet_kayitlari' listeleri
-        Python'da (routes.py) birleştirilip, tarihe göre sıralanıp
-        tek bir "Cari Hesap Ekstresi" olarak burada gösterilecektir.
-    -->
-    <table class="cari-table">
-        <thead>
-            <tr>
-                <th>Tarih</th>
-                <th>Açıklama</th>
-                <th>Yön</th>
-                <th>Tutar</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Örnek Hareket (Alacak) -->
-            {% for odeme in firma.odemeler %}
-            <tr>
-                <td>{{ odeme.tarih | tarihtr }}</td>
-                <td>Ödeme/Tahsilat - {{ odeme.aciklama }}</td>
-                <td class="kredi">ALACAK (Ödeme Yaptı)</td>
-                <td class="kredi">- {{ odeme.tutar }} TL</td>
-            </tr>
-            {% endfor %}
-            
-            <!-- Örnek Hareket (Borç veya Alacak) -->
-            {% for hizmet in firma.hizmet_kayitlari %}
-            <tr>
-                <td>{{ hizmet.tarih | tarihtr }}</td>
-                <td>Hizmet Kaydı - {{ hizmet.aciklama }}</td>
-                {% if hizmet.yon == 'giden' %}
-                    <td class="borc">BORÇ (Hizmet Sattık)</td>
-                    <td class="borc">+ {{ hizmet.tutar }} TL</td>
-                {% else %}
-                    <td class="kredi">ALACAK (Hizmet Aldık)</td>
-                    <td class="kredi">- {{ hizmet.tutar }} TL</td>
-                {% endif %}
-            </tr>
-            {% endfor %}
-            
-            {% if not firma.odemeler and not firma.hizmet_kayitlari %}
-            <tr><td colspan="4">Cari hareket bulunamadı.</td></tr>
-            {% endif %}
-        </tbody>
-        <tfoot>
-            <tr style="background-color: #f8f9fa;">
-                <td colspan="3" style="text-align: right; font-weight: bold;">NET BAKİYE:</td>
-                <td style="font-weight: bold; font-size: 1.2em;">(Hesaplanacak Bakiye)</td>
-            </tr>
-        </tfoot>
-    </table>
-
-    <!-- 3. TEDARİKÇİ HAREKETLERİ -->
-    <h3 style="margin-top: 20px;">Firmanın Tedarikçi Olarak İşlem Geçmişi</h3>
-    {% if firma.is_tedarikci %}
-        <p>Bu firmanın tedarikçi olarak sağladığı kayıtlar:</p>
-        <ul>
-            <li>Tedarik Edilen Ekipmanlar: {{ firma.tedarik_edilen_ekipmanlar | length }} adet</li>
-            <li>Sağlanan Nakliye Hizmetleri: {{ firma.saglanan_nakliye_hizmetleri | length }} adet</li>
-            <li>Tedarik Edilen Parçalar: {{ firma.tedarik_edilen_parcalar | length }} adet</li>
-        </ul>
-    {% else %}
-        <p class="text-muted">Bu firma 'Tedarikçi' olarak tanımlanmamış.</p>
-    {% endif %}
-    
 </div>
-
 {% endblock %}

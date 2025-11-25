@@ -10,13 +10,31 @@ from app.models import Odeme, HizmetKaydi, Firma, Kasa
 from app.forms import OdemeForm, HizmetKaydiForm, KasaForm
 
 # -------------------------------------------------------------------------
+# YARDIMCI FONKSİYON: Para Birimi Temizleme
+# -------------------------------------------------------------------------
+def clean_currency_input(value_str):
+    """
+    '2.500,50' -> '2500.50' yapar.
+    """
+    if not value_str:
+        return '0.0'
+    
+    val = str(value_str).strip()
+    
+    # Virgül varsa, binlik ayracı olan noktaları sil, virgülü nokta yap
+    if ',' in val:
+        val = val.replace('.', '') # Binlikleri sil
+        val = val.replace(',', '.') # Virgülü ondalık nokta yap
+    
+    return val
+
+# -------------------------------------------------------------------------
 # 1. YENİ ÖDEME/TAHSİLAT EKLEME
 # -------------------------------------------------------------------------
 @cari_bp.route('/odeme/ekle', methods=['GET', 'POST'])
 def odeme_ekle():
     form = OdemeForm()
     
-    # 1. Müşteri Listesi (Sadece aktif ve müşteri olanlar)
     try:
         musteriler = Firma.query.filter_by(is_musteri=True, is_active=True).order_by(Firma.firma_adi).all()
         form.firma_musteri_id.choices = [(f.id, f.firma_adi) for f in musteriler]
@@ -25,7 +43,6 @@ def odeme_ekle():
     
     form.firma_musteri_id.choices.insert(0, (0, '--- Müşteri Seçiniz ---'))
 
-    # 2. Kasa Listesi (Bankalar ve Nakit Kasalar)
     try:
         kasalar = Kasa.query.order_by(Kasa.kasa_adi).all()
         form.kasa_id.choices = [(k.id, f"{k.kasa_adi} ({k.para_birimi})") for k in kasalar]
@@ -34,7 +51,6 @@ def odeme_ekle():
         
     form.kasa_id.choices.insert(0, (0, '--- Kasa/Banka Seçiniz ---'))
 
-    # URL'den gelen müşteri ID varsa otomatik seç (Kısayol için)
     if request.method == 'GET':
         musteri_id = request.args.get('musteri_id', type=int)
         if musteri_id:
@@ -44,14 +60,16 @@ def odeme_ekle():
 
     if form.validate_on_submit():
         try:
-            # Tutarı String olarak kaydet (Veritabanı yapımıza uygun)
-            tutar_str = str(form.tutar.data)
+            # --- DÜZELTME: Tutar Temizleme ---
+            tutar_raw = form.tutar.data
+            tutar_db = clean_currency_input(tutar_raw)
+            # ---------------------------------
             
             yeni_odeme = Odeme(
                 firma_musteri_id=form.firma_musteri_id.data,
                 kasa_id=form.kasa_id.data,
                 tarih=form.tarih.data.strftime('%Y-%m-%d'),
-                tutar=tutar_str,
+                tutar=tutar_db, # Temizlenmiş tutar
                 fatura_no=form.fatura_no.data,
                 vade_tarihi=form.vade_tarihi.data.strftime('%Y-%m-%d') if form.vade_tarihi.data else None,
                 aciklama=form.aciklama.data
@@ -62,21 +80,20 @@ def odeme_ekle():
             # Kasa bakiyesini güncelle
             kasa = Kasa.query.get(form.kasa_id.data)
             if kasa:
-                # Mevcut bakiye string olabilir, float'a çevirip topla
                 try:
                     eski_bakiye = float(kasa.bakiye or 0)
                 except ValueError:
                     eski_bakiye = 0.0
-                    
-                yeni_bakiye = eski_bakiye + float(form.tutar.data)
+                
+                # Yeni tutarı ekle
+                yeni_bakiye = eski_bakiye + float(tutar_db)
                 kasa.bakiye = str(yeni_bakiye)
             
             db.session.commit()
             
             firma = Firma.query.get(form.firma_musteri_id.data)
-            flash(f'{firma.firma_adi} firmasından {tutar_str} tutarında ödeme alındı.', 'success')
+            flash(f'{firma.firma_adi} firmasından {tutar_db} tutarında ödeme alındı.', 'success')
             
-            # İşlem bitince o firmanın detayına dönmek en mantıklısı
             return redirect(url_for('firmalar.bilgi', id=form.firma_musteri_id.data))
             
         except Exception as e:
@@ -94,30 +111,32 @@ def odeme_ekle():
 def hizmet_ekle():
     form = HizmetKaydiForm()
     
-    # Tüm Aktif Firmalar (Hem müşteri hem tedarikçi olabilir)
     try:
         firmalar = Firma.query.filter_by(is_active=True).order_by(Firma.firma_adi).all()
         form.firma_id.choices = [(f.id, f.firma_adi) for f in firmalar]
     except:
         form.firma_id.choices = []
-        
     form.firma_id.choices.insert(0, (0, '--- Firma Seçiniz ---'))
     
     if request.method == 'GET':
         firma_id = request.args.get('firma_id', type=int)
         if firma_id:
             form.firma_id.data = firma_id
-            
         form.tarih.data = datetime.today().date()
 
     if form.validate_on_submit():
         try:
+            # --- DÜZELTME: Tutar Temizleme ---
+            tutar_raw = form.tutar.data
+            tutar_db = clean_currency_input(tutar_raw)
+            # ---------------------------------
+
             yeni_hizmet = HizmetKaydi(
                 firma_id=form.firma_id.data,
                 tarih=form.tarih.data.strftime('%Y-%m-%d'),
-                tutar=str(form.tutar.data),
+                tutar=tutar_db, # Temizlenmiş tutar
                 aciklama=form.aciklama.data,
-                yon=form.yon.data, # 'gelen' (Alacak) veya 'giden' (Borç)
+                yon=form.yon.data, 
                 fatura_no=form.fatura_no.data,
                 vade_tarihi=form.vade_tarihi.data.strftime('%Y-%m-%d') if form.vade_tarihi.data else None
             )
