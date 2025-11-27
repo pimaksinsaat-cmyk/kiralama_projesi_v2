@@ -2,16 +2,145 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Kiralama Projesi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Pimaks Kiralama{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS (Görünüm için şart) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome (İkonlar için şart) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Genel İyileştirmeler */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Navbar Düzenlemeleri - Gölge Kaldırıldı */
+        .navbar {
+            /* box-shadow kaldırıldı */
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        .navbar-brand {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            color: #333 !important; /* Logo yazısı koyu renk */
+        }
+        
+        /* Logo Stili */
+        .navbar-logo {
+            height: 50px; /* Biraz daha belirgin */
+            width: auto;
+            margin-right: 10px;
+            object-fit: contain;
+        }
 
-   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
-</head> 
+        /* İçerik Alanı */
+        .main-content {
+            flex: 1;
+            padding-bottom: 40px;
+            padding-top: 10px;
+        }
+        
+        /* Footer - Çizgi ve Kutu Kaldırıldı */
+        footer {
+            background-color: transparent;
+            color: #868e96; /* Daha silik gri */
+            padding: 20px 0;
+            text-align: center;
+            font-size: 0.85em;
+            margin-top: auto;
+            border: none; /* Çizgi kaldırıldı */
+        }
+    </style>
+    
+    {% block head %}{% endblock %}
+</head>
 <body>
-    <hr>
-    {% block content %}
-    {% endblock %}
-    {% block scripts %}
-        {% endblock scripts %}
+    
+    <!-- Navigasyon Menüsü -->
+    <!-- DÜZELTME: 'navbar-dark bg-dark' kaldırıldı, 'navbar-light' eklendi. -->
+    <nav class="navbar navbar-expand-lg navbar-light mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                <!-- Logo -->
+                <img src="{{ url_for('static', filename='img/logo.JPG') }}" 
+                     alt="Pimaks Logo" 
+                     class="navbar-logo">
+                <span>Pimaks Kiralama</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('filo.index') }}"><i class="fa fa-truck"></i> Filo</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('kiralama.index') }}"><i class="fa fa-file-contract"></i> Kiralama</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('firmalar.index') }}"><i class="fa fa-users"></i> Firmalar</a>
+                    </li>
+                    
+                    <!-- Ayırıcı Çizgi (Dikey) -->
+                    <li class="nav-item d-none d-lg-block mx-2 border-end border-secondary-subtle"></li>
+                    
+                    <!-- Finansal İşlemler -->
+                     <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fa fa-wallet"></i> Finans
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                            <li><a class="dropdown-item" href="{{ url_for('cari.odeme_ekle') }}">Ödeme Al (Tahsilat)</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('cari.hizmet_ekle') }}">Fatura/Hizmet Gir</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('cari.kasa_listesi') }}">Kasa & Banka Hesapları</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Ana İçerik -->
+    <div class="container main-content">
+        <!-- Flash Mesajları -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </div>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            &copy; 2025 Pimaks Kiralama Yönetim Sistemi
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block scripts %}{% endblock %}
 </body>
 </html>

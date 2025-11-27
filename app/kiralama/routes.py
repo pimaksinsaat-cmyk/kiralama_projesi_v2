@@ -15,26 +15,59 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from app import db
 from app.kiralama import kiralama_bp 
-# HizmetKaydi modeli eklendi (Cari entegrasyonu için)
 from app.models import Kiralama, Ekipman, Firma, KiralamaKalemi, HizmetKaydi
 from app.forms import KiralamaForm, KiralamaKalemiForm 
 
 # -------------------------------------------------------------------------
-# YENİ YARDIMCI FONKSİYON: Para Birimi Temizleme (Veritabanı için)
+# YARDIMCI FONKSİYON: Para Birimi Temizleme
 # -------------------------------------------------------------------------
 def clean_currency_input(value_str):
-    """
-    '1.500,50' -> '1500.50' çevirir.
-    """
     if not value_str: return '0.0'
     val = str(value_str).strip()
     if ',' in val:
-        val = val.replace('.', '') # Binlik noktaları sil
-        val = val.replace(',', '.') # Virgülü nokta yap
+        val = val.replace('.', '') 
+        val = val.replace(',', '.') 
     return val
 
 # -------------------------------------------------------------------------
-# YARDIMCI FONKSİYON: TCMB Döviz Kurlarını Çek
+# YARDIMCI FONKSİYON: CARİ HESABI GÜNCELLE
+# -------------------------------------------------------------------------
+def guncelle_cari_toplam(kiralama_id):
+    try:
+        kiralama = Kiralama.query.get(kiralama_id)
+        if not kiralama: return
+
+        toplam_tutar = Decimal(0.0)
+        
+        for kalem in kiralama.kalemler:
+            baslangic = datetime.strptime(kalem.kiralama_baslangıcı, "%Y-%m-%d").date()
+            bitis = datetime.strptime(kalem.kiralama_bitis, "%Y-%m-%d").date()
+            gun_sayisi = (bitis - baslangic).days + 1
+            if gun_sayisi < 1: gun_sayisi = 1
+            
+            brm_fiyat = Decimal(kalem.kiralama_brm_fiyat or 0)
+            nakliye = Decimal(kalem.nakliye_satis_fiyat or 0)
+            
+            kalem_toplam = (brm_fiyat * gun_sayisi) + nakliye
+            toplam_tutar += kalem_toplam
+            
+        cari_kayit = HizmetKaydi.query.filter_by(
+            firma_id=kiralama.firma_musteri_id,
+            fatura_no=kiralama.kiralama_form_no,
+            yon='giden'
+        ).first()
+        
+        if cari_kayit:
+            cari_kayit.tutar = str(toplam_tutar)
+            cari_kayit.aciklama = f"Kiralama Bedeli (Güncel): Form {kiralama.kiralama_form_no}"
+            db.session.commit()
+        
+    except Exception as e:
+        print(f"Cari güncelleme hatası: {e}")
+        pass
+
+# -------------------------------------------------------------------------
+# YARDIMCI FONKSİYON: TCMB Kur Çekme
 # -------------------------------------------------------------------------
 def get_tcmb_kurlari():
     rates = {'USD': 0.0, 'EUR': 0.0}
@@ -51,7 +84,7 @@ def get_tcmb_kurlari():
     return rates
 
 # -------------------------------------------------------------------------
-# YARDIMCI FONKSİYONLAR (Seçenekleri Doldurma)
+# YARDIMCI FONKSİYONLAR (Form Doldurma)
 # -------------------------------------------------------------------------
 def get_pimaks_ekipman_choices(kiralama_objesi=None, include_ids=None):
     if include_ids is None: include_ids = []
@@ -145,19 +178,63 @@ def index():
         today = date.today()
         for kiralama in kiralamalar:
             for kalem in kiralama.kalemler:
+                # Varsayılan değerler
+                kalem.sure_bilgisi = ""
+
+                # 1. Durum Mesajı Hesaplama
                 if kalem.sonlandirildi:
-                    kalem.durum_mesaji = "Tamamlandı"; kalem.durum_sinifi = "secondary"
+                    kalem.durum_mesaji = "Tamamlandı"
+                    kalem.durum_sinifi = "secondary"
                 elif not kalem.kiralama_bitis:
-                    kalem.durum_mesaji = "Aktif (Bitiş Belirsiz)"; kalem.durum_sinifi = "primary"
+                    kalem.durum_mesaji = "Aktif (Bitiş Belirsiz)"
+                    kalem.durum_sinifi = "primary"
                 else:
                     try:
                         bitis_dt = datetime.strptime(kalem.kiralama_bitis, '%Y-%m-%d').date()
                         kalan_gun = (bitis_dt - today).days
-                        if kalan_gun < 0: kalem.durum_mesaji = f"Gecikti ({abs(kalan_gun)} gün)"; kalem.durum_sinifi = "danger"
-                        elif kalan_gun == 0: kalem.durum_mesaji = "BUGÜN BİTİYOR"; kalem.durum_sinifi = "warning"
-                        elif kalan_gun <= 7: kalem.durum_mesaji = f"{kalan_gun} gün sonra bitecek"; kalem.durum_sinifi = "warning"
-                        else: kalem.durum_mesaji = "Aktif"; kalem.durum_sinifi = "success"
-                    except: kalem.durum_mesaji = "Hatalı Tarih"; kalem.durum_sinifi = "dark" 
+                        
+                        if kalan_gun < 0: 
+                            kalem.durum_mesaji = f"Gecikti ({abs(kalan_gun)} gün)"
+                            kalem.durum_sinifi = "danger"
+                        elif kalan_gun == 0: 
+                            kalem.durum_mesaji = "BUGÜN BİTİYOR"
+                            kalem.durum_sinifi = "warning"
+                        elif kalan_gun <= 7: 
+                            kalem.durum_mesaji = f"{kalan_gun} gün kaldı"
+                            kalem.durum_sinifi = "warning"
+                        else: 
+                            kalem.durum_mesaji = "Aktif"
+                            kalem.durum_sinifi = "success"
+                    except: 
+                        kalem.durum_mesaji = "Hatalı Tarih"
+                        kalem.durum_sinifi = "dark" 
+
+                # 2. YENİ: Süre Bilgisi Hesaplama (Kaçıncı Gün / Toplam)
+                try:
+                    baslangic_dt = datetime.strptime(kalem.kiralama_baslangıcı, '%Y-%m-%d').date()
+                    bitis_dt = datetime.strptime(kalem.kiralama_bitis, '%Y-%m-%d').date()
+                    
+                    # Toplam planlanan gün (Giriş günü dahil +1)
+                    toplam_gun = (bitis_dt - baslangic_dt).days + 1
+                    
+                    if kalem.sonlandirildi:
+                         # Bitti ise sadece toplam süreyi göster
+                         kalem.sure_bilgisi = f"Toplam {toplam_gun} Gün Sürdü"
+                    else:
+                         # Devam ediyorsa kaçıncı günde olduğunu göster
+                         gecen_gun = (today - baslangic_dt).days + 1
+                         
+                         if gecen_gun < 1:
+                             kalem.sure_bilgisi = f"Henüz Başlamadı (Plan: {toplam_gun} Gün)"
+                         elif gecen_gun > toplam_gun:
+                             # Gecikmede ise
+                             kalem.sure_bilgisi = f"{gecen_gun}. Gün (Plan: {toplam_gun} Gün)"
+                         else:
+                             # Normal süreçte ise
+                             kalem.sure_bilgisi = f"{gecen_gun}. Gün / Toplam {toplam_gun} Gün"
+                except Exception as e:
+                    print(f"Süre hesaplama hatası: {e}")
+                    kalem.sure_bilgisi = ""
         
         return render_template('kiralama/index.html', kiralamalar=kiralamalar, pagination=pagination, q=q, kurlar=kurlar)
     except Exception as e:
@@ -165,7 +242,7 @@ def index():
         return render_template('kiralama/index.html', kiralamalar=[], pagination=None, q=q, kurlar={'USD': 0.0, 'EUR': 0.0})
 
 # -------------------------------------------------------------------------
-# 4. YENİ KİRALAMA EKLEME (CARİ VE STOK ENTEGRASYONLU)
+# 4. YENİ KİRALAMA EKLEME
 # -------------------------------------------------------------------------
 @kiralama_bp.route('/ekle', methods=['GET', 'POST'])
 def ekle():
@@ -211,27 +288,22 @@ def ekle():
         try:
             secilen_pimaks_ekipman_idler = set()
             kalemler_to_add = [] 
-            
-            # --- CARİ İÇİN TOPLAM TUTAR HESAPLAMA ---
             toplam_musteri_alacagi = Decimal(0.0)
             
             for kalem_data in form.kalemler.data:
                 ekipman_id_to_use = None
                 ekipman_to_update_status = None 
                 
-                # --- Cari: Kalem Bazlı Tutar Hesaplama ---
                 kiralama_brm_fiyat = Decimal(clean_currency_input(str(kalem_data['kiralama_brm_fiyat'])))
                 nakliye_satis_fiyat = Decimal(clean_currency_input(str(kalem_data['nakliye_satis_fiyat'])))
                 
                 baslangic = kalem_data['kiralama_baslangıcı']
                 bitis = kalem_data['kiralama_bitis']
-                # DÜZELTME: Giriş günü dahil (+1)
                 gun_sayisi = (bitis - baslangic).days + 1
                 if gun_sayisi < 1: gun_sayisi = 1
                 
                 kalem_toplam_tutar = (kiralama_brm_fiyat * gun_sayisi) + nakliye_satis_fiyat
                 toplam_musteri_alacagi += kalem_toplam_tutar
-                # ---------------------------------------
 
                 if kalem_data['dis_tedarik_ekipman']:
                     tedarikci_id = kalem_data['harici_ekipman_tedarikci_id']
@@ -242,7 +314,6 @@ def ekle():
                     yukseklik = int(kalem_data.get('harici_ekipman_calisma_yuksekligi') or 0)
                     kapasite = int(kalem_data.get('harici_ekipman_kaldirma_kapasitesi') or 0)
                     
-                    # --- Cari: Tedarikçi Gideri ---
                     kiralama_alis_fiyat = Decimal(clean_currency_input(str(kalem_data['kiralama_alis_fiyat'])))
                     if kiralama_alis_fiyat > 0:
                          gider_tutar = kiralama_alis_fiyat * gun_sayisi
@@ -255,7 +326,6 @@ def ekle():
                              fatura_no=yeni_kiralama.kiralama_form_no 
                          )
                          db.session.add(hizmet_gider)
-                    # ------------------------------
                     
                     if not (tedarikci_id and tedarikci_id > 0 and seri_no):
                         raise ValueError(f"Dış Tedarik seçildi ancak Tedarikçi veya Seri No bilgisi eksik.")
@@ -285,7 +355,6 @@ def ekle():
                 
                 if bitis < baslangic: raise ValueError("Tarih hatası.")
                 
-                # --- Cari: Nakliye Gideri ---
                 nakliye_ted_id = kalem_data['nakliye_tedarikci_id'] if kalem_data['dis_tedarik_nakliye'] else None
                 if nakliye_ted_id and kalem_data['dis_tedarik_nakliye']:
                     nakliye_alis_fiyat = Decimal(clean_currency_input(str(kalem_data['nakliye_alis_fiyat'])))
@@ -299,7 +368,6 @@ def ekle():
                              fatura_no=yeni_kiralama.kiralama_form_no 
                          )
                          db.session.add(hizmet_nakliye)
-                # ----------------------------
 
                 yeni_kalem = KiralamaKalemi(
                     ekipman_id=ekipman_id_to_use,
@@ -323,21 +391,19 @@ def ekle():
                     if ekipman: ekipman.calisma_durumu = "kirada"
                     db.session.add(kalem)
                 
-                # --- Cari: Müşteriye Toplam Borç Kaydı ---
                 if toplam_musteri_alacagi > 0:
                     hizmet_musteri = HizmetKaydi(
                         firma_id=form.firma_musteri_id.data,
                         tarih=datetime.now().strftime('%Y-%m-%d'),
                         tutar=str(toplam_musteri_alacagi),
-                        yon='giden', # Biz fatura kestik (Gelir)
+                        yon='giden', 
                         aciklama=f"Kiralama Bedeli (Toplam)",
                         fatura_no=yeni_kiralama.kiralama_form_no
                     )
                     db.session.add(hizmet_musteri)
-                # -----------------------------------------
 
                 db.session.commit()
-                flash(f"{len(kalemler_to_add)} kalem kiralandı ve cari kayıtlar oluşturuldu!", "success")
+                flash(f"{len(kalemler_to_add)} kalem kiralandı!", "success")
                 return redirect(url_for('kiralama.index')) 
 
         except Exception as e:
@@ -408,14 +474,12 @@ def duzenle(kiralama_id):
                     
                     if isinstance(kalem.kiralama_baslangıcı, str): kalem_form.kiralama_baslangıcı.data = datetime.strptime(kalem.kiralama_baslangıcı, '%Y-%m-%d').date()
                     if isinstance(kalem.kiralama_bitis, str): kalem_form.kiralama_bitis.data = datetime.strptime(kalem.kiralama_bitis, '%Y-%m-%d').date()
-                    
                     kalem_form.kiralama_brm_fiyat.data = Decimal(kalem.kiralama_brm_fiyat or 0)
                     kalem_form.kiralama_alis_fiyat.data = Decimal(kalem.kiralama_alis_fiyat or 0)
                     kalem_form.nakliye_satis_fiyat.data = Decimal(kalem.nakliye_satis_fiyat or 0)
                     kalem_form.nakliye_alis_fiyat.data = Decimal(kalem.nakliye_alis_fiyat or 0)
         except Exception as e:
-            flash(f"Form verileri yüklenirken bir hata oluştu: {e}", "danger")
-            traceback.print_exc()
+            flash(f"Form hatası: {e}", "danger"); traceback.print_exc()
 
     if form.validate_on_submit():
         original_db_kalemler = {k.id: k for k in kiralama.kalemler if not k.sonlandirildi}
@@ -440,52 +504,32 @@ def duzenle(kiralama_id):
                         continue 
 
                 ekipman_id_to_use = None
-                
                 if kalem_data['dis_tedarik_ekipman']:
-                    tedarikci_id = kalem_data['harici_ekipman_tedarikci_id']
-                    seri_no = (kalem_data['harici_ekipman_seri_no'] or '').strip()
-                    tipi = (kalem_data['harici_ekipman_tipi'] or 'Bilinmiyor').strip()
-                    marka = (kalem_data['harici_ekipman_marka'] or 'Bilinmiyor').strip()
-                    model = (kalem_data['harici_ekipman_model'] or '').strip()
-                    yukseklik = int(kalem_data.get('harici_ekipman_calisma_yuksekligi') or 0)
-                    kapasite = int(kalem_data.get('harici_ekipman_kaldirma_kapasitesi') or 0)
-                    
+                    tedarikci_id = kalem_data['harici_ekipman_tedarikci_id']; seri_no = (kalem_data['harici_ekipman_seri_no'] or '').strip()
+                    tipi = (kalem_data['harici_ekipman_tipi'] or 'Bilinmiyor').strip(); marka = (kalem_data['harici_ekipman_marka'] or 'Bilinmiyor').strip(); model = (kalem_data['harici_ekipman_model'] or '').strip()
+                    yukseklik = int(kalem_data.get('harici_ekipman_calisma_yuksekligi') or 0); kapasite = int(kalem_data.get('harici_ekipman_kaldirma_kapasitesi') or 0)
                     if not (tedarikci_id and tedarikci_id > 0 and seri_no): raise ValueError(f"Dış Tedarik eksik.")
-                    
                     harici_ekipman = Ekipman.query.filter_by(firma_tedarikci_id=tedarikci_id, seri_no=seri_no).first()
                     if not harici_ekipman:
-                        harici_ekipman = Ekipman(
-                            kod=f"HARICI-{seri_no}", seri_no=seri_no, tipi=tipi, marka=marka, model=model,
-                            yakit="Bilinmiyor", calisma_yuksekligi=yukseklik, kaldirma_kapasitesi=kapasite,
-                            uretim_tarihi="Bilinmiyor", giris_maliyeti='0', firma_tedarikci_id=tedarikci_id, calisma_durumu='harici',
-                            is_active=True
-                        )
-                        db.session.add(harici_ekipman)
-                        db.session.flush()
+                        harici_ekipman = Ekipman(kod=f"HARICI-{seri_no}", seri_no=seri_no, tipi=tipi, marka=marka, model=model, yakit="Bilinmiyor", calisma_yuksekligi=yukseklik, kaldirma_kapasitesi=kapasite, uretim_tarihi="Bilinmiyor", giris_maliyeti='0', firma_tedarikci_id=tedarikci_id, calisma_durumu='harici', is_active=True)
+                        db.session.add(harici_ekipman); db.session.flush()
                     else:
                         if not harici_ekipman.is_active: harici_ekipman.is_active = True
-                        harici_ekipman.marka = marka; harici_ekipman.model = model; harici_ekipman.tipi = tipi
-                        harici_ekipman.calisma_yuksekligi = yukseklik; harici_ekipman.kaldirma_kapasitesi = kapasite
+                        harici_ekipman.marka = marka; harici_ekipman.model = model; harici_ekipman.tipi = tipi; harici_ekipman.calisma_yuksekligi = yukseklik; harici_ekipman.kaldirma_kapasitesi = kapasite
                     ekipman_id_to_use = harici_ekipman.id
                 else:
                     ekipman_id_to_use = kalem_data['ekipman_id']
                     if not (ekipman_id_to_use and ekipman_id_to_use > 0): continue 
                     if ekipman_id_to_use in yeni_pimaks_ekipman_idler: raise ValueError(f"Ekipman çakışması.")
-                    
                     ekipman_to_update = Ekipman.query.get(ekipman_id_to_use)
                     if not ekipman_to_update or ekipman_to_update.firma_tedarikci_id is not None: raise ValueError("Hata")
                     if (ekipman_to_update.calisma_durumu != 'bosta' and ekipman_id_to_use not in original_pimaks_ekipman_ids): raise ValueError("Hata")
-                    
                     yeni_pimaks_ekipman_idler.add(ekipman_id_to_use)
                     ekipmanlar_to_update_status[ekipman_id_to_use] = 'kirada'
                 
-                baslangic = kalem_data['kiralama_baslangıcı']
-                bitis = kalem_data['kiralama_bitis']
-                baslangic_str = baslangic.strftime("%Y-%m-%d")
-                bitis_str = bitis.strftime("%Y-%m-%d")
-                
-                nakliye_ted_id_data = kalem_data['nakliye_tedarikci_id']
-                nakliye_ted_id = nakliye_ted_id_data if nakliye_ted_id_data != 0 else None
+                baslangic = kalem_data['kiralama_baslangıcı']; bitis = kalem_data['kiralama_bitis']
+                baslangic_str = baslangic.strftime("%Y-%m-%d"); bitis_str = bitis.strftime("%Y-%m-%d")
+                nakliye_ted_id = kalem_data['nakliye_tedarikci_id'] if kalem_data['dis_tedarik_nakliye'] else None
                 
                 if db_kalem and db_kalem.id in original_db_kalemler:
                     db_kalem.ekipman_id = ekipman_id_to_use
@@ -523,7 +567,11 @@ def duzenle(kiralama_id):
             if ids_to_delete: KiralamaKalemi.query.filter(KiralamaKalemi.id.in_(ids_to_delete)).delete(synchronize_session=False)
 
             db.session.commit()
-            flash('Kiralama kaydı başarıyla güncellendi.', 'success')
+            
+            # Cari Hesabı Otomatik Güncelle
+            guncelle_cari_toplam(kiralama.id)
+            
+            flash('Güncellendi.', 'success')
             return redirect(url_for('kiralama.index'))
 
         except Exception as e:
@@ -587,9 +635,48 @@ def sonlandir_kalem():
             ekipman.calisma_durumu = 'bosta'
         
         db.session.commit()
+        
+        # Sonlandırmada da Cariyi Güncelle
+        guncelle_cari_toplam(kalem.kiralama_id)
+        
         flash(f"Sonlandırıldı.", 'success')
     except Exception as e:
         db.session.rollback()
         flash(f"Hata: {str(e)}", 'danger')
+
+    return redirect(url_for('kiralama.index', page=page, q=q))
+
+@kiralama_bp.route('/kalem/iptal_et', methods=['POST'])
+def iptal_et_kalem():
+    """
+    Yanlışlıkla sonlandırılan bir kiralama kalemini tekrar 'Aktif' hale getirir.
+    """
+    try:
+        kalem_id = request.form.get('kalem_id', type=int)
+        page = request.args.get('page', 1, type=int)
+        q = request.args.get('q', '')
+
+        if not kalem_id: return redirect(url_for('kiralama.index'))
+        
+        kalem = KiralamaKalemi.query.get_or_404(kalem_id)
+        if not kalem.sonlandirildi:
+            flash("Bu kalem zaten aktif durumda.", "warning")
+            return redirect(url_for('kiralama.index', page=page, q=q))
+
+        ekipman = kalem.ekipman
+        kalem.sonlandirildi = False
+        
+        if ekipman and ekipman.firma_tedarikci_id is None:
+            ekipman.calisma_durumu = 'kirada'
+        
+        db.session.commit()
+        
+        guncelle_cari_toplam(kalem.kiralama_id)
+        
+        flash(f"Sonlandırma işlemi geri alındı. Makine tekrar kirada.", 'success')
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Hata oluştu: {str(e)}", 'danger')
 
     return redirect(url_for('kiralama.index', page=page, q=q))

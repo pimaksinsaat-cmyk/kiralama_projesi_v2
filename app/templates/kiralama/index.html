@@ -4,7 +4,6 @@
 
 {% block content %}
 <style>
-    /* ... (CSS Stilleri Aynen Kalır) ... */
     .container { max-width: 1500px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
     th, td { padding: 12px; border: 1px solid #dee2e6; text-align: left; vertical-align: top; }
@@ -32,16 +31,20 @@
     .kalem-listesi li { padding: 5px; border-bottom: 1px dashed #eee; }
     .kalem-listesi li:last-child { border-bottom: none; }
     
-    /* Mobil dokunma alanını belirtmek için */
     .kalem-listesi-item:hover { background-color: #f8f9fa; cursor: context-menu; }
     
-    /* Menü stilleri */
     .context-menu, .context-menu-kalem { display: none; position: absolute; background-color: white; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-radius: 5px; z-index: 1000; min-width: 200px; padding: 5px 0; }
     .context-menu-kalem { z-index: 1001; }
     .context-menu-item { display: block; padding: 12px 15px; color: #333; text-decoration: none; font-size: 1em; }
     .context-menu-item:hover { background-color: #f5f5f5; color: #000; text-decoration: none; }
+    
+    /* Renkli Menü Öğeleri */
     .context-menu-item.delete { color: #dc3545; font-weight: bold; }
     .context-menu-item.delete:hover { background-color: #dc3545; color: white; }
+    
+    .context-menu-item.iptal { color: #e0a800; font-weight: bold; } /* Sarı renk */
+    .context-menu-item.iptal:hover { background-color: #fff3cd; }
+
     .context-menu-divider { height: 1px; margin: 5px 0; background-color: #eee; }
     
     .search-form { display: flex; gap: 10px; margin-bottom: 15px; }
@@ -96,10 +99,11 @@
     </p>
 
     <form method="GET" action="{{ url_for('kiralama.index') }}" class="search-form">
-        <input type="text" name="q" placeholder="Ara..." value="{{ q or '' }}">
+        <input type="text" name="q" placeholder="Form No, Firma Adı veya Yetkili Adı ile ara..." value="{{ q or '' }}">
         <button type="submit">Bul</button>
     </form>
 
+    <!-- Tabloya yatay kaydırma (Mobil) -->
     <div style="overflow-x: auto;">
         <table>
             <thead>
@@ -107,13 +111,13 @@
                     <th>
                         Form No
                         <br>
-                        <small class="text-muted" style="font-weight: normal;">(Sağ tık / Basılı tut)</small>
+                        <small class="text-muted" style="font-weight: normal;">(Seçenekler için sağ tık)</small>
                     </th>
                     <th>Müşteri (Firma)</th>
                     <th>
                         Kiralama Kalemleri
                         <br>
-                        <small class="text-muted" style="font-weight: normal;">(Sonlandırma için Sağ tık/ Basılı tut)</small>
+                        <small class="text-muted" style="font-weight: normal;">(İşlem için sağ tık / basılı tut)</small>
                     </th>
                     <th>Kalem Durumları</th>
                 </tr>
@@ -147,6 +151,7 @@
                                 data-ekipman-kod="{{ kalem.ekipman.kod if kalem.ekipman else 'Bilinmeyen' }}"
                                 data-csrf-token="{{ csrf_token() }}"
                                 data-sonlandirilmis="{{ 1 if kalem.sonlandirildi else 0 }}"
+                                title="İşlem yapmak için sağ tıkla / basılı tut"
                                 >
                                 {% if kalem.ekipman %}
                                     <strong>{{ kalem.ekipman.kod }}</strong> ({{ kalem.ekipman.tipi }})
@@ -170,15 +175,19 @@
                                 <span class="badge bg-{{ kalem.durum_sinifi | default('secondary') }}">
                                     {{ kalem.durum_mesaji | default('Bilinmiyor') }}
                                 </span>
+                                
+                                <!-- YENİ: Süre Bilgisi -->
+                                {% if kalem.sure_bilgisi %}
+                                    <br>
+                                    <small class="text-muted" style="font-size: 0.8em;">{{ kalem.sure_bilgisi }}</small>
+                                {% endif %}
                             </li>
                             {% endfor %}
                         </ul>
                     </td>
                 </tr>
                 {% else %}
-                <tr>
-                    <td colspan="4">Kayıtlı kiralama bulunamadı.</td>
-                </tr>
+                <tr><td colspan="4">Kayıtlı kiralama bulunamadı.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -216,8 +225,11 @@
 
 <div id="context-menu-kalem" class="context-menu-kalem">
     <a href="#" class="context-menu-item" id="menu-sonlandir"><i class="fa fa-check"></i> Kiralamayı Sonlandır...</a>
+    <!-- YENİ: İptal (Geri Alma) Seçeneği -->
+    <a href="#" class="context-menu-item iptal" id="menu-iptal"><i class="fa fa-undo"></i> Sonlandırmayı Geri Al</a>
 </div>
 
+<!-- Sonlandırma Modalı -->
 <div id="modal-backdrop" class="modal-backdrop"></div>
 <div id="sonlandir-modal" class="modal-dialog">
     <form id="sonlandir-kalem-form" method="POST" action="{{ url_for('kiralama.sonlandir_kalem') }}">
@@ -236,20 +248,20 @@
     </form>
 </div>
 
+<!-- Geri Alma Formu -->
+<form id="iptal-kalem-form" method="POST" action="{{ url_for('kiralama.iptal_et_kalem') }}" style="display: none;">
+    <input type="hidden" name="csrf_token" id="iptal-csrf-token">
+    <input type="hidden" name="kalem_id" id="iptal-kalem-id">
+</form>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     
-    // --- ORTAK: DOKUNMATİK EKRAN (LONG PRESS) DESTEĞİ ---
-    // DÜZELTME: stopBubbling parametresi eklendi (Çakışmayı Önlemek İçin)
+    // --- ORTAK: DOKUNMATİK (LONG PRESS) ---
     function addLongPressListener(element, callback, stopBubbling = false) {
         let timer;
-        
         element.addEventListener('touchstart', function(e) {
-            // Eğer içteki öğe ise (kalem), olayın yukarı (satıra) gitmesini engelle
-            if (stopBubbling) {
-                e.stopPropagation(); 
-            }
-            
+            if (stopBubbling) e.stopPropagation();
             timer = setTimeout(function() {
                 timer = null;
                 const touch = e.touches[0];
@@ -260,17 +272,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     pageY: touch.pageY
                 };
                 callback(mockEvent, element);
-            }, 600); // 600ms
+            }, 600); 
         }, {passive: false});
-
-        function clear() {
-            if (timer) { clearTimeout(timer); timer = null; }
-        }
+        function clear() { if (timer) { clearTimeout(timer); timer = null; } }
         element.addEventListener('touchend', clear);
         element.addEventListener('touchmove', clear);
     }
 
-    // --- 1. ANA KİRALAMA MENÜSÜ ---
+    // --- 1. ANA KİRALAMA SAĞ TIK ---
     const contextMenu = document.getElementById('context-menu');
     const deleteForm = document.getElementById('delete-form');
     const menuDuzenle = document.getElementById('menu-duzenle');
@@ -292,9 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     document.querySelectorAll('.kiralama-satiri').forEach(row => {
-        // Masaüstü sağ tık
         row.addEventListener('contextmenu', (e) => showRowMenu(e, row));
-        // Mobil basılı tut (stopBubbling = false, çünkü bu en dış katman)
         addLongPressListener(row, showRowMenu, false);
     });
 
@@ -310,9 +317,10 @@ document.addEventListener('DOMContentLoaded', function() {
         hideRowMenu();
     });
 
-    // --- 2. KALEM SONLANDIRMA MENÜSÜ ---
+    // --- 2. KALEM MENÜSÜ ---
     const contextMenuKalem = document.getElementById('context-menu-kalem');
     const menuSonlandir = document.getElementById('menu-sonlandir');
+    const menuIptal = document.getElementById('menu-iptal'); // YENİ
     const modalBackdrop = document.getElementById('modal-backdrop');
     const sonlandirModal = document.getElementById('sonlandir-modal');
     const modalKalemIdInput = document.getElementById('modal-kalem-id');
@@ -320,19 +328,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalEkipmanKod = document.getElementById('modal-ekipman-kod');
     const modalBitisTarihiInput = document.getElementById('modal-bitis-tarihi');
     const modalIptalButton = document.getElementById('modal-iptal');
+    const iptalForm = document.getElementById('iptal-kalem-form'); // YENİ
+
     let currentKalemId = null, currentEkipmanKod = null, currentKalemCsrfToken = null;
 
     const showKalemMenu = (event, item) => {
-        // Masaüstü için bubbling engelleme
-        event.stopPropagation(); 
-        event.preventDefault();
+        event.stopPropagation(); event.preventDefault();
         hideRowMenu();
-        
-        if (item.dataset.sonlandirilmis === '1') return;
         
         currentKalemId = item.dataset.kalemId;
         currentEkipmanKod = item.dataset.ekipmanKod;
         currentKalemCsrfToken = item.dataset.csrfToken;
+        const isSonlandirilmis = item.dataset.sonlandirilmis === '1';
+
+        // --- AKILLI MENÜ ---
+        if (isSonlandirilmis) {
+            menuSonlandir.style.display = 'none';
+            menuIptal.style.display = 'block'; // Geri Al'ı göster
+        } else {
+            menuSonlandir.style.display = 'block'; // Sonlandır'ı göster
+            menuIptal.style.display = 'none';
+        }
         
         contextMenuKalem.style.left = event.pageX + 'px';
         contextMenuKalem.style.top = event.pageY + 'px';
@@ -340,13 +356,11 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     document.querySelectorAll('.kalem-listesi-item').forEach(item => {
-        // Masaüstü sağ tık
         item.addEventListener('contextmenu', (e) => showKalemMenu(e, item));
-        // Mobil basılı tut (DÜZELTME: stopBubbling = true yapıldı)
-        // Bu sayede kaleme basınca satırın menüsü açılmayacak!
         addLongPressListener(item, showKalemMenu, true);
     });
 
+    // SONLANDIRMA
     menuSonlandir.addEventListener('click', function(event) {
         event.preventDefault();
         hideKalemMenu();
@@ -357,6 +371,19 @@ document.addEventListener('DOMContentLoaded', function() {
             modalBitisTarihiInput.value = new Date().toISOString().split('T')[0]; 
             modalBackdrop.style.display = 'block';
             sonlandirModal.style.display = 'block';
+        }
+    });
+    
+    // İPTAL ETME (GERİ ALMA)
+    menuIptal.addEventListener('click', function(event) {
+        event.preventDefault();
+        hideKalemMenu();
+        if (currentKalemId) {
+            if (confirm("'" + currentEkipmanKod + "' için yapılan sonlandırmayı geri almak (tekrar aktifleştirmek) istiyor musunuz?")) {
+                document.getElementById('iptal-kalem-id').value = currentKalemId;
+                document.getElementById('iptal-csrf-token').value = currentKalemCsrfToken;
+                iptalForm.submit();
+            }
         }
     });
 
@@ -374,8 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('touchstart', function(event) {
         if (event.target === modalBackdrop) hideSonlandirModal();
         if (!event.target.closest('.context-menu') && !event.target.closest('.context-menu-kalem')) {
-             hideRowMenu();
-             hideKalemMenu();
+             hideRowMenu(); hideKalemMenu();
         }
     });
 });

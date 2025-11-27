@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Ödeme Kaydını Düzenle{% endblock %}
+
+{% block content %}
+<style>
+    .form-section {
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-width: 800px;
+        margin: 20px auto;
+        border-top: 5px solid #ffc107; /* Düzenleme olduğu için sarı ton */
+    }
+    .form-title {
+        color: #343a40;
+        text-align: center;
+        margin-bottom: 25px;
+        font-weight: bold;
+    }
+</style>
+
+<div class="container">
+    <div class="form-section">
+        <h2 class="form-title"><i class="fa fa-edit"></i> Ödeme Kaydını Düzenle</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <!-- 1. Satır: Müşteri ve Kasa -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.firma_musteri_id.label(class="form-label fw-bold") }}
+                    {{ form.firma_musteri_id(class="form-select form-control") }}
+                    {% for error in form.firma_musteri_id.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                    {{ form.kasa_id.label(class="form-label fw-bold") }}
+                    {{ form.kasa_id(class="form-select form-control") }}
+                    {% for error in form.kasa_id.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
+                </div>
+            </div>
+
+            <!-- 2. Satır: Tarih ve Tutar -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.tarih.label(class="form-label fw-bold") }}
+                    {{ form.tarih(class="form-control", type="date") }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.tutar.label(class="form-label fw-bold") }}
+                    <div class="input-group">
+                        <span class="input-group-text">₺</span>
+                        <!-- Akıllı Giriş: type="text", autocomplete="off" -->
+                        {{ form.tutar(class="form-control currency-input", placeholder="0,00", type="text", autocomplete="off", style="font-size: 1.2em; font-weight: bold;") }}
+                    </div>
+                    {% for error in form.tutar.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
+                </div>
+            </div>
+
+            <!-- 3. Satır: Fatura No ve Vade -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.fatura_no.label(class="form-label fw-bold") }}
+                    {{ form.fatura_no(class="form-control", placeholder="Varsa Makbuz/Dekont No") }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.vade_tarihi.label(class="form-label fw-bold") }}
+                    {{ form.vade_tarihi(class="form-control", type="date") }}
+                </div>
+            </div>
+
+            <!-- 4. Satır: Açıklama -->
+            <div class="mb-4">
+                {{ form.aciklama.label(class="form-label fw-bold") }}
+                {{ form.aciklama(class="form-control") }}
+            </div>
+
+            <!-- Butonlar -->
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('firmalar.bilgi', id=odeme.firma_musteri_id) }}" class="btn btn-secondary">İptal</a>
+                {{ form.submit(class="btn btn-warning", value="Güncelle") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- AKILLI FİNANSAL GİRİŞ SCRİPTİ -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const currencyInputs = document.querySelectorAll('.currency-input');
+
+    function formatCurrency(value) {
+        if (!value) return '';
+        let v = value.toString().replace(',', '.');
+        let number = parseFloat(v);
+        if (isNaN(number)) return value;
+        return number.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    function cleanCurrency(val) {
+        if (!val) return "0.00";
+        return val.toString().replace(/\./g, '').replace(',', '.');
+    }
+
+    function formatInput(input) {
+        let value = input.value;
+        if (value === '') return;
+
+        let selectionStart = input.selectionStart;
+        let cleanVal = value.replace(/[^\d,]/g, '');
+        
+        let parts = cleanVal.split(',');
+        if (parts.length > 2) cleanVal = parts[0] + ',' + parts.slice(1).join('');
+        
+        parts = cleanVal.split(',');
+        let integerPart = parts[0];
+        let decimalPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : ''; 
+        let formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        let formattedValue = formattedInteger + decimalPart;
+        if (cleanVal === ',') formattedValue = '0,';
+
+        input.value = formattedValue;
+
+        let newDots = (formattedValue.slice(0, selectionStart).match(/\./g) || []).length;
+        let oldDots = (value.slice(0, selectionStart).match(/\./g) || []).length;
+        try {
+            // Basit imleç yönetimi
+        } catch (e) {}
+    }
+
+    currencyInputs.forEach(input => {
+        // Sayfa açılışında DB'den gelen veriyi formatla
+        if (input.value) {
+            // DB'den nokta ondalıklı gelebilir, virgüle çevirip formatla
+            if (input.value.indexOf('.') > -1 && input.value.indexOf(',') === -1) {
+                input.value = input.value.replace('.', ',');
+            }
+            input.value = formatCurrency(input.value);
+        }
+
+        input.addEventListener('input', function() { formatInput(this); });
+        
+        input.addEventListener('keydown', function(e) {
+            const allowed = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', 'Escape', 'Enter'];
+            if (allowed.includes(e.key)) return;
+            if (!/^[0-9,]$/.test(e.key)) e.preventDefault();
+        });
+
+        input.addEventListener('focus', function() {
+            let clean = cleanCurrency(this.value);
+            this.value = (clean === '0.00' || clean === '0') ? '' : clean.replace('.', ',');
+            setTimeout(() => { this.select(); }, 50);
+        });
+
+        input.addEventListener('blur', function() {
+            this.value = formatCurrency(this.value);
+        });
+
+        input.form.addEventListener('submit', function() {
+            input.value = cleanCurrency(input.value);
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -18,24 +18,30 @@
         font-size: 1.1em;
     }
 
-    /* YATAY BİLGİ ŞERİDİ (INFO BAR) */
+    /* YATAY BİLGİ ŞERİDİ */
     .info-card {
         background-color: #fff;
         border: 1px solid #dee2e6;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         margin-bottom: 20px;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 1rem;
+        overflow-x: auto;
+
     }
     .info-item {
-        border-right: 1px solid #eee;
-        padding-right: 15px;
-        margin-right: 15px;
+        min-width: fit-content; 
+        padding-right: 20px; 
+        border-right: 1px solid #eee; 
+        flex: 0 0 auto;
+        min-width: 150px; /* kutuların daralmaması için */
+
     }
-    .info-item:last-child {
-        border-right: none;
-        padding-right: 0;
-        margin-right: 0;
-    }
+    .info-item:last-child { border-right: none; }
+    
     .info-label {
         font-size: 0.75em;
         color: #6c757d;
@@ -46,10 +52,43 @@
         margin-bottom: 2px;
     }
     .info-value {
-        font-size: 1em;
+        font-size: 1.1em;
         font-weight: 500;
         color: #212529;
+        white-space: nowrap; 
     }
+    
+    .overflow-auto::-webkit-scrollbar { height: 6px; }
+    .overflow-auto::-webkit-scrollbar-thumb { background-color: #ccc; border-radius: 4px; }
+
+    /* SAĞ TIK MENÜSÜ STİLLERİ */
+    .context-menu { 
+        display: none; 
+        position: absolute; 
+        background-color: white; 
+        border: 1px solid #ccc; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
+        border-radius: 5px; 
+        z-index: 1000; 
+        min-width: 180px; 
+        padding: 5px 0; 
+    }
+    .context-menu-item { 
+        display: block; 
+        padding: 10px 15px; 
+        color: #333; 
+        text-decoration: none; 
+        font-size: 0.95em; 
+        cursor: pointer;
+    }
+    .context-menu-item:hover { background-color: #f5f5f5; color: #000; text-decoration: none; }
+    .context-menu-item.delete { color: #dc3545; font-weight: bold; }
+    .context-menu-item.delete:hover { background-color: #dc3545; color: white; }
+    .context-menu-divider { height: 1px; margin: 5px 0; background-color: #eee; }
+    
+    /* Tablo Satırı Hover */
+    .islem-satiri { cursor: context-menu; transition: background-color 0.2s; }
+    .islem-satiri:hover { background-color: #f8f9fa !important; }
 </style>
 
 <div class="container">
@@ -65,36 +104,31 @@
             </a>
             <a href="{{ url_for('firmalar.duzelt', id=firma.id) }}" class="btn btn-warning">Düzenle</a>
             <a href="{{ url_for('firmalar.index') }}" class="btn btn-secondary">Listeye Dön</a>
+
+            <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Ana Sayfa</a>
+            
+
         </div>
     </div>
 
-    <!-- YATAY FİRMA BİLGİLERİ -->
+    <!-- FİRMA BİLGİLERİ -->
     <div class="card info-card">
         <div class="card-body py-3">
-            <div class="d-flex flex-wrap align-items-center">
-                <!-- 1. Yetkili -->
-                <div class="info-item flex-fill">
+            <div class="d-flex flex-row flex-nowrap align-items-center gap-4 overflow-auto pb-2">
+                <div class="info-item">
                     <span class="info-label">Yetkili Kişi</span>
                     <div class="info-value">{{ firma.yetkili_adi }}</div>
                 </div>
-                
-                <!-- 2. Vergi -->
-                <div class="info-item flex-fill">
+                <div class="info-item">
                     <span class="info-label">Vergi Dairesi / No</span>
                     <div class="info-value">{{ firma.vergi_dairesi }} / {{ firma.vergi_no }}</div>
                 </div>
-                
-                <!-- 3. İletişim -->
-                <div class="info-item flex-fill">
+                <div class="info-item">
                     <span class="info-label">İletişim & Adres</span>
-                    <div class="info-value text-truncate" style="max-width: 300px;" title="{{ firma.iletisim_bilgileri }}">
-                        {{ firma.iletisim_bilgileri }}
-                    </div>
+                    <div class="info-value">{{ firma.iletisim_bilgileri }}</div>
                 </div>
-                
-                <!-- 4. Rol -->
-                <div class="info-item text-center">
-                    <span class="info-label mb-1">Firma Rolü</span>
+                <div class="info-item">
+                    <span class="info-label">Firma Rolü</span>
                     <div>
                         {% if firma.is_musteri %}<span class="badge bg-primary">Müşteri</span>{% endif %}
                         {% if firma.is_tedarikci %}<span class="badge bg-warning text-dark">Tedarikçi</span>{% endif %}
@@ -108,6 +142,7 @@
     <div class="card">
         <div class="card-header bg-light">
             <i class="fa fa-list-alt me-2"></i> <strong>Cari Hesap Ekstresi</strong>
+            <small class="text-muted float-end mt-1">(İşlem yapmak için satıra sağ tıklayın veya basılı tutun)</small>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -117,26 +152,34 @@
                             <th>Tarih</th>
                             <th>Form No</th>
                             <th>İşlem Türü</th>
-                            <th style="width: 30%;">Açıklama</th>
+                            <th style="width: 35%;">Açıklama</th>
                             <th class="text-end">Borç (Giden)</th>
                             <th class="text-end">Alacak (Gelen)</th>
                             <th class="text-end" style="min-width: 150px;">Bakiye (Kümülatif)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- JINJA2: Verileri Hazırla ve Sırala -->
                         {% set tum_hareketler = (firma.hizmet_kayitlari + firma.odemeler) | sort(attribute='tarih') %}
-                        
-                        <!-- NAMESPACE: Değişkenleri döngü içinde güncellemek için -->
                         {% set ns = namespace(running_balance=0.0, total_borc=0.0, total_alacak=0.0) %}
                         
                         {% for islem in tum_hareketler %}
                             {% set tutar = islem.tutar|float %}
                             {% set satir_tutar_borc = 0 %}
                             {% set satir_tutar_alacak = 0 %}
-
-                            <!-- İŞLEM TİPİ VE BAKİYE HESABI -->
-                            {% if islem.__tablename__ == 'hizmet_kaydi' %}
+                            
+                            <!-- URL ve Tür Belirleme -->
+                            {% if islem.__tablename__ == 'odeme' %}
+                                {% set duzenle_url = url_for('cari.odeme_duzelt', id=islem.id) %}
+                                {% set sil_url = url_for('cari.odeme_sil', id=islem.id) %}
+                                {% set tur_adi = 'Ödeme' %}
+                                <!-- Ödeme her zaman alacaktır -->
+                                {% set ns.running_balance = ns.running_balance - tutar %}
+                                {% set ns.total_alacak = ns.total_alacak + tutar %}
+                                {% set satir_tutar_alacak = tutar %}
+                            {% else %}
+                                {% set duzenle_url = url_for('cari.hizmet_duzelt', id=islem.id) %}
+                                {% set sil_url = url_for('cari.hizmet_sil', id=islem.id) %}
+                                {% set tur_adi = 'Hizmet/Fatura' %}
                                 {% if islem.yon == 'giden' %}
                                     <!-- Borç (Satış) -->
                                     {% set ns.running_balance = ns.running_balance + tutar %}
@@ -148,14 +191,15 @@
                                     {% set ns.total_alacak = ns.total_alacak + tutar %}
                                     {% set satir_tutar_alacak = tutar %}
                                 {% endif %}
-                            {% else %} 
-                                <!-- Ödeme (Her zaman Alacak) -->
-                                {% set ns.running_balance = ns.running_balance - tutar %}
-                                {% set ns.total_alacak = ns.total_alacak + tutar %}
-                                {% set satir_tutar_alacak = tutar %}
                             {% endif %}
 
-                            <tr>
+                            <tr class="islem-satiri" 
+                                data-duzenle-url="{{ duzenle_url }}"
+                                data-sil-url="{{ sil_url }}"
+                                data-csrf-token="{{ csrf_token() }}"
+                                data-tur="{{ tur_adi }}"
+                                data-tarih="{{ islem.tarih }}"
+                                >
                                 <!-- Tarih -->
                                 <td>{{ islem.tarih | tarihtr }}</td>
                                 
@@ -236,4 +280,103 @@
         </div>
     </div>
 </div>
+
+<!-- GİZLİ SAĞ TIK MENÜSÜ -->
+<div id="context-menu" class="context-menu">
+    <a href="#" class="context-menu-item" id="menu-duzenle">
+        <i class="fa fa-edit me-2"></i> İşlemi Düzenle
+    </a>
+    <div class="context-menu-divider"></div>
+    <a href="#" class="context-menu-item delete" id="menu-sil">
+        <i class="fa fa-trash-alt me-2"></i> İşlemi Sil
+    </a>
+</div>
+
+<!-- Gizli Silme Formu -->
+<form id="delete-form" method="POST" style="display: none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- ORTAK: LONG PRESS HANDLER (Mobil) ---
+    function addLongPressListener(element, callback) {
+        let timer;
+        element.addEventListener('touchstart', function(e) {
+            timer = setTimeout(function() {
+                timer = null;
+                const touch = e.touches[0];
+                const mockEvent = {
+                    preventDefault: () => e.preventDefault(),
+                    stopPropagation: () => e.stopPropagation(),
+                    pageX: touch.pageX,
+                    pageY: touch.pageY
+                };
+                callback(mockEvent, element);
+            }, 600); 
+        }, {passive: false});
+        function clear() { if (timer) { clearTimeout(timer); timer = null; } }
+        element.addEventListener('touchend', clear);
+        element.addEventListener('touchmove', clear);
+    }
+
+    const contextMenu = document.getElementById('context-menu');
+    const deleteForm = document.getElementById('delete-form');
+    const menuDuzenle = document.getElementById('menu-duzenle');
+    const menuSil = document.getElementById('menu-sil');
+    
+    let currentSilUrl = null;
+    let currentCsrfToken = null;
+    let currentTur = null;
+    let currentTarih = null;
+
+    const showMenu = (event, row) => {
+        event.preventDefault();
+        
+        // Verileri al
+        currentSilUrl = row.dataset.silUrl;
+        const duzenleUrl = row.dataset.duzenleUrl;
+        currentCsrfToken = row.dataset.csrfToken;
+        currentTur = row.dataset.tur;
+        currentTarih = row.dataset.tarih;
+        
+        // Linkleri güncelle
+        menuDuzenle.href = duzenleUrl;
+        
+        // Menüyü konumlandır
+        contextMenu.style.left = event.pageX + 'px';
+        contextMenu.style.top = event.pageY + 'px';
+        contextMenu.style.display = 'block';
+    };
+
+    document.querySelectorAll('.islem-satiri').forEach(row => {
+        // Masaüstü
+        row.addEventListener('contextmenu', (e) => showMenu(e, row));
+        // Mobil
+        addLongPressListener(row, showMenu);
+    });
+
+    // Menüyü kapatma
+    window.addEventListener('click', function() {
+        if (contextMenu.style.display === 'block') contextMenu.style.display = 'none';
+    });
+    window.addEventListener('touchstart', function(event) {
+         if (!event.target.closest('.context-menu')) contextMenu.style.display = 'none';
+    });
+
+    // Silme İşlemi
+    menuSil.addEventListener('click', function(event) {
+        event.preventDefault();
+        if (currentSilUrl) {
+            if (confirm(currentTarih + " tarihli " + currentTur + " işlemini silmek istediğinizden emin misiniz?\nBu işlem geri alınamaz!")) {
+                deleteForm.action = currentSilUrl;
+                deleteForm.querySelector('input[name="csrf_token"]').value = currentCsrfToken;
+                deleteForm.submit();
+            }
+        }
+        contextMenu.style.display = 'none';
+    });
+});
+</script>
 {% endblock %}

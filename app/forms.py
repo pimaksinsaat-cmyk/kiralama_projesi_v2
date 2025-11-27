@@ -7,6 +7,7 @@ from wtforms.validators import Optional, InputRequired, NumberRange, ValidationE
 
 secim_hata_mesaji = "Lütfen geçerli bir seçim yapınız."
 
+# Para Birimi Doğrulayıcı
 def validate_currency(form, field):
     if field.data:
         clean_value = field.data.replace('.', '').replace(',', '.')
@@ -14,9 +15,6 @@ def validate_currency(form, field):
             float(clean_value)
         except ValueError:
             raise ValidationError("Lütfen geçerli bir sayısal değer giriniz (Örn: 150.000,00).")
-
-# ... (FirmaForm, EkipmanForm, KiralamaKalemiForm, KiralamaForm AYNI KALIR) ...
-# Yer kazanmak için üst kısmı tekrar etmiyorum.
 
 # 1. FirmaForm
 class FirmaForm(FlaskForm):
@@ -41,13 +39,19 @@ class EkipmanForm(FlaskForm):
     kaldirma_kapasitesi = StringField('Kaldırma Kapasitesi (kg)', validators=[InputRequired()])
     uretim_tarihi = StringField('Üretim Tarihi (Yıl)', validators=[InputRequired()])
     giris_maliyeti = StringField('Giriş Maliyeti (Satın Alma)', validators=[Optional(), validate_currency])
-    para_birimi = SelectField('Para Birimi', choices=[('TRY', 'TL'), ('USD', 'USD'), ('EUR', 'EUR')], default='TRY', validators=[InputRequired()])
+    para_birimi = SelectField(
+        'Para Birimi', 
+        choices=[('TRY', 'TL (Türk Lirası)'), ('USD', 'USD (Amerikan Doları)'), ('EUR', 'EUR (Euro)')],
+        default='TRY',
+        validators=[InputRequired()]
+    )
     submit = SubmitField('Kaydet')
 
 # 3. KiralamaKalemiForm
 class KiralamaKalemiForm(FlaskForm):
     class Meta: csrf = False 
-    id = HiddenField('Kalem ID'); dis_tedarik_ekipman = BooleanField("Dış Tedarik Ekipman?")
+    id = HiddenField('Kalem ID')
+    dis_tedarik_ekipman = BooleanField("Dış Tedarik Ekipman?")
     ekipman_id = SelectField('Pimaks Filosu', coerce=int, default='0', validators=[Optional()])
     harici_ekipman_tedarikci_id = SelectField('Ekipman Tedarikçisi', coerce=int, default='0', validators=[Optional()])
     harici_ekipman_tipi = StringField('Harici Ekipman Tipi', validators=[Optional()])
@@ -75,15 +79,13 @@ class KiralamaForm(FlaskForm):
     kalemler = FieldList(FormField(KiralamaKalemiForm), min_entries=1)
     submit = SubmitField('Kaydet')
 
-# -------------------------------------------------------------------------
-# 5. OdemeForm (Cari Modülü - Tahsilat)
-# -------------------------------------------------------------------------
+# 5. OdemeForm (DÜZELTİLDİ: Tutar StringField oldu)
 class OdemeForm(FlaskForm):
     firma_musteri_id = SelectField('Ödeme Yapan Müşteri (Firma)', coerce=int, default='0', validators=[NumberRange(min=1, message=secim_hata_mesaji)])
     kasa_id = SelectField('Giriş Yapılacak Kasa/Banka', coerce=int, default='0', validators=[NumberRange(min=1, message="Lütfen bir kasa/banka seçiniz.")])
     tarih = DateField('Ödeme Tarihi', format='%Y-%m-%d', validators=[InputRequired()])
     
-    # DÜZELTME: DecimalField -> StringField (validate_currency eklendi)
+    # DÜZELTME: StringField ve validate_currency
     tutar = StringField('Ödeme Tutarı', validators=[InputRequired(), validate_currency])
     
     fatura_no = StringField('Makbuz/Dekont No', validators=[Optional()])
@@ -91,15 +93,12 @@ class OdemeForm(FlaskForm):
     aciklama = StringField('Açıklama (Örn: EFT, Nakit Tahsilat)', validators=[Optional()])
     submit = SubmitField('Ödemeyi Kaydet')
 
-
-# -------------------------------------------------------------------------
-# 6. HizmetKaydiForm (Cari Modülü - Gelir/Gider)
-# -------------------------------------------------------------------------
+# 6. HizmetKaydiForm (DÜZELTİLDİ: Tutar StringField oldu)
 class HizmetKaydiForm(FlaskForm):
     firma_id = SelectField('İlgili Firma', coerce=int, default='0', validators=[NumberRange(min=1, message=secim_hata_mesaji)])
     tarih = DateField('İşlem Tarihi', format='%Y-%m-%d', validators=[InputRequired()])
     
-    # DÜZELTME: DecimalField -> StringField (validate_currency eklendi)
+    # DÜZELTME: StringField ve validate_currency
     tutar = StringField('Tutar (KDV Dahil)', validators=[InputRequired(), validate_currency])
     
     aciklama = StringField('Hizmet/Ürün Açıklaması', validators=[InputRequired()])
@@ -108,7 +107,6 @@ class HizmetKaydiForm(FlaskForm):
     vade_tarihi = DateField('Vade Tarihi', format='%Y-%m-%d', validators=[Optional()])
     submit = SubmitField('Hizmet Kaydını Oluştur')
 
-# ... (Diğer formlar KasaForm, StokKartiForm vb. aynı kalır) ...
 # 7. StokKartiForm
 class StokKartiForm(FlaskForm):
     parca_kodu = StringField('Parça Kodu', validators=[InputRequired()])
