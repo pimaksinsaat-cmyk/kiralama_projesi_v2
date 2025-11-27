@@ -1,8 +1,8 @@
 """Tam finansal yapi
 
-Revision ID: 0a495dd0f0c0
+Revision ID: 8853e8021b87
 Revises: 
-Create Date: 2025-11-23 21:16:48.288116
+Create Date: 2025-11-27 20:49:43.895972
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '0a495dd0f0c0'
+revision = '8853e8021b87'
 down_revision = None
 branch_labels = None
 depends_on = None
