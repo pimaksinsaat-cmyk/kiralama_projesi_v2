@@ -30,18 +30,6 @@ def clean_currency_input(value_str):
     except (ValueError, InvalidOperation):
         return Decimal('0.0')
 
-def get_dahili_islem_firmasi():
-    """Dahili transferler için sanal firma getirir/oluşturur."""
-    firma = Firma.query.filter_by(firma_adi='Dahili Kasa İşlemleri').first()
-    if not firma:
-        firma = Firma(
-            firma_adi='Dahili Kasa İşlemleri', yetkili_adi='Sistem',
-            is_musteri=False, is_tedarikci=False, is_active=True
-        )
-        db.session.add(firma)
-        db.session.commit()
-    return firma
-
 def bakiye_guncelle(model_obj, tutar_decimal, islem_tipi='ekle'):
     """
     Firma veya Kasa bakiyesini güvenli şekilde günceller.
@@ -50,15 +38,14 @@ def bakiye_guncelle(model_obj, tutar_decimal, islem_tipi='ekle'):
     """
     if not model_obj: return
 
+    # Veritabanında String tutuyoruz, işlem için Decimal'e çevir
     mevcut = Decimal(model_obj.bakiye or 0)
     
     if islem_tipi == 'ekle':
         # Yeni işlem ekleniyorsa, tutarı bakiyeye ekle
-        # (Örn: Ödeme Yap (-100) -> Bakiye azalır)
         model_obj.bakiye = str(mevcut + tutar_decimal)
     elif islem_tipi == 'sil':
         # İşlem siliniyorsa, etkinin tersini yap (Çıkar)
-        # (Örn: Ödeme Yap (-100) siliniyorsa -> -(-100) = +100 eklenir, bakiye geri gelir)
         model_obj.bakiye = str(mevcut - tutar_decimal)
 
 # -------------------------------------------------------------------------
@@ -67,22 +54,22 @@ def bakiye_guncelle(model_obj, tutar_decimal, islem_tipi='ekle'):
 
 @cari_bp.route('/odeme/ekle', methods=['GET', 'POST'])
 def odeme_ekle():
-    """TAHSİLAT (PARA GİRİŞİ): Kasa Artar (+), Firma Bakiyesi Düşer (- veya +)"""
-    # Not: Tahsilat firmadan alacak düşer (yani bakiyeyi azaltır).
+    """TAHSİLAT (PARA GİRİŞİ): Kasa Artar (+), Firma Bakiyesi Düşer (-)"""
     form = OdemeForm()
     
-    # Select box doldurma
+    # --- FORM SEÇENEKLERİNİ DOLDURMA (GET/POST ayırmadan) ---
+    form.firma_musteri_id.choices = [(0, '--- Müşteri Seçiniz ---')]
     try:
         musteriler = Firma.query.filter_by(is_musteri=True, is_active=True).order_by(Firma.firma_adi).all()
-        form.firma_musteri_id.choices = [(f.id, f.firma_adi) for f in musteriler]
-    except: form.firma_musteri_id.choices = []
-    form.firma_musteri_id.choices.insert(0, (0, '--- Müşteri Seçiniz ---'))
+        form.firma_musteri_id.choices += [(f.id, f.firma_adi) for f in musteriler]
+    except: pass
 
+    form.kasa_id.choices = [(0, '--- Kasa Seçiniz ---')]
     try:
         kasalar = Kasa.query.order_by(Kasa.kasa_adi).all()
-        form.kasa_id.choices = [(k.id, f"{k.kasa_adi} ({k.para_birimi})") for k in kasalar]
-    except: form.kasa_id.choices = []
-    form.kasa_id.choices.insert(0, (0, '--- Kasa Seçiniz ---'))
+        form.kasa_id.choices += [(k.id, f"{k.kasa_adi} ({k.para_birimi})") for k in kasalar]
+    except: pass
+    # --------------------------------------------------------
 
     if request.method == 'GET':
         form.tarih.data = datetime.today().date()
@@ -110,7 +97,6 @@ def odeme_ekle():
             bakiye_guncelle(kasa, tutar_net, 'ekle')
 
             # 2. FİRMA GÜNCELLE (Tahsilat yaptık, müşterinin borcu DÜŞER)
-            # Bakiyeden DÜŞMEK için EKSİ değer gönderiyoruz
             firma = Firma.query.get(form.firma_musteri_id.data)
             bakiye_guncelle(firma, -tutar_net, 'ekle')
 
@@ -130,18 +116,19 @@ def odeme_yap():
     """ÖDEME YAPMA (PARA ÇIKIŞI): Kasa Azalır (-), Firma Alacağı Düşer (-)"""
     form = OdemeForm()
     
-    # Select box doldurma (Aynı kodlar tekrar edildiği için kısaltıyorum)
+    # --- FORM SEÇENEKLERİNİ DOLDURMA ---
+    form.firma_musteri_id.choices = [(0, '--- Firma Seçiniz ---')]
     try:
-        # Ödeme yaparken hem müşteri hem tedarikçi olabilir
         firmalar = Firma.query.filter_by(is_active=True).order_by(Firma.firma_adi).all()
-        form.firma_musteri_id.choices = [(f.id, f.firma_adi) for f in firmalar]
-        
-        kasalar = Kasa.query.order_by(Kasa.kasa_adi).all()
-        form.kasa_id.choices = [(k.id, f"{k.kasa_adi} ({k.para_birimi})") for k in kasalar]
+        form.firma_musteri_id.choices += [(f.id, f.firma_adi) for f in firmalar]
     except: pass
-    
-    form.firma_musteri_id.choices.insert(0, (0, '--- Firma Seçiniz ---'))
-    form.kasa_id.choices.insert(0, (0, '--- Kasa Seçiniz ---'))
+
+    form.kasa_id.choices = [(0, '--- Kasa Seçiniz ---')]
+    try:
+        kasalar = Kasa.query.order_by(Kasa.kasa_adi).all()
+        form.kasa_id.choices += [(k.id, f"{k.kasa_adi} ({k.para_birimi})") for k in kasalar]
+    except: pass
+    # -----------------------------------
 
     if request.method == 'GET':
         form.tarih.data = datetime.today().date()
@@ -154,8 +141,7 @@ def odeme_yap():
             tutar_girilen = abs(clean_currency_input(form.tutar.data))
             tutar_net = -tutar_girilen # EKSİ YAPIYORUZ
 
-            # Açıklamaya Kasa Adı Ekleme
-            kasa = Kasa.query.get(form.kasa_id.data) if form.kasa_id.data else None
+            # Açıklamaya Kasa Adı Ekleme (Opsiyonel)
             aciklama_final = form.aciklama.data
             
             yeni_odeme = Odeme(
@@ -170,10 +156,10 @@ def odeme_yap():
             db.session.add(yeni_odeme)
             
             # 1. KASA GÜNCELLE (Para Çıktığı için AZALIR - tutar_net zaten eksi)
+            kasa = Kasa.query.get(form.kasa_id.data)
             bakiye_guncelle(kasa, tutar_net, 'ekle')
             
             # 2. FİRMA GÜNCELLE (Ödeme yaptık, borcumuz DÜŞER)
-            # Borcu pozitif tutuyorsak, eksi ekleyince azalır.
             firma = Firma.query.get(form.firma_musteri_id.data)
             bakiye_guncelle(firma, tutar_net, 'ekle')
 
@@ -193,9 +179,13 @@ def odeme_duzelt(id):
     odeme = Odeme.query.get_or_404(id)
     form = OdemeForm(obj=odeme)
     
-    # Selectleri doldur...
-    form.firma_musteri_id.choices = [(f.id, f.firma_adi) for f in Firma.query.all()]
-    form.kasa_id.choices = [(k.id, k.kasa_adi) for k in Kasa.query.all()]
+    # --- SEÇENEKLERİ DOLDURMA ---
+    form.firma_musteri_id.choices = [(0, '--- Seçiniz ---')]
+    form.kasa_id.choices = [(0, '--- Seçiniz ---')]
+    try:
+        form.firma_musteri_id.choices += [(f.id, f.firma_adi) for f in Firma.query.all()]
+        form.kasa_id.choices += [(k.id, k.kasa_adi) for k in Kasa.query.all()]
+    except: pass
     
     if request.method == 'GET':
         # Ekrana basarken EKSİ işareti kafa karıştırmasın diye mutlak değer göster
@@ -216,21 +206,17 @@ def odeme_duzelt(id):
             bakiye_guncelle(eski_kasa, eski_tutar, 'sil')
             
             # Eski firmadan etkiyi sil
-            # Not: Tahsilatsa (pozitif) -> Firma bakiyesi düşmüştü. Silince artmalı. 'sil' fonksiyonu (mevcut - pozitif) yapar, yani azaltır.
-            # DÜZELTME: Firma bakiyesi Odeme Ekle'de (-tutar) olarak gitmişti.
-            # Buradaki mantık karmaşasını çözmek için manuel işlem en temizi:
-            
             if eski_firma:
-                # Eğer kayıt Tahsilat (Pozitif) ise: Firma bakiyesi düşmüştü (-), geri ekle (+).
+                # Tahsilat (Pozitif) -> Firma bakiyesi düşmüştü. Geri almak için EKLEMEK lazım.
                 if eski_tutar > 0:
                     eski_firma.bakiye = str(Decimal(eski_firma.bakiye or 0) + eski_tutar)
-                # Eğer kayıt Ödeme Yap (Negatif) ise: Firma bakiyesi düşmüştü (-), geri ekle (+ aka -(-val)).
+                # Ödeme (Negatif) -> Firma bakiyesi düşmüştü. Geri almak için EKLEMEK lazım (abs).
                 else:
-                    eski_firma.bakiye = str(Decimal(eski_firma.bakiye or 0) - eski_tutar)
+                    eski_firma.bakiye = str(Decimal(eski_firma.bakiye or 0) + abs(eski_tutar))
 
             # 2. YENİ VERİLERİ HAZIRLA
-            # Kullanıcı her zaman pozitif girer. Eski kayıt negatifse (Ödeme Yap) yine negatif yapmalıyız.
             girilen_tutar = abs(clean_currency_input(form.tutar.data))
+            # Eski işlem negatifse (Ödeme Yap), yeni işlem de negatif olmalı
             yeni_tutar = girilen_tutar if eski_tutar >= 0 else -girilen_tutar
             
             odeme.firma_musteri_id = form.firma_musteri_id.data
@@ -244,15 +230,15 @@ def odeme_duzelt(id):
             yeni_kasa = Kasa.query.get(odeme.kasa_id)
             yeni_firma = Firma.query.get(odeme.firma_musteri_id)
             
-            # Kasa güncellenir (Pozitifse artar, Negatifse azalır)
+            # Kasa güncellenir
             bakiye_guncelle(yeni_kasa, yeni_tutar, 'ekle')
             
             # Firma güncellenir
             if yeni_firma:
                 if yeni_tutar > 0: # Tahsilat -> Bakiye Düşer
                     yeni_firma.bakiye = str(Decimal(yeni_firma.bakiye or 0) - yeni_tutar)
-                else: # Ödeme Yap -> Bakiye Düşer (Negatif topla)
-                    yeni_firma.bakiye = str(Decimal(yeni_firma.bakiye or 0) + yeni_tutar)
+                else: # Ödeme Yap -> Bakiye Düşer
+                    yeni_firma.bakiye = str(Decimal(yeni_firma.bakiye or 0) + yeni_tutar) # tutar eksi
 
             db.session.commit()
             flash('İşlem güncellendi.', 'success')
@@ -272,14 +258,11 @@ def odeme_sil(id):
     try:
         tutar = Decimal(odeme.tutar or 0)
         
-        # 1. KASADAN GERİ AL ('sil' modu mevcut - tutar yapar)
-        # Tutar pozitifse (giriş) -> çıkarır. Tutar negatifse (çıkış) -> ekler. Doğru.
+        # 1. KASADAN GERİ AL
         if odeme.kasa:
             bakiye_guncelle(odeme.kasa, tutar, 'sil')
             
-        # 2. FİRMADAN GERİ AL
-        # Firma bakiyesi her zaman düşmüştü (hem tahsilatta hem ödemede).
-        # Şimdi geri ARTIRMALIYIZ (Mutlak değer kadar ekle).
+        # 2. FİRMADAN GERİ AL (Her durumda borç geri gelir)
         firma = Firma.query.get(firma_id)
         if firma:
             mevcut = Decimal(firma.bakiye or 0)
@@ -303,8 +286,10 @@ def odeme_sil(id):
 def hizmet_ekle():
     form = HizmetKaydiForm()
     # Select doldurma...
-    form.firma_id.choices = [(f.id, f.firma_adi) for f in Firma.query.all()]
-    form.firma_id.choices.insert(0, (0, 'Seçiniz'))
+    form.firma_id.choices = [(0, '--- Seçiniz ---')]
+    try:
+        form.firma_id.choices += [(f.id, f.firma_adi) for f in Firma.query.all()]
+    except: pass
 
     if request.method == 'GET':
         form.tarih.data = datetime.today().date()
@@ -313,9 +298,6 @@ def hizmet_ekle():
     if form.validate_on_submit():
         try:
             tutar = abs(clean_currency_input(form.tutar.data))
-            
-            # Gelen/Giden yönüne göre işareti belirleyebilirsin.
-            # Şimdilik Fatura = Borç Artırır (+) varsayımıyla devam ediyorum.
             
             yeni_hizmet = HizmetKaydi(
                 firma_id=form.firma_id.data,
@@ -330,8 +312,7 @@ def hizmet_ekle():
             
             # FİRMA BAKİYESİ GÜNCELLEME (Fatura bakiyeyi artırır)
             firma = Firma.query.get(form.firma_id.data)
-            if firma:
-                bakiye_guncelle(firma, tutar, 'ekle')
+            bakiye_guncelle(firma, tutar, 'ekle')
 
             db.session.commit()
             flash('Fatura/Hizmet kaydedildi.', 'success')
@@ -348,36 +329,39 @@ def hizmet_duzelt(id):
     hizmet = HizmetKaydi.query.get_or_404(id)
     form = HizmetKaydiForm(obj=hizmet)
     
+    # Select doldurma...
+    form.firma_id.choices = [(0, '--- Seçiniz ---')]
     try:
-        firmalar = Firma.query.filter_by(is_active=True).order_by(Firma.firma_adi).all()
-        form.firma_id.choices = [(f.id, f.firma_adi) for f in firmalar]
-    except:
-        form.firma_id.choices = []
-        
-    form.firma_id.choices.insert(0, (0, '--- Firma Seçiniz ---'))
+        form.firma_id.choices += [(f.id, f.firma_adi) for f in Firma.query.all()]
+    except: pass
 
     if request.method == 'GET':
-        if hizmet.tarih:
-            form.tarih.data = datetime.strptime(hizmet.tarih, '%Y-%m-%d').date()
-        if hizmet.vade_tarihi:
-            form.vade_tarihi.data = datetime.strptime(hizmet.vade_tarihi, '%Y-%m-%d').date()
-        
-        if hizmet.tutar:
-            val = str(hizmet.tutar)
-            form.tutar.data = val.replace('.', ',')
+         if hizmet.tutar: form.tutar.data = str(hizmet.tutar).replace('.', ',')
+         if hizmet.tarih: form.tarih.data = datetime.strptime(hizmet.tarih, '%Y-%m-%d').date()
 
     if form.validate_on_submit():
         try:
-            hizmet.firma_id = form.firma_id.data
-            hizmet.tarih = form.tarih.data.strftime('%Y-%m-%d')
-            hizmet.tutar = clean_currency_input(form.tutar.data)
-            hizmet.aciklama = form.aciklama.data
-            hizmet.yon = form.yon.data
-            hizmet.fatura_no = form.fatura_no.data
-            hizmet.vade_tarihi = form.vade_tarihi.data.strftime('%Y-%m-%d') if form.vade_tarihi.data else None
+            eski_tutar = Decimal(hizmet.tutar or 0)
+            eski_firma = Firma.query.get(hizmet.firma_id)
             
+            # 1. Eski bakiyeyi geri al
+            if eski_firma:
+                bakiye_guncelle(eski_firma, eski_tutar, 'sil')
+            
+            # 2. Veriyi Güncelle
+            yeni_tutar = abs(clean_currency_input(form.tutar.data))
+            hizmet.tutar = str(yeni_tutar)
+            hizmet.firma_id = form.firma_id.data
+            hizmet.aciklama = form.aciklama.data
+            hizmet.fatura_no = form.fatura_no.data
+            hizmet.tarih = form.tarih.data.strftime('%Y-%m-%d')
+            
+            # 3. Yeni bakiyeyi ekle
+            yeni_firma = Firma.query.get(hizmet.firma_id)
+            bakiye_guncelle(yeni_firma, yeni_tutar, 'ekle')
+
             db.session.commit()
-            flash('Kayıt güncellendi.', 'success')
+            flash('Fatura güncellendi.', 'success')
             return redirect(url_for('firmalar.bilgi', id=hizmet.firma_id))
         except Exception as e:
             db.session.rollback()
@@ -390,9 +374,15 @@ def hizmet_sil(id):
     hizmet = HizmetKaydi.query.get_or_404(id)
     firma_id = hizmet.firma_id
     try:
+        # Faturayı silersek, müşterinin borcu (bakiyesi) DÜŞMELİ
+        tutar = Decimal(hizmet.tutar or 0)
+        firma = Firma.query.get(firma_id)
+        if firma:
+            bakiye_guncelle(firma, tutar, 'sil')
+            
         db.session.delete(hizmet)
         db.session.commit()
-        flash('Kayıt silindi.', 'success')
+        flash('Fatura silindi, bakiye güncellendi.', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Hata: {str(e)}', 'danger')
@@ -400,9 +390,8 @@ def hizmet_sil(id):
     return redirect(url_for('firmalar.bilgi', id=firma_id))
 
 # -------------------------------------------------------------------------
-# 3. KASA/BANKA İŞLEMLERİ
+# 3. KASA / BANKA YÖNETİMİ
 # -------------------------------------------------------------------------
-
 @cari_bp.route('/kasa/listesi')
 def kasa_listesi():
     kasalar = Kasa.query.order_by(Kasa.kasa_adi).all()
@@ -421,12 +410,10 @@ def kasa_ekle():
             )
             db.session.add(yeni_kasa)
             db.session.commit()
-            flash('Hesap tanımlandı.', 'success')
+            flash('Kasa açıldı.', 'success')
             return redirect(url_for('cari.kasa_listesi'))
         except Exception as e:
-            db.session.rollback()
-            flash(f'Hata: {str(e)}', 'danger')
-            
+            flash(f'Hata: {e}', 'danger')
     return render_template('cari/kasa_ekle.html', form=form)
 
 @cari_bp.route('/kasa/duzelt/<int:id>', methods=['GET', 'POST'])
@@ -465,9 +452,10 @@ def kasa_sil(id):
             if hedef_kasa_id:
                 hedef_kasa = Kasa.query.get(hedef_kasa_id)
                 if hedef_kasa:
+                    # Bakiyeyi devret
                     hedef_kasa.bakiye = str(float(hedef_kasa.bakiye or 0) + bakiye)
                     
-                    # Bakiye devri kaydı
+                    # Kayıt at
                     dahili_firma = get_dahili_islem_firmasi()
                     devir_kaydi = Odeme(
                         firma_musteri_id=dahili_firma.id,
@@ -480,10 +468,10 @@ def kasa_sil(id):
                     flash(f"Bakiye '{hedef_kasa.kasa_adi}' hesabına devredildi.", 'info')
                 else:
                     flash('Hata: Hedef hesap bulunamadı.', 'danger')
-                    return redirect(url_for('cari.kasa_duzelt', id=id))
+                    return redirect(url_for('cari.kasa_listesi')) # Düzeltme: Liste'ye dön
             else:
                 flash('Hata: Bakiye sıfır değil, lütfen devredilecek hesabı seçin!', 'danger')
-                return redirect(url_for('cari.kasa_duzelt', id=id))
+                return redirect(url_for('cari.kasa_listesi'))
         
         db.session.delete(kasa)
         db.session.commit()
@@ -495,6 +483,12 @@ def kasa_sil(id):
         
     return redirect(url_for('cari.kasa_listesi'))
 
+@cari_bp.route('/kasa/hareketler/<int:id>')
+def kasa_hareketleri(id):
+    kasa = Kasa.query.get_or_404(id)
+    hareketler = Odeme.query.filter_by(kasa_id=id).order_by(Odeme.tarih.desc(), Odeme.id.desc()).all()
+    return render_template('cari/kasa_hareketleri.html', kasa=kasa, hareketler=hareketler, now=datetime.now)
+
 @cari_bp.route('/kasa/hizli_islem', methods=['POST'])
 def kasa_hizli_islem():
     try:
@@ -503,12 +497,7 @@ def kasa_hizli_islem():
         tutar_str = request.form.get('tutar')
         aciklama = request.form.get('aciklama')
         
-        if ',' in tutar_str and '.' not in tutar_str: 
-             tutar_str = tutar_str.replace(',', '.')
-        elif '.' in tutar_str and ',' in tutar_str: 
-             tutar_str = tutar_str.replace('.', '').replace(',', '.')
-             
-        tutar = float(tutar_str)
+        tutar = float(clean_currency_input(tutar_str))
         if tutar <= 0:
             flash("Tutar sıfırdan büyük olmalıdır.", "warning")
             return redirect(url_for('cari.kasa_listesi'))
@@ -516,6 +505,7 @@ def kasa_hizli_islem():
         kasa = Kasa.query.get_or_404(kasa_id)
         dahili_firma = get_dahili_islem_firmasi()
         
+        # Giriş ise pozitif, Çıkış ise negatif
         islem_tutari = tutar if islem_yonu == 'giris' else -tutar
         
         yeni_hareket = Odeme(
@@ -527,7 +517,9 @@ def kasa_hizli_islem():
         )
         db.session.add(yeni_hareket)
 
-        kasa.bakiye = str(float(kasa.bakiye or 0) + islem_tutari)
+        # Kasa bakiyesini güncelle
+        mevcut = Decimal(kasa.bakiye or 0)
+        kasa.bakiye = str(mevcut + Decimal(islem_tutari))
         
         db.session.commit()
         flash(f"İşlem kaydedildi.", 'success')
@@ -547,12 +539,7 @@ def kasa_transfer():
         tutar_str = request.form.get('tutar')
         aciklama = request.form.get('aciklama')
         
-        if ',' in tutar_str and '.' not in tutar_str: 
-             tutar_str = tutar_str.replace(',', '.')
-        elif '.' in tutar_str and ',' in tutar_str: 
-             tutar_str = tutar_str.replace('.', '').replace(',', '.')
-             
-        tutar = float(tutar_str)
+        tutar = Decimal(clean_currency_input(tutar_str))
         if tutar <= 0:
             flash("Transfer tutarı sıfırdan büyük olmalıdır.", "warning")
             return redirect(url_for('cari.kasa_listesi'))
@@ -574,7 +561,7 @@ def kasa_transfer():
             aciklama=f"Transfer Çıkışı -> {hedef.kasa_adi} ({aciklama})"
         )
         db.session.add(cikis_kaydi)
-        kaynak.bakiye = str(float(kaynak.bakiye or 0) - tutar)
+        kaynak.bakiye = str(Decimal(kaynak.bakiye or 0) - tutar)
 
         # Hedef -> Giriş
         giris_kaydi = Odeme(
@@ -585,7 +572,7 @@ def kasa_transfer():
             aciklama=f"Transfer Girişi <- {kaynak.kasa_adi} ({aciklama})"
         )
         db.session.add(giris_kaydi)
-        hedef.bakiye = str(float(hedef.bakiye or 0) + tutar)
+        hedef.bakiye = str(Decimal(hedef.bakiye or 0) + tutar)
         
         db.session.commit()
         flash(f"Transfer başarıyla tamamlandı.", 'success')
@@ -596,15 +583,3 @@ def kasa_transfer():
         traceback.print_exc()
         
     return redirect(url_for('cari.kasa_listesi'))
-
-# -------------------------------------------------------------------------
-# 3.5. KASA HAREKETLERİ LİSTESİ (YENİ)
-# -------------------------------------------------------------------------
-@cari_bp.route('/kasa/hareketler/<int:id>')
-def kasa_hareketleri(id):
-    kasa = Kasa.query.get_or_404(id)
-    # Bu kasaya ait tüm ödemeleri (giriş/çıkış) tarihe göre tersten sırala
-    hareketler = Odeme.query.filter_by(kasa_id=id).order_by(Odeme.tarih.desc(), Odeme.id.desc()).all()
-    
-    # HATA DÜZELTME: now=datetime.now EKLENDİ
-    return render_template('cari/kasa_hareketleri.html', kasa=kasa, hareketler=hareketler, now=datetime.now)

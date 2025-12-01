@@ -3,6 +3,13 @@
 {% block title %}Ödeme Kaydını Düzenle{% endblock %}
 
 {% block content %}
+{# --- KAYDIN TÜRÜNE GÖRE RENK BELİRLEME --- #}
+{% set is_cikis = (odeme.tutar | float < 0) %}
+{% set theme_color = '#dc3545' if is_cikis else '#ffc107' %}
+{% set theme_title = 'Ödeme (Çıkış) Düzenle' if is_cikis else 'Tahsilat (Giriş) Düzenle' %}
+{% set icon_class = 'fa-arrow-up' if is_cikis else 'fa-edit' %}
+{% set btn_class = 'btn-danger' if is_cikis else 'btn-warning' %}
+
 <style>
     .form-section {
         background-color: #fff;
@@ -11,19 +18,21 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         max-width: 800px;
         margin: 20px auto;
-        border-top: 5px solid #ffc107; /* Düzenleme olduğu için sarı ton */
+        border-top: 5px solid {{ theme_color }}; /* Dinamik Renk */
     }
     .form-title {
-        color: #343a40;
+        color: {{ theme_color }};
         text-align: center;
         margin-bottom: 25px;
         font-weight: bold;
     }
+    .btn-warning { color: #212529; font-weight: bold; }
+    .btn-danger { font-weight: bold; }
 </style>
 
 <div class="container">
     <div class="form-section">
-        <h2 class="form-title"><i class="fa fa-edit"></i> Ödeme Kaydını Düzenle</h2>
+        <h2 class="form-title"><i class="fa {{ icon_class }}"></i> {{ theme_title }}</h2>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -36,7 +45,6 @@
         <form method="POST" novalidate>
             {{ form.hidden_tag() }}
             
-            <!-- 1. Satır: Müşteri ve Kasa -->
             <div class="row mb-3">
                 <div class="col-md-6">
                     {{ form.firma_musteri_id.label(class="form-label fw-bold") }}
@@ -50,7 +58,6 @@
                 </div>
             </div>
 
-            <!-- 2. Satır: Tarih ve Tutar -->
             <div class="row mb-3">
                 <div class="col-md-6">
                     {{ form.tarih.label(class="form-label fw-bold") }}
@@ -59,15 +66,20 @@
                 <div class="col-md-6">
                     {{ form.tutar.label(class="form-label fw-bold") }}
                     <div class="input-group">
-                        <span class="input-group-text">₺</span>
-                        <!-- Akıllı Giriş: type="text", autocomplete="off" -->
-                        {{ form.tutar(class="form-control currency-input", placeholder="0,00", type="text", autocomplete="off", style="font-size: 1.2em; font-weight: bold;") }}
+                        <span class="input-group-text" style="background-color: {{ theme_color }}; color: white;">₺</span>
+                        
+                        {# ÖNEMLİ: Value kısmında eksi işaretini siliyoruz ki JS hata vermesin #}
+                        {% set display_value = form.tutar.data | string | replace('-', '') if form.tutar.data else '' %}
+                        
+                        {{ form.tutar(class="form-control currency-input", 
+                                      value=display_value,
+                                      placeholder="0,00", type="text", autocomplete="off", 
+                                      style="font-size: 1.2em; font-weight: bold;") }}
                     </div>
                     {% for error in form.tutar.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
                 </div>
             </div>
 
-            <!-- 3. Satır: Fatura No ve Vade -->
             <div class="row mb-3">
                 <div class="col-md-6">
                     {{ form.fatura_no.label(class="form-label fw-bold") }}
@@ -79,55 +91,41 @@
                 </div>
             </div>
 
-            <!-- 4. Satır: Açıklama -->
             <div class="mb-4">
                 {{ form.aciklama.label(class="form-label fw-bold") }}
                 {{ form.aciklama(class="form-control") }}
             </div>
 
-            <!-- Butonlar -->
             <div class="d-flex justify-content-between">
-                <!-- İptal butonu için geri dönüş adresi firma bilgisi olarak ayarlandı -->
-                <a href="{{ url_for('firmalar.index') }}" class="btn btn-secondary">İptal</a>
-                {{ form.submit(class="btn btn-warning", value="Güncelle") }}
+                <a href="javascript:history.back()" class="btn btn-secondary">
+                    <i class="fa fa-arrow-left"></i> İptal
+                </a>
+                
+                {{ form.submit(class="btn " + btn_class + " px-5", value="Kaydı Güncelle") }}
             </div>
         </form>
     </div>
 </div>
 
-<!-- AKILLI FİNANSAL GİRİŞ SCRİPTİ (DÜZELTİLMİŞ & EŞLEŞTİRİLMİŞ VERSİYON) -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const currencyInputs = document.querySelectorAll('.currency-input');
 
     function formatCurrency(value) {
         if (!value) return '';
-        
-        // --- KRİTİK DÜZELTME: Önce TÜM noktaları sil, sonra virgülü nokta yap ---
-        // Böylece "1.500" -> "1500" olur ve parseFloat doğru çalışır.
         let v = value.toString().replace(/\./g, '').replace(',', '.');
-        
         let number = parseFloat(v);
         if (isNaN(number)) return value;
         return number.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     }
 
-    function cleanCurrency(val) {
-        if (!val) return "0.00";
-        // DB'ye gönderirken de aynı temizliği yap
-        return val.toString().replace(/\./g, '').replace(',', '.');
-    }
-
     function formatInput(input) {
         let value = input.value;
         if (value === '') return;
-
-        let selectionStart = input.selectionStart;
         
-        // Sadece rakam ve virgül bırak
+        // Eksi işareti dahil her şeyi temizle, sadece rakam ve virgül kalsın
         let cleanVal = value.replace(/[^\d,]/g, '');
         
-        // Birden fazla virgül varsa engelle (sadece ilkini tut)
         let parts = cleanVal.split(',');
         if (parts.length > 2) cleanVal = parts[0] + ',' + parts.slice(1).join('');
         
@@ -135,7 +133,6 @@ document.addEventListener('DOMContentLoaded', function() {
         let integerPart = parts[0];
         let decimalPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : ''; 
         
-        // Binlik ayracı ekle (görsel)
         let formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         let formattedValue = formattedInteger + decimalPart;
         
@@ -145,13 +142,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     currencyInputs.forEach(input => {
-        // Sayfa açılışında DB'den gelen veriyi formatla
+        // Sayfa açılışında formatla
         if (input.value) {
-            // DB'den nokta ondalıklı gelebilir (örn: 1500.50), bunu TR formatına (1500,50) çevir
+            // Eğer Python'dan gelen veri noktalı geldiyse (örn: 1500.00) virgüle çevir
             if (input.value.indexOf('.') > -1 && input.value.indexOf(',') === -1) {
                 input.value = input.value.replace('.', ',');
             }
-            // Sonra standart format fonksiyonundan geçir
             input.value = formatCurrency(input.value);
         }
 
@@ -160,28 +156,21 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('keydown', function(e) {
             const allowed = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', 'Escape', 'Enter'];
             if (allowed.includes(e.key)) return;
-            if (e.ctrlKey || e.metaKey) return; // Kopyala yapıştır izin ver
+            if (e.ctrlKey || e.metaKey) return;
             if (!/^[0-9,]$/.test(e.key)) e.preventDefault();
         });
 
-        // Odaklandığında ham değeri (noktasız) göster
         input.addEventListener('focus', function() {
             let val = this.value;
-            // 1.500,00 -> 1500,00 (Noktaları sil)
             let raw = val.replace(/\./g, '');
             if (raw === '0,00' || raw === '0') raw = '';
             this.value = raw;
             setTimeout(() => { this.select(); }, 50);
         });
 
-        // Odaktan çıkınca tekrar formatla (1.500,00)
         input.addEventListener('blur', function() {
             this.value = formatCurrency(this.value);
         });
-
-        // --- DÜZELTME: SUBMIT EVENT LISTENER KALDIRILDI ---
-        // Artık form gönderilirken "1.500,00" formatı bozulmayacak.
-        // Python tarafı bu formatı (Türkçe format) beklediği için hata düzelecek.
     });
 });
 </script>

@@ -3,8 +3,8 @@ from wtforms import (
     StringField, DecimalField, SelectField, DateField, SubmitField, 
     FormField, FieldList, HiddenField, IntegerField, BooleanField, TextAreaField
 )
-from wtforms.validators import Optional, InputRequired, NumberRange, ValidationError
-
+from wtforms.validators import Optional, InputRequired, NumberRange, ValidationError 
+from wtforms.validators import DataRequired, Optional
 secim_hata_mesaji = "Lütfen geçerli bir seçim yapınız."
 
 # Para Birimi Doğrulayıcı
@@ -81,21 +81,16 @@ class KiralamaForm(FlaskForm):
 
 # 5. OdemeForm (DÜZELTİLDİ: Tutar StringField oldu)
 class OdemeForm(FlaskForm):
-    firma_musteri_id = SelectField('Ödeme Yapan Müşteri (Firma)', coerce=int, default='0', validators=[NumberRange(min=1, message=secim_hata_mesaji)])
-    kasa_id = SelectField('Giriş Yapılacak Kasa/Banka', coerce=int, default='0', validators=[NumberRange(min=1, message="Lütfen bir kasa/banka seçiniz.")])
-    tarih = DateField('Ödeme Tarihi', format='%Y-%m-%d', validators=[InputRequired()])
-    alacakli_musteri_id = SelectField('Ödeme Yapılan (Firma)', coerce=int, default='0', validators=[NumberRange(min=1, message=secim_hata_mesaji)])
-
-
-
-    # DÜZELTME: StringField ve validate_currency
-    tutar = StringField('Ödeme Tutarı', validators=[InputRequired(), validate_currency])
+    # DİKKAT: choices=[] ekliyoruz ki hata vermesin
+    firma_musteri_id = SelectField('Firma/Müşteri', coerce=int, choices=[], validators=[DataRequired()])
+    kasa_id = SelectField('Kasa/Banka', coerce=int, choices=[], validators=[DataRequired()])
     
-    fatura_no = StringField('Makbuz/Dekont No', validators=[Optional()])
-    vade_tarihi = DateField('Vade Tarihi (Opsiyonel)', format='%Y-%m-%d', validators=[Optional()])
-    aciklama = StringField('Açıklama (Örn: EFT, Nakit Tahsilat)', validators=[Optional()])
-    submit = SubmitField('Ödemeyi Kaydet')
-
+    tarih = DateField('Tarih', format='%Y-%m-%d', validators=[DataRequired()])
+    tutar = StringField('Tutar', validators=[DataRequired()]) # String alıp biz çeviriyoruz
+    fatura_no = StringField('Belge/Fatura No', validators=[Optional()])
+    vade_tarihi = DateField('Vade Tarihi', format='%Y-%m-%d', validators=[Optional()])
+    aciklama = StringField('Açıklama', validators=[Optional()])
+    submit = SubmitField('Kaydet')
 # 6. HizmetKaydiForm (DÜZELTİLDİ: Tutar StringField oldu)
 class HizmetKaydiForm(FlaskForm):
     firma_id = SelectField('İlgili Firma', coerce=int, default='0', validators=[NumberRange(min=1, message=secim_hata_mesaji)])
