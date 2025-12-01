@@ -21,7 +21,7 @@
     .context-menu-header { padding: 8px 15px; background-color: #e9ecef; font-size: 0.85em; font-weight: bold; color: #6c757d; border-bottom: 1px solid #dee2e6; }
     .context-menu-divider { height: 1px; margin: 5px 0; background-color: #eee; }
 
-    /* GÜVENLİ MODAL STİLLERİ (Flexbox Merkezleme & İç İçe Yapı) */
+    /* GÜVENLİ MODAL STİLLERİ */
     .custom-backdrop { 
         display: none; 
         position: fixed; 
@@ -31,8 +31,6 @@
         height: 100%; 
         background: rgba(0,0,0,0.5); 
         z-index: 1040; 
-        
-        /* İçeriği ortalamak için Flexbox */
         justify-content: center;
         align-items: center;
     }
@@ -128,39 +126,32 @@
     </div>
 </div>
 
-<!-- SAĞ TIK MENÜSÜ -->
 <div id="context-menu" class="context-menu">
     <div class="context-menu-header" id="menu-header">Kasa İşlemleri</div>
     
-    <!-- Hesap Hareketleri -->
     <a href="#" class="context-menu-item" id="menu-hareketler">
         <i class="fa fa-list-alt me-2 text-secondary"></i> Hesap Hareketleri
     </a>
     
-    <!-- Hızlı İşlem -->
     <a href="#" class="context-menu-item" id="menu-islem">
         <i class="fa fa-exchange-alt me-2 text-info"></i> Hızlı Para Giriş/Çıkış
     </a>
     
-    <!-- Transfer -->
     <a href="#" class="context-menu-item" id="menu-transfer">
         <i class="fa fa-random me-2 text-primary"></i> Para Transferi (Virman)
     </a>
     
-    <!-- Düzenle -->
     <a href="#" class="context-menu-item" id="menu-duzenle">
         <i class="fa fa-edit me-2 text-warning"></i> Hesabı Düzenle
     </a>
     
     <div class="context-menu-divider"></div>
     
-    <!-- Sil -->
     <a href="#" class="context-menu-item delete" id="menu-sil">
         <i class="fa fa-trash-alt me-2"></i> Hesabı Sil
     </a>
 </div>
 
-<!-- 1. HIZLI İŞLEM MODALI -->
 <div id="modal-backdrop-islem" class="custom-backdrop">
     <div id="islem-modal" class="custom-modal">
         <div class="modal-header">
@@ -214,7 +205,6 @@
     </div>
 </div>
 
-<!-- 2. TRANSFER MODALI (GÜVENLİ) -->
 <div id="modal-backdrop-transfer" class="custom-backdrop">
     <div id="transfer-modal" class="custom-modal">
         <div class="modal-header">
@@ -235,7 +225,6 @@
 
                 <div class="mb-3">
                     <label class="form-label fw-bold">Hedef Hesap (Giriş):</label>
-                    <!-- Bu Select artık güvenli, tıklayınca modal kapanmaz -->
                     <select name="hedef_kasa_id" id="transfer-hedef-select" class="form-select" required>
                         <option value="">-- Hedef Hesap Seçiniz --</option>
                     </select>
@@ -263,7 +252,6 @@
     </div>
 </div>
 
-<!-- 3. SİLME MODALI (GÜVENLİ) -->
 <div id="modal-backdrop-delete" class="custom-backdrop">
     <div id="delete-modal" class="custom-modal">
         <button type="button" class="close-btn modal-close-btn">&times;</button>
@@ -351,8 +339,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let currentKasa = {};
 
+    // --- SAHTE EVENT (MOCK EVENT) FONKSİYONU ---
+    // Mobilde basılı tutulduğunda showMenu'ye gönderilecek sahte "e" nesnesini yaratır.
     function showMenu(e, row) {
         e.preventDefault();
+        
+        // Eğer mobilden geliyorsa (Touch Event), e'nin yapısı farklıdır
+        // Ancak bu fonksiyonu hem "contextmenu" (mouse) hem de "timer" (mobil) çağırıyor.
+        // Timer'dan çağrıldığında biz ona sahte bir e veriyoruz (Aşağıdaki addLongPressListener içinde).
+        
         currentKasa = {
             id: row.dataset.id,
             adi: row.dataset.adi,
@@ -372,15 +367,41 @@ document.addEventListener('DOMContentLoaded', function() {
         contextMenu.style.display = 'block';
     }
 
-    document.querySelectorAll('.kasa-satiri').forEach(row => {
-        row.addEventListener('contextmenu', (e) => showMenu(e, row));
+    // --- MOBİL UZUN BASMA (LONG PRESS) DİNLEYİCİSİ ---
+    function addLongPressListener(element, callback) {
         let timer;
-        row.addEventListener('touchstart', (e) => { timer = setTimeout(() => showMenu(e.touches[0], row), 600); });
-        row.addEventListener('touchend', () => clearTimeout(timer));
-        row.addEventListener('touchmove', () => clearTimeout(timer));
+        element.addEventListener('touchstart', function(e) {
+            timer = setTimeout(function() {
+                timer = null;
+                const touch = e.touches[0];
+                // Sahte event oluşturuyoruz çünkü callback içinde e.preventDefault kullanılıyor
+                const mockEvent = {
+                    preventDefault: () => e.preventDefault(),
+                    stopPropagation: () => e.stopPropagation(),
+                    pageX: touch.pageX,
+                    pageY: touch.pageY
+                };
+                callback(mockEvent, element);
+            }, 600); // 600 ms basılı tutma süresi
+        }, {passive: false});
+
+        function clear() { if (timer) { clearTimeout(timer); timer = null; } }
+        element.addEventListener('touchend', clear);
+        element.addEventListener('touchmove', clear);
+    }
+
+    // --- EVENT LISTENERLARI EKLE ---
+    document.querySelectorAll('.kasa-satiri').forEach(row => {
+        // Masaüstü (Sağ Tık)
+        row.addEventListener('contextmenu', (e) => showMenu(e, row));
+        // Mobil (Basılı Tut)
+        addLongPressListener(row, showMenu);
     });
 
     window.addEventListener('click', (e) => {
+        if (!e.target.closest('.context-menu')) contextMenu.style.display = 'none';
+    });
+    window.addEventListener('touchstart', (e) => {
         if (!e.target.closest('.context-menu')) contextMenu.style.display = 'none';
     });
 
@@ -471,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
         backdropDelete.style.display = 'flex';
     });
 
-    // --- MODAL KAPATMA MANTIĞI (GÜVENLİ) ---
+    // --- MODAL KAPATMA MANTIĞI ---
     function closeModals() {
         backdropIslem.style.display = 'none';
         backdropDelete.style.display = 'none';
@@ -492,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Modal içindeki tıklamaların dışarı taşmasını engelle (Select kapanmaması için)
+    // Modal içindeki tıklamaların dışarı taşmasını engelle
     document.querySelectorAll('.custom-modal').forEach(modal => {
         modal.addEventListener('click', function(e) { e.stopPropagation(); });
     });
