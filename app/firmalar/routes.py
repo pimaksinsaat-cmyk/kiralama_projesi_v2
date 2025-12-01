@@ -1,7 +1,7 @@
 from app.firmalar import firmalar_bp
 from app import db
 from flask import render_template, url_for, redirect, flash, request
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from sqlalchemy.exc import IntegrityError
 import traceback
 from decimal import Decimal
@@ -20,7 +20,14 @@ def index():
     try:
         page = request.args.get('page', 1, type=int)
         q = request.args.get('q', '', type=str)
-        base_query = Firma.query.filter_by(is_active=True)
+        
+        # GÜNCELLEME: 'Dahili Kasa İşlemleri' adlı sistem firmasını listede GİZLE
+        base_query = Firma.query.filter(
+            and_(
+                Firma.is_active == True,
+                Firma.firma_adi != 'Dahili Kasa İşlemleri'
+            )
+        )
         
         if q:
             search_term = f'%{q}%'
@@ -105,8 +112,6 @@ def bilgi(id):
         toplam_alacak = 0.0 # Firmanın bizden alacağı (Ödemeler + Onların kestiği faturalar)
         
         # 1. Hizmet/Fatura Kayıtlarını Hesapla
-        # (Kiralama işlemlerini de HizmetKaydi'na işlediğimiz için onları ayrıca toplamıyoruz,
-        # hepsi burada 'giden' veya 'gelen' olarak birikiyor.)
         for h in firma.hizmet_kayitlari:
             tutar = float(h.tutar or 0)
             if h.yon == 'giden':

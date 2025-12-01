@@ -33,11 +33,7 @@
             {% endif %}
         {% endwith %}
 
-        <!-- 
-        KİLİT MANTIĞI:
-        Eğer bu kayıt otomatik oluşturulmuş bir Kiralama/Nakliye kaydı ise,
-        düzenlemeyi burada engelliyoruz.
-        -->
+        <!-- KİLİT MANTIĞI -->
         {% set is_system_record = ('Kiralama' in (hizmet.aciklama or '')) or ('Nakliye' in (hizmet.aciklama or '')) or ('PF-' in (hizmet.fatura_no or '')) %}
 
         {% if is_system_record %}
@@ -49,7 +45,6 @@
                     Buradan yapılan değişiklikler, kiralama güncellendiğinde <strong>kaybolacaktır.</strong>
                 </p>
                 <hr>
-                <!-- Eğer form no varsa, kiralama sayfasına gitme linki bulmaya çalışalım (Basitçe listeye atar) -->
                 <a href="{{ url_for('kiralama.index', q=hizmet.fatura_no) }}" class="btn btn-warning btn-sm fw-bold">
                     <i class="fa fa-external-link-alt"></i> İlgili Kiralamaya Git
                 </a>
@@ -59,18 +54,14 @@
         <form method="POST" novalidate>
             {{ form.hidden_tag() }}
             
-            <!-- Eğer sistem kaydı ise alanları READONLY (Sadece Okunur) yapıyoruz -->
             {% set readonly_attr = 'readonly' if is_system_record else '' %}
             {% set disabled_class = 'bg-light' if is_system_record else '' %}
 
             <div class="row mb-3">
                 <div class="col-md-6">
                     {{ form.firma_id.label(class="form-label fw-bold") }}
-                    <!-- Select alanını readonly yapmak zordur, o yüzden 'disabled' gibi davranan bir stil veya mantık gerekir. 
-                         En kolayı: Eğer sistem kaydıysa select'i gizleyip yerine text göstermek. -->
                     {% if is_system_record %}
                         <input type="text" class="form-control bg-light" value="{{ hizmet.firma.firma_adi }}" readonly>
-                        <!-- Form gönderimi için hidden field -->
                         <div style="display:none;">{{ form.firma_id() }}</div>
                     {% else %}
                         {{ form.firma_id(class="form-select form-control") }}
@@ -146,14 +137,14 @@
     </div>
 </div>
 
-<!-- Script: odeme_duzelt.html ile aynı -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const currencyInputs = document.querySelectorAll('.currency-input');
 
     function formatCurrency(value) {
         if (!value) return '';
-        let v = value.toString().replace(',', '.');
+        // DÜZELTME: Noktaları sil, virgülü nokta yap
+        let v = value.toString().replace(/\./g, '').replace(',', '.');
         let number = parseFloat(v);
         if (isNaN(number)) return value;
         return number.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -165,18 +156,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function formatInput(input) {
-        // ... (Mevcut formatlama kodu aynı kalır) ...
-        // ... Readonly ise bu fonksiyonları çalıştırmamaya gerek yok, sadece görüntüleme yeterli
+        if (input.readOnly) return; 
+        
         let value = input.value;
         if (value === '') return;
-        // ... (Kodun geri kalanı aynı)
-        // Kısa tutmak için tekrar yazmıyorum, önceki kodunuzdaki script buraya aynen gelir.
-        // Ancak readonly kontrolü ekleyebiliriz:
-        if (input.readOnly) return; 
-        // ...
+        
+        let cleanVal = value.replace(/[^\d,]/g, '');
+        let parts = cleanVal.split(',');
+        if (parts.length > 2) cleanVal = parts[0] + ',' + parts.slice(1).join('');
+        
+        parts = cleanVal.split(',');
+        let integerPart = parts[0];
+        let decimalPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : ''; 
+        let formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        let formattedValue = formattedInteger + decimalPart;
+        
+        if (cleanVal === ',') formattedValue = '0,';
+        input.value = formattedValue;
     }
-    
-    // ...
     
     currencyInputs.forEach(input => {
         // Açılışta formatla (Readonly olsa bile güzel görünsün)
@@ -188,15 +185,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (!input.readOnly) {
-            // Sadece düzenlenebilir ise event listener ekle
-            input.addEventListener('input', function() { /* ... */ });
+            input.addEventListener('input', function() { formatInput(this); });
+            
+            input.addEventListener('keydown', function(e) {
+                const allowed = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', 'Escape', 'Enter'];
+                if (allowed.includes(e.key)) return;
+                if (e.ctrlKey || e.metaKey) return;
+                if (!/^[0-9,]$/.test(e.key)) e.preventDefault();
+            });
+
             input.addEventListener('focus', function() {
-                let clean = cleanCurrency(this.value);
-                this.value = (clean === '0.00' || clean === '0') ? '' : clean.replace('.', ',');
+                let val = this.value;
+                let raw = val.replace(/\./g, ''); // Noktaları sil
+                if (raw === '0,00' || raw === '0') raw = '';
+                this.value = raw;
                 setTimeout(() => { this.select(); }, 50);
             });
-            input.addEventListener('blur', function() { this.value = formatCurrency(this.value); });
-            input.form.addEventListener('submit', function() { input.value = cleanCurrency(input.value); });
+
+            input.addEventListener('blur', function() { 
+                this.value = formatCurrency(this.value); 
+            });
+            
+            // --- SUBMIT LISTENER KALDIRILDI ---
         }
     });
 });

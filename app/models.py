@@ -13,7 +13,7 @@ class Firma(db.Model):
     is_musteri = db.Column(db.Boolean, default=True, nullable=False, index=True)
     is_tedarikci = db.Column(db.Boolean, default=False, nullable=False, index=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-
+    bakiye = db.Column(db.String(50), default='0.0') 
     kiralamalar = db.relationship('Kiralama', back_populates='firma_musteri', foreign_keys='Kiralama.firma_musteri_id', cascade="all, delete-orphan")
     tedarik_edilen_ekipmanlar = db.relationship('Ekipman', back_populates='firma_tedarikci', foreign_keys='Ekipman.firma_tedarikci_id')
     odemeler = db.relationship('Odeme', back_populates='firma_musteri', foreign_keys='Odeme.firma_musteri_id', cascade="all, delete-orphan")
@@ -21,6 +21,7 @@ class Firma(db.Model):
     hizmet_kayitlari = db.relationship('HizmetKaydi', back_populates='firma', foreign_keys='HizmetKaydi.firma_id')
     tedarik_edilen_parcalar = db.relationship('StokKarti', back_populates='varsayilan_tedarikci', foreign_keys='StokKarti.varsayilan_tedarikci_id')
     stok_hareketleri = db.relationship('StokHareket', back_populates='firma', cascade="all, delete-orphan")
+    
     def __repr__(self): return f'<Firma {self.firma_adi}>'
 
 # 2. KASA (Yeni)

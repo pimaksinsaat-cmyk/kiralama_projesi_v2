@@ -1,8 +1,8 @@
-"""Tam finansal yapi
+"""sifirdan kurulum
 
-Revision ID: 8853e8021b87
+Revision ID: 61b00cb6ac5d
 Revises: 
-Create Date: 2025-11-27 20:49:43.895972
+Create Date: 2025-11-30 23:00:38.468938
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '8853e8021b87'
+revision = '61b00cb6ac5d'
 down_revision = None
 branch_labels = None
 depends_on = None

@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Yeni Ödeme / Tahsilat Ekle{% endblock %}
+{% set is_cikis = (request.args.get('yon') == 'cikis') %}
+{% set title_text = 'Ödeme Yap (Tediye)' if is_cikis else 'Ödeme Al (Tahsilat)' %}
+{% set header_color = '#dc3545' if is_cikis else '#28a745' %}
+{% set button_class = 'btn-danger' if is_cikis else 'btn-success' %}
+{% set icon_class = 'fa-arrow-up' if is_cikis else 'fa-money-bill-wave' %}
+
+{% block title %}{{ title_text }}{% endblock %}
 
 {% block content %}
 <style>
@@ -14,7 +20,7 @@
         margin: 20px auto;
     }
     .form-title {
-        color: #28a745; /* Tahsilat olduğu için yeşil tonu */
+        color: {{ header_color }}; /* Dinamik renk */
         text-align: center;
         margin-bottom: 25px;
         font-weight: bold;
@@ -25,6 +31,12 @@
         padding: 10px 30px;
         font-weight: bold;
     }
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        padding: 10px 30px;
+        font-weight: bold;
+    }
     .btn-secondary {
         padding: 10px 20px;
     }
@@ -32,7 +44,7 @@
 
 <div class="container">
     <div class="form-section">
-        <h2 class="form-title"><i class="fa fa-money-bill-wave"></i> Yeni Ödeme / Tahsilat Al</h2>
+        <h2 class="form-title"><i class="fa {{ icon_class }}"></i> {{ title_text }}</h2>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -45,7 +57,8 @@
         <form method="POST" novalidate>
             {{ form.hidden_tag() }}
             
-            <!-- 1. Satır: Müşteri ve Kasa -->
+            <input type="hidden" name="yon" value="{{ 'cikis' if is_cikis else 'giris' }}">
+            
             <div class="row mb-3">
                 <div class="col-md-6">
                     {{ form.firma_musteri_id.label(class="form-label fw-bold") }}
@@ -53,21 +66,18 @@
                     {% for error in form.firma_musteri_id.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
                 </div>
                 <div class="col-md-6">
-                    <!-- YENİ: Kasa Tanımlama Kısayolu -->
                     <div class="d-flex justify-content-between">
                         {{ form.kasa_id.label(class="form-label fw-bold") }}
                         <a href="{{ url_for('cari.kasa_ekle') }}" class="text-decoration-none small" style="color: #007bff;">
                             <i class="fa fa-plus-circle"></i> Yeni Hesap Tanımla
                         </a>
                     </div>
-                    <!-- ----------------------------- -->
                     
                     {{ form.kasa_id(class="form-select form-control") }}
                     {% for error in form.kasa_id.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
                 </div>
             </div>
 
-            <!-- 2. Satır: Tarih ve Tutar -->
             <div class="row mb-3">
                 <div class="col-md-6">
                     {{ form.tarih.label(class="form-label fw-bold") }}
@@ -76,7 +86,6 @@
                 </div>
                 <div class="col-md-6">
                     {{ form.tutar.label(class="form-label fw-bold") }}
-                    <!-- Akıllı Giriş İçin: type="text", autocomplete="off" ve currency-input sınıfı -->
                     <div class="input-group">
                         <span class="input-group-text">₺</span>
                         {{ form.tutar(class="form-control currency-input", placeholder="0,00", type="text", autocomplete="off", style="font-size: 1.2em; font-weight: bold;") }}
@@ -85,7 +94,6 @@
                 </div>
             </div>
 
-            <!-- 3. Satır: Fatura No ve Vade -->
             <div class="row mb-3">
                 <div class="col-md-6">
                     {{ form.fatura_no.label(class="form-label fw-bold") }}
@@ -98,29 +106,29 @@
                 </div>
             </div>
 
-            <!-- 4. Satır: Açıklama -->
             <div class="mb-4">
                 {{ form.aciklama.label(class="form-label fw-bold") }}
                 {{ form.aciklama(class="form-control", placeholder="Örn: Kasım ayı kiralama bedeli tahsilatı (EFT)") }}
             </div>
 
-            <!-- Butonlar -->
             <div class="d-flex justify-content-between">
-                <a href="{{ url_for('main.index') }}" class="btn btn-secondary">İptal</a>
-                {{ form.submit(class="btn btn-success") }}
+                <a href="javascript:history.back()" class="btn btn-secondary">
+                    <i class="fa fa-arrow-left"></i> İptal
+                </a>
+                
+                {{ form.submit(class=button_class, value=title_text) }}
             </div>
         </form>
     </div>
 </div>
 
-<!-- AKILLI FİNANSAL GİRİŞ SCRİPTİ (Ortak) -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const currencyInputs = document.querySelectorAll('.currency-input');
 
     function formatCurrency(value) {
         if (!value) return '';
-        let v = value.toString().replace(',', '.');
+        let v = value.toString().replace(/\./g, '').replace(',', '.');
         let number = parseFloat(v);
         if (isNaN(number)) return value;
         return number.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -136,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (value === '') return;
 
         let selectionStart = input.selectionStart;
-        let oldDots = (value.slice(0, selectionStart).match(/\./g) || []).length;
+        
         let cleanVal = value.replace(/[^\d,]/g, '');
         
         let parts = cleanVal.split(',');
@@ -145,19 +153,16 @@ document.addEventListener('DOMContentLoaded', function() {
         parts = cleanVal.split(',');
         let integerPart = parts[0];
         let decimalPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : ''; 
+        
         let formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         let formattedValue = formattedInteger + decimalPart;
+        
         if (cleanVal === ',') formattedValue = '0,';
 
         input.value = formattedValue;
-
-        let newDots = (formattedValue.slice(0, selectionStart).match(/\./g) || []).length;
-        let newPos = selectionStart + (newDots - oldDots);
-        try { input.setSelectionRange(newPos, newPos); } catch (e) {}
     }
 
     currencyInputs.forEach(input => {
-        // Sayfa açılışında
         if (input.value) input.value = formatCurrency(input.value);
 
         input.addEventListener('input', function() { formatInput(this); });
@@ -165,21 +170,20 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('keydown', function(e) {
             const allowed = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', 'Escape', 'Enter'];
             if (allowed.includes(e.key)) return;
+            if (e.ctrlKey || e.metaKey) return;
             if (!/^[0-9,]$/.test(e.key)) e.preventDefault();
         });
 
         input.addEventListener('focus', function() {
-            let clean = cleanCurrency(this.value);
-            this.value = (clean === '0.00' || clean === '0') ? '' : clean.replace('.', ',');
+            let val = this.value;
+            let raw = val.replace(/\./g, '');
+            if (raw === '0,00' || raw === '0') raw = '';
+            this.value = raw;
             setTimeout(() => { this.select(); }, 50);
         });
 
         input.addEventListener('blur', function() {
             this.value = formatCurrency(this.value);
-        });
-
-        input.form.addEventListener('submit', function() {
-            input.value = cleanCurrency(input.value);
         });
     });
 });

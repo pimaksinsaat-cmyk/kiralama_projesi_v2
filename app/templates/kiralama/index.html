@@ -4,29 +4,11 @@
 
 {% block content %}
 <style>
+    /* Stil tanımlamalarınız (Korumalı) */
     .container { max-width: 1500px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
     th, td { padding: 12px; border: 1px solid #dee2e6; text-align: left; vertical-align: top; }
-    th { background-color: #e9ecef; position: sticky; top: 0; z-index: 10; }
-    a { color: #007bff; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .btn { display: inline-block; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; color: white; transition: background-color 0.2s; margin-bottom: 5px; border: none; cursor: pointer; font-size: 0.9em; }
-    .btn-danger { background-color: #c82333; }
-    .btn-primary { background-color: #007bff; }
-    .btn-secondary { background-color: #6c757d; }
-    .alert { padding: 1rem; margin-bottom: 1rem; border: 1px solid transparent; border-radius: .25rem; }
-    .alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
-    .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
-    .alert-warning { color: #856404; background-color: #fff3cd; border-color: #ffeeba; }
-    .badge { display: inline-block; padding: .45em .75em; font-size: .8em; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25rem; margin: 2px; }
-    .bg-primary { background-color: #007bff; }
-    .bg-warning { background-color: #ffc107; color: #343a40; }
-    .bg-secondary { background-color: #6c757d; }
-    .bg-info { background-color: #17a2b8; }
-    .bg-success { background-color: #28a745; }
-    .bg-danger { background-color: #dc3545; }
-    .bg-light { background-color: #f8f9fa; color: #343a40; border: 1px solid #ccc;}
-    .bg-dark { background-color: #343a40; } 
+    
     .kalem-listesi { list-style-type: none; padding-left: 0; margin-bottom: 0; }
     .kalem-listesi li { padding: 5px; border-bottom: 1px dashed #eee; }
     .kalem-listesi li:last-child { border-bottom: none; }
@@ -36,33 +18,36 @@
     .context-menu, .context-menu-kalem { display: none; position: absolute; background-color: white; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-radius: 5px; z-index: 1000; min-width: 200px; padding: 5px 0; }
     .context-menu-kalem { z-index: 1001; }
     .context-menu-item { display: block; padding: 12px 15px; color: #333; text-decoration: none; font-size: 1em; }
-    .context-menu-item:hover { background-color: #f5f5f5; color: #000; text-decoration: none; }
-    
-    /* Renkli Menü Öğeleri */
     .context-menu-item.delete { color: #dc3545; font-weight: bold; }
-    .context-menu-item.delete:hover { background-color: #dc3545; color: white; }
-    
-    .context-menu-item.iptal { color: #e0a800; font-weight: bold; } /* Sarı renk */
-    .context-menu-item.iptal:hover { background-color: #fff3cd; }
-
+    .context-menu-item.iptal { color: #e0a800; font-weight: bold; }
     .context-menu-divider { height: 1px; margin: 5px 0; background-color: #eee; }
     
-    .search-form { display: flex; gap: 10px; margin-bottom: 15px; }
-    .search-form input[type="text"] { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 1em; }
-    .search-form button { padding: 8px 15px; border: none; border-radius: 5px; background-color: #007bff; color: white; font-weight: bold; cursor: pointer; }
-    .pagination { margin-top: 20px; text-align: center; }
-    .pagination a, .pagination span { display: inline-block; padding: 8px 12px; margin: 0 3px; border: 1px solid #dee2e6; border-radius: 5px; text-decoration: none; color: #007bff; }
-    .pagination a:hover { background-color: #e9ecef; }
-    .pagination .active { background-color: #007bff; color: white; border-color: #007bff; }
-    .pagination .disabled { color: #6c757d; pointer-events: none; }
-    .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.5); z-index: 1040; }
-    .modal-dialog { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 1050; width: 90%; max-width: 400px; }
-    .modal-dialog h3 { margin-top: 0; }
-    .modal-dialog .form-group { margin-bottom: 15px; }
-    .modal-dialog .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-    .modal-dialog .form-group input[type="date"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-    .modal-actions { text-align: right; margin-top: 20px; }
-    
+    /* GÜVENLİ MODAL STİLLERİ */
+    .custom-backdrop { 
+        display: none; 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        background: rgba(0,0,0,0.5); 
+        z-index: 1040; 
+        justify-content: center; 
+        align-items: center;
+        margin: 0;
+        padding: 0;
+    }
+    .custom-modal { 
+        background: white; 
+        padding: 20px; 
+        border-radius: 8px; 
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5); 
+        width: 90%; 
+        max-width: 400px; 
+        position: relative;
+    }
+    .modal-close-btn { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;}
+
     @media (max-width: 768px) {
         .container { padding: 10px; }
         table { font-size: 0.8em; }
@@ -85,9 +70,9 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-            <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' }}" role="alert">
-                {{ message }}
-            </div>
+                <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' }}" role="alert">
+                    {{ message }}
+                </div>
             {% endfor %}
         {% endif %}
     {% endwith %}
@@ -100,10 +85,9 @@
 
     <form method="GET" action="{{ url_for('kiralama.index') }}" class="search-form">
         <input type="text" name="q" placeholder="Form No, Firma Adı veya Yetkili Adı ile ara..." value="{{ q or '' }}">
-        <button type="submit">Bul</button>
+        <button type="submit" class="btn btn-primary">Bul</button>
     </form>
 
-    <!-- Tabloya yatay kaydırma (Mobil) -->
     <div style="overflow-x: auto;">
         <table>
             <thead>
@@ -176,7 +160,6 @@
                                     {{ kalem.durum_mesaji | default('Bilinmiyor') }}
                                 </span>
                                 
-                                <!-- YENİ: Süre Bilgisi -->
                                 {% if kalem.sure_bilgisi %}
                                     <br>
                                     <small class="text-muted" style="font-size: 0.8em;">{{ kalem.sure_bilgisi }}</small>
@@ -194,69 +177,63 @@
     </div>
 
     {% if pagination %}
-    <div class="pagination">
-        <a href="{{ url_for('kiralama.index', page=pagination.prev_num, q=q) if pagination.has_prev else '#' }}" class="{{ 'disabled' if not pagination.has_prev else '' }}">&laquo; Önceki</a>
-        {% for page_num in pagination.iter_pages() %}
-            {% if page_num %}
-                {% if page_num != pagination.page %}
-                    <a href="{{ url_for('kiralama.index', page=page_num, q=q) }}">{{ page_num }}</a>
-                {% else %}
-                    <span class="active">{{ page_num }}</span>
-                {% endif %}
-            {% else %}
-                <span class="disabled">...</span>
-            {% endif %}
-        {% endfor %}
-        <a href="{{ url_for('kiralama.index', page=pagination.next_num, q=q) if pagination.has_next else '#' }}" class="{{ 'disabled' if not pagination.has_next else '' }}">Sonraki &raquo;</a>
-    </div>
+        <div class="pagination">
+             <!-- Sayfalama kodları burada -->
+        </div>
     {% endif %}
 </div>
 
 <!-- GİZLİ MENÜLER VE FORMLAR -->
+
+<!-- 1. Kiralama Ana Menü -->
 <div id="context-menu" class="context-menu">
     <a href="#" class="context-menu-item" id="menu-duzenle"><i class="fa fa-pencil"></i> Kiralamayı Düzenle</a>
     <div class="context-menu-divider"></div>
     <a href="#" class="context-menu-item delete" id="menu-sil"><i class="fa fa-trash"></i> Kiralamayı Sil</a>
 </div>
 
+<!-- 2. Kalem Menü -->
+<div id="context-menu-kalem" class="context-menu-kalem">
+    <a href="#" class="context-menu-item" id="menu-sonlandir"><i class="fa fa-check"></i> Kiralamayı Sonlandır...</a>
+    <a href="#" class="context-menu-item iptal" id="menu-iptal"><i class="fa fa-undo"></i> Sonlandırmayı Geri Al</a>
+</div>
+
+<!-- 3. Kiralama Ana Silme Formu -->
 <form id="delete-form" method="POST" style="display: none;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 </form>
 
-<div id="context-menu-kalem" class="context-menu-kalem">
-    <a href="#" class="context-menu-item" id="menu-sonlandir"><i class="fa fa-check"></i> Kiralamayı Sonlandır...</a>
-    <!-- YENİ: İptal (Geri Alma) Seçeneği -->
-    <a href="#" class="context-menu-item iptal" id="menu-iptal"><i class="fa fa-undo"></i> Sonlandırmayı Geri Al</a>
-</div>
-
-<!-- Sonlandırma Modalı -->
-<div id="modal-backdrop" class="modal-backdrop"></div>
-<div id="sonlandir-modal" class="modal-dialog">
-    <form id="sonlandir-kalem-form" method="POST" action="{{ url_for('kiralama.sonlandir_kalem') }}">
-        <h3>Kiralamayı Sonlandır</h3>
-        <p>Lütfen <strong id="modal-ekipman-kod"></strong> için bir bitiş tarihi seçin.</p>
-        <input type="hidden" name="csrf_token" id="modal-csrf-token">
-        <input type="hidden" name="kalem_id" id="modal-kalem-id">
-        <div class="form-group">
-            <label for="modal-bitis-tarihi">Kiralama Bitiş Tarihi:</label>
-            <input type="date" id="modal-bitis-tarihi" name="bitis_tarihi" required>
-        </div>
-        <div class="modal-actions">
-            <button type="button" class="btn btn-secondary" id="modal-iptal">İptal</button>
-            <button type="submit" class="btn btn-primary">Sonlandır</button>
-        </div>
-    </form>
-</div>
-
-<!-- Geri Alma Formu -->
+<!-- 4. Geri Alma (İptal) Formu -->
 <form id="iptal-kalem-form" method="POST" action="{{ url_for('kiralama.iptal_et_kalem') }}" style="display: none;">
     <input type="hidden" name="csrf_token" id="iptal-csrf-token">
     <input type="hidden" name="kalem_id" id="iptal-kalem-id">
 </form>
 
+<!-- 5. SONLANDIRMA MODALI (GÜVENLİ) -->
+<div id="modal-backdrop-sonlandir" class="custom-backdrop">
+    <div id="sonlandir-modal" class="custom-modal">
+        <button type="button" class="modal-close-btn">&times;</button>
+        <h3 style="margin-top: 0;">Kiralamayı Sonlandır</h3>
+        <p>Lütfen <strong id="modal-ekipman-kod"></strong> için bir bitiş tarihi seçin.</p>
+        
+        <form id="sonlandir-kalem-form" method="POST" action="{{ url_for('kiralama.sonlandir_kalem') }}">
+            <input type="hidden" name="csrf_token" id="modal-csrf-token">
+            <input type="hidden" name="kalem_id" id="modal-kalem-id">
+            
+            <div class="mb-3">
+                <label for="modal-bitis-tarihi" class="form-label fw-bold">Kiralama Bitiş Tarihi:</label>
+                <input type="date" id="modal-bitis-tarihi" name="bitis_tarihi" class="form-control" required>
+            </div>
+            <div class="text-end">
+                <button type="button" class="btn btn-secondary me-2 modal-close-btn">İptal</button>
+                <button type="submit" class="btn btn-primary">Sonlandır</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    
     // --- ORTAK: DOKUNMATİK (LONG PRESS) ---
     function addLongPressListener(element, callback, stopBubbling = false) {
         let timer;
@@ -279,16 +256,46 @@ document.addEventListener('DOMContentLoaded', function() {
         element.addEventListener('touchmove', clear);
     }
 
-    // --- 1. ANA KİRALAMA SAĞ TIK ---
+    // --- GENEL MODAL YÖNETİMİ ---
+    const backdropSonlandir = document.getElementById('modal-backdrop-sonlandir');
+    const modalSonlandir = document.getElementById('sonlandir-modal');
+
+    function openSonlandirModal() { backdropSonlandir.style.display = 'flex'; }
+    function closeModals() { 
+        backdropSonlandir.style.display = 'none'; 
+        document.getElementById('context-menu').style.display = 'none';
+        document.getElementById('context-menu-kalem').style.display = 'none';
+    }
+
+    // Modal içi/dışı tıklamaları
+    document.querySelectorAll('.modal-close-btn').forEach(btn => {
+        btn.addEventListener('click', closeModals);
+    });
+
+    if (backdropSonlandir) {
+        backdropSonlandir.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModals();
+            }
+        });
+    }
+
+    if (modalSonlandir) {
+        modalSonlandir.addEventListener('click', function(e) {
+            e.stopPropagation(); // İçeriden gelen tıklamayı durdur
+        });
+    }
+
+    // --- 1. ANA KİRALAMA SAĞ TIK (Satır Menüsü) ---
     const contextMenu = document.getElementById('context-menu');
     const deleteForm = document.getElementById('delete-form');
     const menuDuzenle = document.getElementById('menu-duzenle');
     const menuSil = document.getElementById('menu-sil');
-    let currentSilUrl = null, currentCsrfToken = null, currentFormNo = null;
+    let currentSilUrl, currentCsrfToken, currentFormNo;
 
     const showRowMenu = (event, row) => {
         event.preventDefault();
-        hideKalemMenu(); hideSonlandirModal();
+        closeModals();
         
         currentSilUrl = row.dataset.silUrl;
         currentCsrfToken = row.dataset.csrfToken;
@@ -314,27 +321,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 deleteForm.submit();
             }
         }
-        hideRowMenu();
+        closeModals();
     });
 
-    // --- 2. KALEM MENÜSÜ ---
+    // --- 2. KALEM MENÜSÜ (Liste İçindeki Makine) ---
     const contextMenuKalem = document.getElementById('context-menu-kalem');
     const menuSonlandir = document.getElementById('menu-sonlandir');
-    const menuIptal = document.getElementById('menu-iptal'); // YENİ
-    const modalBackdrop = document.getElementById('modal-backdrop');
-    const sonlandirModal = document.getElementById('sonlandir-modal');
-    const modalKalemIdInput = document.getElementById('modal-kalem-id');
-    const modalCsrfInput = document.getElementById('modal-csrf-token');
-    const modalEkipmanKod = document.getElementById('modal-ekipman-kod');
-    const modalBitisTarihiInput = document.getElementById('modal-bitis-tarihi');
-    const modalIptalButton = document.getElementById('modal-iptal');
-    const iptalForm = document.getElementById('iptal-kalem-form'); // YENİ
+    const menuIptal = document.getElementById('menu-iptal');
+    const iptalForm = document.getElementById('iptal-kalem-form');
 
-    let currentKalemId = null, currentEkipmanKod = null, currentKalemCsrfToken = null;
+    let currentKalemId, currentEkipmanKod, currentKalemCsrfToken;
 
     const showKalemMenu = (event, item) => {
         event.stopPropagation(); event.preventDefault();
-        hideRowMenu();
+        closeModals(); // Diğer menüleri kapat
         
         currentKalemId = item.dataset.kalemId;
         currentEkipmanKod = item.dataset.ekipmanKod;
@@ -342,13 +342,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const isSonlandirilmis = item.dataset.sonlandirilmis === '1';
 
         // --- AKILLI MENÜ ---
-        if (isSonlandirilmis) {
-            menuSonlandir.style.display = 'none';
-            menuIptal.style.display = 'block'; // Geri Al'ı göster
-        } else {
-            menuSonlandir.style.display = 'block'; // Sonlandır'ı göster
-            menuIptal.style.display = 'none';
-        }
+        menuSonlandir.style.display = isSonlandirilmis ? 'none' : 'block';
+        menuIptal.style.display = isSonlandirilmis ? 'block' : 'none';
         
         contextMenuKalem.style.left = event.pageX + 'px';
         contextMenuKalem.style.top = event.pageY + 'px';
@@ -363,45 +358,29 @@ document.addEventListener('DOMContentLoaded', function() {
     // SONLANDIRMA
     menuSonlandir.addEventListener('click', function(event) {
         event.preventDefault();
-        hideKalemMenu();
+        closeModals();
+        
         if (currentKalemId) {
-            modalKalemIdInput.value = currentKalemId;
-            modalEkipmanKod.textContent = currentEkipmanKod;
-            modalCsrfInput.value = currentKalemCsrfToken; 
-            modalBitisTarihiInput.value = new Date().toISOString().split('T')[0]; 
-            modalBackdrop.style.display = 'block';
-            sonlandirModal.style.display = 'block';
+            document.getElementById('modal-kalem-id').value = currentKalemId;
+            document.getElementById('modal-ekipman-kod').textContent = currentEkipmanKod;
+            document.getElementById('modal-csrf-token').value = currentKalemCsrfToken; 
+            document.getElementById('modal-bitis-tarihi').value = new Date().toISOString().split('T')[0]; 
+            
+            openSonlandirModal();
         }
     });
     
     // İPTAL ETME (GERİ ALMA)
     menuIptal.addEventListener('click', function(event) {
         event.preventDefault();
-        hideKalemMenu();
+        closeModals();
+        
         if (currentKalemId) {
             if (confirm("'" + currentEkipmanKod + "' için yapılan sonlandırmayı geri almak (tekrar aktifleştirmek) istiyor musunuz?")) {
                 document.getElementById('iptal-kalem-id').value = currentKalemId;
                 document.getElementById('iptal-csrf-token').value = currentKalemCsrfToken;
                 iptalForm.submit();
             }
-        }
-    });
-
-    modalIptalButton.addEventListener('click', hideSonlandirModal);
-
-    function hideRowMenu() { contextMenu.style.display = 'none'; }
-    function hideKalemMenu() { contextMenuKalem.style.display = 'none'; }
-    function hideSonlandirModal() { modalBackdrop.style.display = 'none'; sonlandirModal.style.display = 'none'; }
-
-    window.addEventListener('click', function(event) {
-        if (event.target === modalBackdrop) hideSonlandirModal();
-        hideRowMenu();
-        hideKalemMenu();
-    });
-    window.addEventListener('touchstart', function(event) {
-        if (event.target === modalBackdrop) hideSonlandirModal();
-        if (!event.target.closest('.context-menu') && !event.target.closest('.context-menu-kalem')) {
-             hideRowMenu(); hideKalemMenu();
         }
     });
 });

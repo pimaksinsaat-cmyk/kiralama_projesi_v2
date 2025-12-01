@@ -92,12 +92,14 @@
 </style>
 
 <div class="container">
-    <!-- Başlık ve Butonlar -->
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
         <h1 class="mb-2 mb-md-0">{{ firma.firma_adi }}</h1>
         <div class="action-buttons">
             <a href="{{ url_for('cari.odeme_ekle', musteri_id=firma.id) }}" class="btn btn-success">
                 <i class="fa fa-money-bill-wave"></i> Ödeme Al
+            </a>
+            <a href="{{ url_for('cari.odeme_yap', musteri_id=firma.id) }}" class="btn btn-danger">
+                <i class="fa fa-money-bill-wave"></i> Ödeme yap
             </a>
             <a href="{{ url_for('cari.hizmet_ekle', firma_id=firma.id) }}" class="btn btn-primary">
                 <i class="fa fa-file-invoice"></i> Fatura/Hizmet Gir
@@ -107,11 +109,9 @@
 
             <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Ana Sayfa</a>
             
-
         </div>
     </div>
 
-    <!-- FİRMA BİLGİLERİ -->
     <div class="card info-card">
         <div class="card-body py-3">
             <div class="d-flex flex-row flex-nowrap align-items-center gap-4 overflow-auto pb-2">
@@ -138,7 +138,6 @@
         </div>
     </div>
 
-    <!-- CARİ HESAP EKSTRESİ TABLOSU -->
     <div class="card">
         <div class="card-header bg-light">
             <i class="fa fa-list-alt me-2"></i> <strong>Cari Hesap Ekstresi</strong>
@@ -159,6 +158,7 @@
                         </tr>
                     </thead>
                     <tbody>
+
                         {% set tum_hareketler = (firma.hizmet_kayitlari + firma.odemeler) | sort(attribute='tarih') %}
                         {% set ns = namespace(running_balance=0.0, total_borc=0.0, total_alacak=0.0) %}
                         
@@ -167,26 +167,34 @@
                             {% set satir_tutar_borc = 0 %}
                             {% set satir_tutar_alacak = 0 %}
                             
-                            <!-- URL ve Tür Belirleme -->
                             {% if islem.__tablename__ == 'odeme' %}
                                 {% set duzenle_url = url_for('cari.odeme_duzelt', id=islem.id) %}
                                 {% set sil_url = url_for('cari.odeme_sil', id=islem.id) %}
-                                {% set tur_adi = 'Ödeme' %}
-                                <!-- Ödeme her zaman alacaktır -->
-                                {% set ns.running_balance = ns.running_balance - tutar %}
-                                {% set ns.total_alacak = ns.total_alacak + tutar %}
-                                {% set satir_tutar_alacak = tutar %}
+                                
+                                {% if tutar < 0 %}
+                                    {% set tur_adi = 'Ödeme (Çıkış)' %}
+                                    {% set abs_tutar = tutar | abs %}
+                                    {% set satir_tutar_borc = abs_tutar %}
+                                    
+                                    {% set ns.running_balance = ns.running_balance + abs_tutar %}
+                                    {% set ns.total_borc = ns.total_borc + abs_tutar %}
+                                {% else %}
+                                    {% set tur_adi = 'Tahsilat (Giriş)' %}
+                                    {% set satir_tutar_alacak = tutar %}
+                                    
+                                    {% set ns.running_balance = ns.running_balance - tutar %}
+                                    {% set ns.total_alacak = ns.total_alacak + tutar %}
+                                {% endif %}
+
                             {% else %}
                                 {% set duzenle_url = url_for('cari.hizmet_duzelt', id=islem.id) %}
                                 {% set sil_url = url_for('cari.hizmet_sil', id=islem.id) %}
                                 {% set tur_adi = 'Hizmet/Fatura' %}
                                 {% if islem.yon == 'giden' %}
-                                    <!-- Borç (Satış) -->
                                     {% set ns.running_balance = ns.running_balance + tutar %}
                                     {% set ns.total_borc = ns.total_borc + tutar %}
                                     {% set satir_tutar_borc = tutar %}
                                 {% else %}
-                                    <!-- Alacak (Alış) -->
                                     {% set ns.running_balance = ns.running_balance - tutar %}
                                     {% set ns.total_alacak = ns.total_alacak + tutar %}
                                     {% set satir_tutar_alacak = tutar %}
@@ -200,10 +208,7 @@
                                 data-tur="{{ tur_adi }}"
                                 data-tarih="{{ islem.tarih }}"
                                 >
-                                <!-- Tarih -->
-                                <td>{{ islem.tarih | tarihtr }}</td>
-                                
-                                <!-- Form No -->
+                                <td>{{ islem.tarih }}</td> 
                                 <td class="text-center">
                                     {% if islem.fatura_no %}
                                         <span class="badge bg-light text-dark border">{{ islem.fatura_no }}</span>
@@ -212,16 +217,18 @@
                                     {% endif %}
                                 </td>
                                 
-                                <!-- Tür -->
                                 <td>
                                     {% if islem.__tablename__ == 'odeme' %}
-                                        <span class="badge bg-success">Tahsilat</span>
+                                        {% if tutar > 0 %}
+                                            <span class="badge bg-success">Tahsilat</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Ödeme</span>
+                                        {% endif %}
                                     {% else %}
                                         <span class="badge bg-info text-dark">Fatura</span>
                                     {% endif %}
                                 </td>
                                 
-                                <!-- Açıklama -->
                                 <td>
                                     {{ islem.aciklama }}
                                     {% if islem.__tablename__ == 'odeme' and islem.kasa %}
@@ -229,17 +236,14 @@
                                     {% endif %}
                                 </td>
                                 
-                                <!-- Borç -->
                                 <td class="text-end text-danger">
                                     {{ "{:,.2f}".format(satir_tutar_borc).replace(',', 'X').replace('.', ',').replace('X', '.') if satir_tutar_borc > 0 else '-' }}
                                 </td>
                                 
-                                <!-- Alacak -->
                                 <td class="text-end text-success">
                                     {{ "{:,.2f}".format(satir_tutar_alacak).replace(',', 'X').replace('.', ',').replace('X', '.') if satir_tutar_alacak > 0 else '-' }}
                                 </td>
                                 
-                                <!-- Kümülatif Bakiye -->
                                 <td class="text-end fw-bold {{ 'text-danger' if ns.running_balance > 0.001 else 'text-success' }}">
                                     {{ "{:,.2f}".format(ns.running_balance).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
                                     <small class="text-muted fw-normal">
@@ -259,7 +263,6 @@
                         {% endif %}
                     </tbody>
                     
-                    <!-- DİP TOPLAM SATIRI -->
                     <tfoot>
                         <tr>
                             <td colspan="4" class="text-end text-uppercase py-3">GENEL TOPLAM:</td>
@@ -281,7 +284,6 @@
     </div>
 </div>
 
-<!-- GİZLİ SAĞ TIK MENÜSÜ -->
 <div id="context-menu" class="context-menu">
     <a href="#" class="context-menu-item" id="menu-duzenle">
         <i class="fa fa-edit me-2"></i> İşlemi Düzenle
@@ -292,7 +294,6 @@
     </a>
 </div>
 
-<!-- Gizli Silme Formu -->
 <form id="delete-form" method="POST" style="display: none;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 </form>

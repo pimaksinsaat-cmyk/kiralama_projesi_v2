@@ -84,7 +84,10 @@ class OdemeForm(FlaskForm):
     firma_musteri_id = SelectField('Ödeme Yapan Müşteri (Firma)', coerce=int, default='0', validators=[NumberRange(min=1, message=secim_hata_mesaji)])
     kasa_id = SelectField('Giriş Yapılacak Kasa/Banka', coerce=int, default='0', validators=[NumberRange(min=1, message="Lütfen bir kasa/banka seçiniz.")])
     tarih = DateField('Ödeme Tarihi', format='%Y-%m-%d', validators=[InputRequired()])
-    
+    alacakli_musteri_id = SelectField('Ödeme Yapılan (Firma)', coerce=int, default='0', validators=[NumberRange(min=1, message=secim_hata_mesaji)])
+
+
+
     # DÜZELTME: StringField ve validate_currency
     tutar = StringField('Ödeme Tutarı', validators=[InputRequired(), validate_currency])
     

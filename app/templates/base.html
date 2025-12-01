@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Pimaks Kiralama{% endblock %}</title>
     
-    <!-- Bootstrap 5 CSS (Görünüm için şart) -->
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    <!-- FontAwesome (İkonlar için şart) -->
+    <!-- FontAwesome (İkonlar) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -21,9 +21,8 @@
             flex-direction: column;
         }
         
-        /* Navbar Düzenlemeleri - Gölge Kaldırıldı */
+        /* Navbar Düzenlemeleri */
         .navbar {
-            /* box-shadow kaldırıldı */
             padding-top: 1rem;
             padding-bottom: 1rem;
         }
@@ -32,12 +31,12 @@
             letter-spacing: 0.5px;
             display: flex;
             align-items: center;
-            color: #333 !important; /* Logo yazısı koyu renk */
+            color: #333 !important;
         }
         
-        /* Logo Stili */
+        /* Logo Stili (Düzeltildi: Sadece statik yol kullanılıyor) */
         .navbar-logo {
-            height: 50px; /* Biraz daha belirgin */
+            height: 50px; 
             width: auto;
             margin-right: 10px;
             object-fit: contain;
@@ -50,15 +49,15 @@
             padding-top: 10px;
         }
         
-        /* Footer - Çizgi ve Kutu Kaldırıldı */
+        /* Footer */
         footer {
             background-color: transparent;
-            color: #868e96; /* Daha silik gri */
+            color: #868e96; 
             padding: 20px 0;
             text-align: center;
             font-size: 0.85em;
             margin-top: auto;
-            border: none; /* Çizgi kaldırıldı */
+            border: none;
         }
     </style>
     
@@ -67,14 +66,14 @@
 <body>
     
     <!-- Navigasyon Menüsü -->
-    <!-- DÜZELTME: 'navbar-dark bg-dark' kaldırıldı, 'navbar-light' eklendi. -->
     <nav class="navbar navbar-expand-lg navbar-light mb-4">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                <!-- Logo -->
+                <!-- Logo: Flask'ın statik dosya yolunu kullanıyoruz -->
                 <img src="{{ url_for('static', filename='img/logo.JPG') }}" 
-                     alt="Pimaks Logo" 
-                     class="navbar-logo">
+                      alt="Pimaks Logo" 
+                      class="navbar-logo"
+                      onerror="this.onerror=null; this.src='/static/img/placeholder.png';"> <!-- Hata durumunda placeholder -->
                 
             </a>
             
@@ -104,6 +103,7 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                             <li><a class="dropdown-item" href="{{ url_for('cari.odeme_ekle') }}">Ödeme Al (Tahsilat)</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('cari.odeme_yap') }}">Ödeme yap (Tediye)</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('cari.hizmet_ekle') }}">Fatura/Hizmet Gir</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('cari.kasa_listesi') }}">Kasa & Banka Hesapları</a></li>
