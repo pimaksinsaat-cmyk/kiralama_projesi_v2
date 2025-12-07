@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cari Durum Raporu - Pimaks</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { background-color: #f8f9fa; padding: 20px; }
+        .container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+        }
+        .header-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f1f1f1;
+        }
+        .bakiye-pozitif { color: #dc3545; font-weight: bold; } 
+        .bakiye-negatif { color: #28a745; font-weight: bold; } 
+        .bakiye-sifir { color: #6c757d; }
+        
+        .table th { background-color: #343a40; color: white; border: none; }
+        .table td { vertical-align: middle; }
+        
+        /* Tablo Link Stili */
+        .firma-link {
+            color: #007bff;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .firma-link:hover { text-decoration: underline; color: #0056b3; }
+
+        /* YAZDIRMA AYARLARI (Kağıda basıldığında butonları gizle) */
+        @media print {
+            .no-print { display: none !important; }
+            body { background-color: white; padding: 0; }
+            .container { box-shadow: none; padding: 0; width: 100%; max-width: 100%; }
+            .table th { background-color: #ddd !important; color: black !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div class="header-area">
+        <div>
+            <h2 class="mb-0">Firma Cari Durum Raporu</h2>
+            <small class="text-muted">Tüm finansal hareketlerin özetidir.</small>
+        </div>
+        
+        <div class="no-print">
+            <button onclick="window.print()" class="btn btn-info mr-2">
+                🖨️ Yazdır
+            </button>
+            <a href="{{ url_for('cari.finans_menu') }}" class="btn btn-outline-secondary">
+                Menüye Dön
+            </a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Firma Adı</th>
+                    <th>Tipi</th>
+                    <th class="text-right">Toplam Borç (Giden)</th>
+                    <th class="text-right">Toplam Alacak (Gelen)</th>
+                    <th class="text-right">GÜNCEL BAKİYE</th>
+                    <th class="text-center">Durum</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for satir in rapor %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('firmalar.bilgi', id=satir.id) }}" class="firma-link" target="_blank">
+                            {{ satir.firma_adi }} ↗
+                        </a>
+                        <br>
+                        <small class="text-muted">{{ satir.yetkili }}</small>
+                    </td>
+                    <td><span class="badge badge-light border">{{ satir.tipi }}</span></td>
+                    
+                    <td class="text-right">
+                        {{ "{:,.2f}".format(satir.toplam_borc).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL
+                    </td>
+                    
+                    <td class="text-right">
+                        {{ "{:,.2f}".format(satir.toplam_alacak).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL
+                    </td>
+                    
+                    <td class="text-right">
+                        {% if satir.bakiye > 0 %}
+                            <span class="bakiye-pozitif">{{ "{:,.2f}".format(satir.bakiye).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL</span>
+                        {% elif satir.bakiye < 0 %}
+                            <span class="bakiye-negatif">{{ "{:,.2f}".format(satir.bakiye).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL</span>
+                        {% else %}
+                            <span class="bakiye-sifir">0,00 TL</span>
+                        {% endif %}
+                    </td>
+                    
+                    <td class="text-center">
+                        {% if satir.bakiye > 0 %} <span class="badge badge-danger">Borçlu</span>
+                        {% elif satir.bakiye < 0 %} <span class="badge badge-success">Alacaklı</span>
+                        {% else %} <span class="badge badge-secondary">Kapalı</span> {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center py-4">Kayıt bulunamadı.</td></tr>
+                {% endfor %}
+            </tbody>
+
+            <tfoot style="background-color: #e9ecef; font-weight: bold; font-size: 1.1em;">
+                <tr>
+                    <td colspan="2" class="text-right">GENEL TOPLAM:</td>
+                    
+                    <td class="text-right">
+                        {{ "{:,.2f}".format(genel_toplam.borc).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL
+                    </td>
+                    
+                    <td class="text-right">
+                        {{ "{:,.2f}".format(genel_toplam.alacak).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL
+                    </td>
+                    
+                    <td class="text-right">
+                        {% if genel_toplam.bakiye > 0 %}
+                            <span style="color: #dc3545;">{{ "{:,.2f}".format(genel_toplam.bakiye).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL</span>
+                        {% elif genel_toplam.bakiye < 0 %}
+                            <span style="color: #28a745;">{{ "{:,.2f}".format(genel_toplam.bakiye).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL</span>
+                        {% else %}
+                            0,00 TL
+                        {% endif %}
+                    </td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>

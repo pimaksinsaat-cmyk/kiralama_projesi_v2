@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 import traceback
 
 # Modeller ve Formlar
-from app.models import Odeme, HizmetKaydi, Firma, Kasa
+from app.models import Odeme, HizmetKaydi, Firma, Kasa ,Kiralama
 from app.forms import OdemeForm, HizmetKaydiForm, KasaForm
 
 # -------------------------------------------------------------------------
@@ -48,6 +48,15 @@ def bakiye_guncelle(model_obj, tutar_decimal, islem_tipi='ekle'):
         # İşlem siliniyorsa, etkinin tersini yap (Çıkar)
         model_obj.bakiye = str(mevcut - tutar_decimal)
 
+def str_to_date(tarih_str):
+    """String tarihleri (2025-10-25) datetime objesine çevirir."""
+    if not tarih_str: return None
+    for fmt in ('%Y-%m-%d', '%d.%m.%Y', '%d/%m/%Y'):
+        try:
+            return datetime.strptime(tarih_str, fmt)
+        except ValueError:
+            continue
+    return None
 # -------------------------------------------------------------------------
 # 1. ÖDEME / TAHSİLAT İŞLEMLERİ
 # -------------------------------------------------------------------------
@@ -583,3 +592,97 @@ def kasa_transfer():
         traceback.print_exc()
         
     return redirect(url_for('cari.kasa_listesi'))
+
+
+@cari_bp.route('/finans-menu')
+def finans_menu():
+    return render_template('cari/finans_menu.html')
+@cari_bp.route('/cari-durum-raporu')
+def cari_durum_raporu():
+    # Sadece aktif firmaları getir
+    firmalar = Firma.query.filter_by(is_active=True).all()
+    rapor_listesi = []
+
+    # GENEL TOPLAM DEĞİŞKENLERİ
+    genel_toplam = {
+        'borc': Decimal('0.0'),   # Toplam Borç (Giden Para + Satışlar)
+        'alacak': Decimal('0.0'), # Toplam Alacak (Gelen Para + Alışlar)
+        'bakiye': Decimal('0.0')
+    }
+
+    for firma in firmalar:
+        # Filtre (Dahili hesapları gizle)
+        adi_kucuk = firma.firma_adi.lower()
+        if 'dahili' in adi_kucuk or 'transfer' in adi_kucuk:
+            continue
+
+        toplam_borc = Decimal('0.0')   # Sol Sütun (Bizim Alacağımız / Onların Borcu)
+        toplam_alacak = Decimal('0.0') # Sağ Sütun (Bizim Borcumuz / Onların Alacağı)
+
+        # ---------------------------------------------------------
+        # 1. HİZMET KAYITLARI (FATURALAR)
+        # ---------------------------------------------------------
+        if firma.hizmet_kayitlari:
+            for h in firma.hizmet_kayitlari:
+                tutar = clean_currency_input(h.tutar)
+                
+                if h.yon == 'giden':
+                    # Biz Fatura Kestik (Satış/Gelir) -> BORÇ Sütununa
+                    toplam_borc += tutar
+                elif h.yon == 'gelen':
+                    # Bize Fatura Geldi (Alış/Gider) -> ALACAK Sütununa
+                    toplam_alacak += tutar
+
+        # ---------------------------------------------------------
+        # 2. ÖDEME HAREKETLERİ (NAKİT GİRİŞ/ÇIKIŞ)
+        # ---------------------------------------------------------
+        # KRİTİK DÜZELTME: Odeme modelinde 'yon' olmadığı için
+        # tutarın Eksi (-) veya Artı (+) olmasına bakıyoruz.
+        if firma.odemeler:
+            for odeme in firma.odemeler:
+                tutar = clean_currency_input(odeme.tutar)
+                
+                # SENARYO A: Tutar NEGATİF ise (-5.500) -> Bu bir ÖDEMEDİR (Para Çıkışı)
+                # Para bizden çıkarsa, karşı tarafın borcunu düşürürüz ama muhasebe tekniği olarak
+                # "Borç" sütununa eklenmez, "Borç Bakiyesini" düşürmek için işlem yapılır.
+                # Ancak senin tablon "Borç / Alacak" mantığıyla çalıştığı için:
+                # Ödeme (Bizden Giden Para) -> Tedarikçiye verdiysek -> BORÇ (Giden) hanesine yazarız.
+                
+                if tutar < 0:
+                    # Negatif değer, bizden para çıktığını gösterir.
+                    # Mutlak değerini alıp BORÇ (Giden) sütununa ekliyoruz.
+                    toplam_borc += abs(tutar) 
+                
+                # SENARYO B: Tutar POZİTİF ise (2.500) -> Bu bir TAHSİLATTIR (Para Girişi)
+                # Müşteriden para geldiyse -> ALACAK (Gelen) hanesine yazarız.
+                else:
+                    toplam_alacak += tutar
+
+        # ---------------------------------------------------------
+        # 3. SONUÇ HESAPLAMA
+        # ---------------------------------------------------------
+        bakiye = toplam_borc - toplam_alacak
+
+        # Genel Toplamlara Ekle
+        genel_toplam['borc'] += toplam_borc
+        genel_toplam['alacak'] += toplam_alacak
+        genel_toplam['bakiye'] += bakiye
+
+        # Firma Tipi Gösterimi
+        tip_str = "Tedarikçi"
+        if firma.is_musteri and firma.is_tedarikci:
+            tip_str = "Müşteri & Tedarikçi"
+        elif firma.is_musteri:
+            tip_str = "Müşteri"
+
+        rapor_listesi.append({
+            'id': firma.id,
+            'firma_adi': firma.firma_adi,
+            'yetkili': firma.yetkili_adi,
+            'tipi': tip_str,
+            'toplam_borc': toplam_borc,    # HTML'de bu değişkeni kullan
+            'toplam_alacak': toplam_alacak, # HTML'de bu değişkeni kullan
+            'bakiye': bakiye
+        })
+
+    return render_template('cari/cari_durum_raporu.html', rapor=rapor_listesi, genel_toplam=genel_toplam)
