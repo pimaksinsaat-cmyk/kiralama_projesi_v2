@@ -12,9 +12,23 @@ import urllib3
 # SSL uyarılarını gizle
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-from app import db
-from app.kiralama import kiralama_bp 
-from app.models import Kiralama, Ekipman, Firma, KiralamaKalemi, HizmetKaydi
+
+
+from app.kiralama import kiralama_bp
+
+# Firmalar (Kendi klasörü)
+from app.firmalar.models import Firma
+
+# Kiralama Klasöründen Gelenler
+from app.kiralama.models import Kiralama, KiralamaKalemi
+
+# Filo Klasöründen Gelenler
+from app.filo.models import Ekipman, BakimKaydi, KullanilanParca, StokKarti, StokHareket
+
+# Cari Klasöründen Gelenler
+from app.cari.models import Kasa, Odeme, HizmetKaydi
+
+
 from app.forms import KiralamaForm, KiralamaKalemiForm 
 
 # -------------------------------------------------------------------------

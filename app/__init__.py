@@ -1,23 +1,27 @@
+# app/__init__.py
 from flask import Flask
 from config import Config
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-# DÜZELTME: CSRFProtect eklendi
+# DİKKAT: Aşağıdaki 2 satırı siliyoruz, artık extensions'dan alacağız
+# from flask_sqlalchemy import SQLAlchemy 
+# from flask_migrate import Migrate
+
 from flask_wtf.csrf import CSRFProtect 
 
-db = SQLAlchemy()
-migrate = Migrate()
-# DÜZELTME: CSRF nesnesi oluşturuldu
+# DÜZELTME: db ve migrate nesnelerini extensions.py'dan çağırıyoruz
+from app.extensions import db, migrate
+
+# CSRF şimdilik burada kalabilir (istersen onu da extensions'a taşıyabilirsin ama şart değil)
 csrf = CSRFProtect()
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # extensions'dan gelen nesneleri başlatıyoruz
     db.init_app(app)
     migrate.init_app(app, db)
     
-    # DÜZELTME: CSRF uygulamasını başlat
+    # CSRF uygulamasını başlat
     csrf.init_app(app)
 
     # --- BLUEPRINT (MODÜL) KAYITLARI ---

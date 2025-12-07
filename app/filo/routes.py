@@ -6,8 +6,23 @@ from sqlalchemy.orm import joinedload, subqueryload
 from sqlalchemy.exc import IntegrityError 
 import traceback 
 from sqlalchemy import or_, and_
-from app.models import Ekipman, Firma, Kiralama, KiralamaKalemi, BakimKaydi
-from app.models import Ekipman, Firma, Kiralama, KiralamaKalemi
+
+
+
+
+# Firmalar (Kendi klasörü)
+from app.firmalar.models import Firma
+
+# Kiralama Klasöründen Gelenler
+from app.kiralama.models import Kiralama, KiralamaKalemi
+
+# Filo Klasöründen Gelenler
+from app.filo.models import Ekipman, BakimKaydi, KullanilanParca, StokKarti, StokHareket
+
+# Cari Klasöründen Gelenler
+from app.cari.models import Kasa, Odeme, HizmetKaydi
+
+
 from app.forms import EkipmanForm 
 import locale
 

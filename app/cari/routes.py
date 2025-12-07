@@ -6,7 +6,20 @@ from decimal import Decimal, InvalidOperation
 import traceback
 
 # Modeller ve Formlar
-from app.models import Odeme, HizmetKaydi, Firma, Kasa ,Kiralama
+
+
+# Firmalar (Kendi klasörü)
+from app.firmalar.models import Firma
+
+# Kiralama Klasöründen Gelenler
+from app.kiralama.models import Kiralama, KiralamaKalemi
+
+# Filo Klasöründen Gelenler
+from app.filo.models import Ekipman, BakimKaydi, KullanilanParca, StokKarti, StokHareket
+
+# Cari Klasöründen Gelenler
+from app.cari.models import Kasa, Odeme, HizmetKaydi
+
 from app.forms import OdemeForm, HizmetKaydiForm, KasaForm
 
 # -------------------------------------------------------------------------

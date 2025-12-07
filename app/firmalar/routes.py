@@ -7,8 +7,23 @@ import traceback
 from decimal import Decimal
 
 # Modeller
-from app.models import Firma, Kiralama, Ekipman, Odeme, HizmetKaydi, KiralamaKalemi, StokKarti, StokHareket
-from app.forms import FirmaForm
+
+
+
+# Firmalar (Kendi klasörü)
+from app.firmalar.models import Firma
+
+# Kiralama Klasöründen Gelenler
+from app.kiralama.models import Kiralama, KiralamaKalemi
+
+# Filo Klasöründen Gelenler
+from app.filo.models import Ekipman, BakimKaydi, KullanilanParca, StokKarti, StokHareket
+
+# Cari Klasöründen Gelenler
+from app.cari.models import Kasa, Odeme, HizmetKaydi
+
+
+
 from sqlalchemy.orm import joinedload, subqueryload
 
 # -------------------------------------------------------------------------
