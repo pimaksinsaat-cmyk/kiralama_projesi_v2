@@ -98,6 +98,7 @@
                 <tr class="firma-satiri"
                     data-firma-id="{{ firma.id }}"
                     data-telefon="{{ firma.telefon }}"
+                    data-yetkili-adi="{{ firma.yetkili_adi or '' }}"
                     data-kiralama-url="{{ url_for('kiralama.index', q=firma.firma_adi) }}" {# Kiralama listesine firmanın adıyla filtre gönderiyoruz #}
                     data-duzenle-url="{{ url_for('firmalar.duzelt', id=firma.id) }}"
                     data-sil-url="{{ url_for('firmalar.sil', id=firma.id) }}"
@@ -175,6 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let currentSilUrl = null;
     let currentFirmaAdi = null;
+    let currentYetkili = null;
 
     const showMenu = (event, row) => {
         event.preventDefault();
@@ -182,6 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // --- BURASI KRİTİK: Değişkenleri satırdan (dataset) çekiyoruz ---
         currentSilUrl = row.dataset.silUrl;
         currentFirmaAdi = row.dataset.firmaAdi;
+        currentYetkili = row.dataset.yetkiliAdi;
         const tel = row.dataset.telefon; // Satırdaki data-telefon
         const kiralamaUrl = row.dataset.kiralamaUrl; // Satırdaki data-kiralama-url
 
@@ -206,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     temizNo = '90' + temizNo;
                 }
 
-                const mesaj = encodeURIComponent(`Merhaba ${currentFirmaAdi}, cari hesabınız ve güncel durum hakkında görüşmek üzere yazıyoruz.`);
+                const mesaj = encodeURIComponent(`Merhaba ${currentYetkili}, Pimaks Kiralama Hizmetlerinden Size Ulaşıyoruz.`);
                 menuWhatsapp.href = `https://wa.me/${temizNo}?text=${mesaj}`;
             } else {
                 menuWhatsapp.style.display = 'none';
