@@ -28,7 +28,6 @@
         .table th { background-color: #343a40; color: white; border: none; }
         .table td { vertical-align: middle; }
         
-        /* Tablo Link Stili */
         .firma-link {
             color: #007bff;
             font-weight: 600;
@@ -36,7 +35,6 @@
         }
         .firma-link:hover { text-decoration: underline; color: #0056b3; }
 
-        /* YAZDIRMA AYARLARI (Kağıda basıldığında butonları gizle) */
         @media print {
             .no-print { display: none !important; }
             body { background-color: white; padding: 0; }
@@ -85,22 +83,25 @@
                             {{ satir.firma_adi }} ↗
                         </a>
                         <br>
-                        <small class="text-muted">{{ satir.yetkili }}</small>
+                        <small class="text-muted">{{ satir.yetkili if satir.yetkili else '-' }}</small>
                     </td>
-                    <td><span class="badge badge-light border">{{ satir.tipi }}</span></td>
+                    <td><span class="badge badge-light border">{{ satir.tipi if satir.tipi else 'Firma' }}</span></td>
                     
                     <td class="text-right">
-                        {{ "{:,.2f}".format(satir.toplam_borc).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL
+                        {# satir.toplam_borc -> satir.borc olarak güncellendi #}
+                        {{ "{:,.2f}".format(satir.borc).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL
                     </td>
                     
                     <td class="text-right">
-                        {{ "{:,.2f}".format(satir.toplam_alacak).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL
+                        {# satir.toplam_alacak -> satir.alacak olarak güncellendi #}
+                        {{ "{:,.2f}".format(satir.alacak).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL
                     </td>
                     
                     <td class="text-right">
                         {% if satir.bakiye > 0 %}
                             <span class="bakiye-pozitif">{{ "{:,.2f}".format(satir.bakiye).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL</span>
                         {% elif satir.bakiye < 0 %}
+                            {# Alacaklı durumda sayıyı pozitif göstermek için abs() kullanılabilir ancak format zaten genelde halleder #}
                             <span class="bakiye-negatif">{{ "{:,.2f}".format(satir.bakiye).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL</span>
                         {% else %}
                             <span class="bakiye-sifir">0,00 TL</span>

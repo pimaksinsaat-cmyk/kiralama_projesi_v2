@@ -83,8 +83,10 @@
                 {% for islem in hareketler %}
                 
                 {# URL ve Veri Hazırlığı (EKLENDİ) #}
-                {% set duzenle_url = url_for('cari.odeme_duzelt', id=islem.id) %}
-                {% set sil_url = url_for('cari.odeme_sil', id=islem.id) %}
+                {% set duzenle_url = url_for('cari.odeme_duzelt', id=islem.id) if islem.id else '#' %}
+
+                {% set sil_url = url_for('cari.odeme_sil', id=islem.id) if islem.id else '#' %}
+
                 {% set tutar = islem.tutar | float %}
                 
                 <tr class="islem-satiri" 
@@ -118,7 +120,7 @@
         </table>
         
         <div class="mt-4 text-center small text-muted d-none d-print-block">
-            Rapor Tarihi: {{ now().strftime('%d.%m.%Y %H:%M') }}
+            Rapor Tarihi: {{ now.strftime('%d.%m.%Y %H:%M') }}
         </div>
     </div>
 </div>

@@ -23,6 +23,12 @@ class Ekipman(db.Model):
     bakim_kayitlari = db.relationship('BakimKaydi', back_populates='ekipman', cascade="all, delete-orphan")
 
     __table_args__ = (db.UniqueConstraint('firma_tedarikci_id', 'seri_no', name='_tedarikci_seri_no_uc'),)
+
+    # Bu ekipmanın 'sahadan çekildiği' (eski makine olduğu) durumlar
+    swap_cikis_kayitlari = db.relationship('MakineDegisim',foreign_keys='MakineDegisim.eski_ekipman_id',backref='eski_ekipman', lazy='dynamic')
+
+    swap_giris_kayitlari = db.relationship('MakineDegisim', foreign_keys='MakineDegisim.yeni_ekipman_id', backref='yeni_ekipman',lazy='dynamic')
+
     def __repr__(self): return f'<Ekipman {self.kod}>'
 
 # 10. BAKIM KAYDI (Servis)

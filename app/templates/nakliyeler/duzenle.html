@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-edit"></i> Nakliye Kaydını Düzenle
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }}
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.tarih.label(class="form-label") }}
+                                {{ form.tarih(class="form-control", type="date") }}
+                                {% for error in form.tarih.errors %}
+                                    <span class="text-danger small">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.firma_id.label(class="form-label") }}
+                                {{ form.firma_id(class="form-select") }}
+                                {% for error in form.firma_id.errors %}
+                                    <span class="text-danger small">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                {{ form.guzergah.label(class="form-label") }}
+                                {{ form.guzergah(class="form-control", placeholder="Örn: İstanbul - Ankara") }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.plaka.label(class="form-label") }}
+                                {{ form.plaka(class="form-control", placeholder="34 ABC 123") }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.tutar.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.tutar(class="form-control", placeholder="0.00") }}
+                                    <span class="input-group-text">TL</span>
+                                </div>
+                                {% for error in form.tutar.errors %}
+                                    <span class="text-danger small">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.kdv_orani.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.kdv_orani(class="form-control") }}
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.aciklama.label(class="form-label") }}
+                            {{ form.aciklama(class="form-control", rows="3") }}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-warning btn-lg", value="Güncelle") }}
+                            <a href="{{ url_for('nakliyeler.index') }}" class="btn btn-secondary">İptal</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

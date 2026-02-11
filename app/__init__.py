@@ -1,16 +1,10 @@
 # app/__init__.py
 from flask import Flask
 from config import Config
-# DİKKAT: Aşağıdaki 2 satırı siliyoruz, artık extensions'dan alacağız
-# from flask_sqlalchemy import SQLAlchemy 
-# from flask_migrate import Migrate
-
 from flask_wtf.csrf import CSRFProtect 
-
-# DÜZELTME: db ve migrate nesnelerini extensions.py'dan çağırıyoruz
 from app.extensions import db, migrate
 
-# CSRF şimdilik burada kalabilir (istersen onu da extensions'a taşıyabilirsin ama şart değil)
+
 csrf = CSRFProtect()
 
 def create_app(config_class=Config):
@@ -23,6 +17,8 @@ def create_app(config_class=Config):
     
     # CSRF uygulamasını başlat
     csrf.init_app(app)
+
+    
 
     # --- BLUEPRINT (MODÜL) KAYITLARI ---
 
@@ -45,5 +41,13 @@ def create_app(config_class=Config):
     # 5. Cari (Finansal İşlemler)
     from app.cari import cari_bp
     app.register_blueprint(cari_bp, url_prefix='/cari')
+
+    # 6. Nakliyeler
+    from app.nakliyeler import nakliye_bp
+    app.register_blueprint(nakliye_bp, url_prefix='/nakliyeler')
+
+    # 7. makine degişim
+    from app.makinedegisim import makinedegisim_bp
+    app.register_blueprint(makinedegisim_bp,url_prefix='/makinedegisim')
 
     return app

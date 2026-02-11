@@ -1,91 +1,75 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finansal İşlemler - Pimaks</title>
-    <style>
-        /* Ana sayfa ile aynı stil */
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
-            margin: 0; 
-            background-color: #f8f9fa; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-        }
-        .container { 
-            max-width: 500px; 
-            width: 90%; 
-            padding: 40px; 
-            background-color: #fff; 
-            border-radius: 12px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-            text-align: center;
-        }
-        h1 { 
-            color: #343a40; 
-            margin-bottom: 30px; 
-            font-size: 1.5rem; 
-            font-weight: bold;
-        }
-        nav a { 
-            display: block; 
-            background-color: #ffffff; 
-            padding: 15px 20px; 
-            margin-bottom: 15px; 
-            text-decoration: none; 
-            color: #495057; 
-            border: 1px solid #dee2e6; 
-            border-radius: 8px; 
-            transition: all 0.2s ease-in-out; 
-            font-size: 1.1rem; 
-            font-weight: 600; 
-        }
-        nav a:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
-        }
-        .btn-back {
-            margin-top: 20px;
-            display: inline-block;
-            color: #6c757d;
-            text-decoration: none;
-            font-size: 0.9rem;
-        }
-        .btn-back:hover {
-            color: #343a40;
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
 
-<div class="container">
-    
-    <h1>Finansal İşlemler</h1>
+{% block title %}Finans Yönetimi{% endblock %}
 
-    <nav>
-        <a href="{{ url_for('cari.kasa_listesi') }}" style="color: #17a2b8; border-color: #17a2b8;">
-            KASA & BANKA HESAPLARI
-        </a>
-        
-        <a href="{{ url_for('cari.odeme_ekle') }}" style="border-color: #28a745; color: #28a745;">
-            ÖDEME AL (GİRİŞ)
-        </a>
-        
-        <a href="{{ url_for('cari.odeme_yap') }}" style="border-color: #dc3545; color: #dc3545;">
-            ÖDEME YAP (ÇIKIŞ)
-        </a>
-        <a href="{{ url_for('cari.cari_durum_raporu') }}" style="border-color: #fd7e14; color: #fd7e14;">
-            FİRMA CARİ DURUMLARI (RAPOR)
-        </a>
-    </nav>
-    
-    <a href="/" class="btn-back">← Ana Sayfaya Dön</a>
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12 text-center">
+            <h2 class="display-5 text-primary"><i class="fa fa-coins"></i> Finans Yönetim Paneli</h2>
+            <p class="lead text-muted">Kasa, Banka, Cari ve Fatura İşlemleri</p>
+        </div>
+    </div>
 
+    <div class="row justify-content-center">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm hover-card border-primary">
+                <div class="card-body text-center">
+                    <div class="display-4 text-primary mb-3"><i class="fa fa-wallet"></i></div>
+                    <h4 class="card-title">Kasa & Banka</h4>
+                    <p class="card-text">Nakit ve Banka hesaplarını yönetin, bakiyeleri kontrol edin.</p>
+                    <a href="{{ url_for('cari.kasa_listesi') }}" class="btn btn-outline-primary stretched-link">
+                        Hesaplara Git
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm hover-card border-info">
+                <div class="card-body text-center">
+                    <div class="display-4 text-info mb-3"><i class="fa fa-chart-line"></i></div>
+                    <h4 class="card-title">Cari Durum Raporu</h4>
+                    <p class="card-text">Tüm müşterilerin ve tedarikçilerin borç/alacak durumunu görün.</p>
+                    <a href="{{ url_for('cari.cari_durum_raporu') }}" class="btn btn-outline-info stretched-link">
+                        Raporu Görüntüle
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm border-secondary">
+                <div class="card-header bg-secondary text-white text-center">
+                    <h5 class="mb-0">Hızlı İşlemler</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    
+                    <a href="{{ url_for('cari.odeme_ekle', yon='tahsilat') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span><i class="fa fa-arrow-down text-success me-2"></i> Tahsilat Al (Giriş)</span>
+                        <i class="fa fa-chevron-right text-muted"></i>
+                    </a>
+
+                    <a href="{{ url_for('cari.odeme_ekle', yon='odeme') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span><i class="fa fa-arrow-up text-danger me-2"></i> Ödeme Yap (Çıkış)</span>
+                        <i class="fa fa-chevron-right text-muted"></i>
+                    </a>
+
+                    <a href="{{ url_for('cari.hizmet_ekle') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span><i class="fa fa-file-invoice text-info me-2"></i> Fatura/Hizmet İşle</span>
+                        <i class="fa fa-chevron-right text-muted"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-</body>
-</html>
+<style>
+    .hover-card:hover {
+        transform: translateY(-5px);
+        transition: transform 0.3s ease;
+        box-shadow: 0 1rem 3rem rgba(0,0,0,.175)!important;
+    }
+</style>
+{% endblock %}

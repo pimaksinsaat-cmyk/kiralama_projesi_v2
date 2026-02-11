@@ -4,225 +4,90 @@
 
 {% block content %}
 <style>
-    /* ... (Mevcut stiller aynı) ... */
+    /* Tablo ve Genel Tasarım */
     .container { max-width: 1500px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
     th, td { padding: 12px; border: 1px solid #dee2e6; text-align: left; vertical-align: middle;}
     th { background-color: #e9ecef; position: sticky; top: 0; z-index: 10; }
-    a { color: #007bff; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .btn { display: inline-block; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; color: white; transition: background-color 0.2s; margin-bottom: 5px; border: none; cursor: pointer; font-size: 0.9em; }
-    .btn-danger { background-color: #c82333; }
-    .btn-warning { background-color: #ffc107; color: #343a40; }
-    .btn-warning:hover { background-color: #e0a800; }
-    .btn-primary { background-color: #007bff; }
-    .btn-secondary { background-color: #6c757d; }
-    .alert { padding: 1rem; margin-bottom: 1rem; border: 1px solid transparent; border-radius: .25rem; }
-    .alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
-    .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
-    .badge { display: inline-block; padding: .45em .75em; font-size: .8em; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25rem; }
-    .bg-success { background-color: #28a745; }
-    .bg-primary { background-color: #007bff; }
-    .bg-secondary { background-color: #6c757d; }
     
-    .context-menu { display: none; position: absolute; background-color: white; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-radius: 5px; z-index: 1000; min-width: 200px; padding: 5px 0; }
-    .context-menu-item { display: block; padding: 12px 15px; color: #333; text-decoration: none; font-size: 1em; }
+    /* Sağ Tık Menüsü (Context Menu) - Z-index yükseltildi */
+    .context-menu { display: none; position: absolute; background-color: white; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-radius: 5px; z-index: 3000; min-width: 200px; padding: 5px 0; }
+    .context-menu-item { display: block; padding: 12px 15px; color: #333; text-decoration: none; font-size: 1em; cursor: pointer; }
     .context-menu-item:hover { background-color: #f5f5f5; color: #000; text-decoration: none; }
     .context-menu-item.delete { color: #dc3545; font-weight: bold; }
-    .context-menu-item.delete:hover { background-color: #dc3545; color: white; }
-    .context-menu-item.kirala { color: #007bff; font-weight: bold; }
-    .context-menu-item.kirala:hover { background-color: #f5f5f5; color: #0056b3; }
-    .context-menu-item.bakim { color: #e0a800; font-weight: bold; }
-    .context-menu-item.bakim:hover { background-color: #fff3cd; color: #856404; }
-    
     .context-menu-divider { height: 1px; margin: 5px 0; background-color: #eee; }
+
+    /* Arama Çubuğu */
     .search-form { display: flex; gap: 10px; margin-bottom: 15px; }
-    .search-form input[type="text"] { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 1em; }
-    .search-form button { padding: 8px 15px; border: none; border-radius: 5px; background-color: #007bff; color: white; font-weight: bold; cursor: pointer; }
-    .pagination { margin-top: 20px; text-align: center; }
-    .pagination a, .pagination span { display: inline-block; padding: 8px 12px; margin: 0 3px; border: 1px solid #dee2e6; border-radius: 5px; text-decoration: none; color: #007bff; }
-    .pagination a:hover { background-color: #e9ecef; }
-    .pagination .active { background-color: #007bff; color: white; border-color: #007bff; }
-    .pagination .disabled { color: #6c757d; pointer-events: none; }
-    .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.5); z-index: 1040; }
-    .modal-dialog { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 1050; width: 90%; max-width: 400px; }
-    .modal-dialog h3 { margin-top: 0; }
-    .modal-dialog .form-group { margin-bottom: 15px; }
-    .modal-dialog .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-    .modal-dialog .form-group input[type="date"], .modal-dialog .form-group input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-    .modal-actions { text-align: right; margin-top: 20px; }
-    
-    @media (max-width: 768px) {
-        table { font-size: 0.8em; }
-        th, td { padding: 8px; }
-    }
+    .search-form input { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
 
-    /* ---------------------------------------------------------- */
-    /* YENİ: ŞIK BLUR EFEKTLİ MOBİL UYARI (GLASSMORPHISM)         */
-    /* ---------------------------------------------------------- */
-    
+    /* Mobil Uyarı Ekranı */
     #rotate-device-overlay {
-        display: none;
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        /* Yarı saydam koyu arka plan */
-        background-color: rgba(33, 37, 41, 0.85); 
-        z-index: 99999;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        text-align: center;
-        padding: 30px;
-        /* Modern tarayıcılar için arka plan bulanıklığı */
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(33, 37, 41, 0.85); z-index: 99999;
+        flex-direction: column; justify-content: center; align-items: center;
+        color: white; text-align: center; padding: 30px; backdrop-filter: blur(8px);
     }
-
-    /* Sadece MOBİL ve DİKEY (Portrait) modda çalışır */
     @media only screen and (max-width: 991px) and (orientation: portrait) {
-        #rotate-device-overlay {
-            display: flex !important;
-        }
-        /* DÜZELTME: İçeriği gizlemek (display:none) yerine 
-           bulanıklaştırıyoruz (blur) ve tıklamayı engelliyoruz.
-        */
-        .container {
-            filter: blur(5px);
-            pointer-events: none; /* Arkaya tıklanmasını engeller */
-            user-select: none;    /* Seçimi engeller */
-        }
-        
-        /* Navbar'ı da bulanıklaştır */
-        nav.navbar {
-            filter: blur(5px);
-            pointer-events: none;
-        }
+        #rotate-device-overlay { display: flex !important; }
+        .container, nav.navbar { filter: blur(5px); pointer-events: none; }
     }
-
-    /* YATAY (Landscape) Modda Her Şey Normale Döner */
-    @media only screen and (orientation: landscape) {
-        #rotate-device-overlay {
-            display: none !important;
-        }
-        .container, nav.navbar {
-            filter: none !important;
-            pointer-events: auto !important;
-            user-select: auto !important;
-        }
-    }
-    
-    .rotate-icon { 
-        font-size: 60px; 
-        margin-bottom: 20px; 
-        animation: rotate-phone 2s infinite ease-in-out;
-        color: #ffc107; /* Dikkat çekici sarı renk */
-    }
-    
-    @keyframes rotate-phone { 
-        0%, 10% { transform: rotate(0deg); } 
-        40%, 60% { transform: rotate(90deg); } 
-        90%, 100% { transform: rotate(0deg); } 
-    }
-
+    .rotate-icon { font-size: 60px; margin-bottom: 20px; animation: rotate-phone 2s infinite ease-in-out; color: #ffc107; }
+    @keyframes rotate-phone { 0%, 10% { transform: rotate(0deg); } 40%, 60% { transform: rotate(90deg); } 90%, 100% { transform: rotate(0deg); } }
 </style>
 
-<!-- MOBİL UYARI EKRANI -->
 <div id="rotate-device-overlay">
     <i class="fa fa-mobile-screen-button rotate-icon"></i>
-    <h3 style="font-weight: bold; margin-bottom: 15px;">Lütfen Ekranı Yan Çevirin</h3>
-    <p style="font-size: 1.1em; line-height: 1.6;">
-        Tabloları rahat görüntülemek ve işlem yapabilmek için cihazınızı yatay konuma getiriniz.
-    </p>
-    
-    <!-- Acil durum butonu: Yine de görmek isterse -->
-    <button class="btn btn-outline-light btn-sm mt-4" onclick="closeRotateOverlay()">
-        Yine de Devam Et
-    </button>
+    <h3>Lütfen Ekranı Yan Çevirin</h3>
+    <button class="btn btn-outline-light btn-sm mt-4" onclick="closeRotateOverlay()">Yine de Devam Et</button>
 </div>
 
 <div class="container">
     <h1>Makine Parkı (Pimaks Filosu)</h1>
     
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-            <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' }}" role="alert">
-                {{ message }}
-            </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    <p>
-        <a href="{{ url_for('filo.ekle') }}">+ Yeni Makine Ekle</a>
-         &nbsp; | &nbsp; 
-        <a href="{{ url_for('filo.harici') }}">Harici Ekipmanları Gör</a>
-         &nbsp; | &nbsp; 
-        <a href="{{ url_for('filo.arsiv') }}" style="color: #6c757d;">Pasif Makineler (Arşiv)</a>
-         &nbsp; | &nbsp; 
-        <a href="{{ url_for('filo.bakimda') }}" style="color: #e0a800; font-weight: bold;">Bakımdaki Makineler</a>
-         &nbsp; | &nbsp; 
-        <a href="{{ url_for('main.index') }}">Ana Sayfaya Dön</a>
-    </p>
+    <div class="mb-3 d-flex flex-wrap gap-2">
+        <a href="{{ url_for('filo.ekle') }}" class="btn btn-primary btn-sm">+ Yeni Makine</a>
+        <a href="{{ url_for('filo.harici') }}" class="btn btn-outline-secondary btn-sm">Harici Ekipmanlar</a>
+        <a href="{{ url_for('filo.arsiv') }}" class="btn btn-outline-dark btn-sm">Arşiv</a>
+        <a href="{{ url_for('filo.bakimda') }}" class="btn btn-warning btn-sm">Bakımdakiler</a>
+    </div>
 
     <form method="GET" action="{{ url_for('filo.index') }}" class="search-form">
-        <input type="text" name="q" placeholder="Makine Kodu, Tipi veya Seri No ile ara..." value="{{ q or '' }}">
-        <button type="submit">Bul</button>
+        <input type="text" name="q" placeholder="Makine Kodu veya Seri No..." value="{{ q or '' }}">
+        <button type="submit" class="btn btn-primary">Bul</button>
     </form>
 
-    <div style="overflow-x: auto;">
-        <table>
+    <div class="table-responsive">
+        <table class="table table-hover">
             <thead>
                 <tr>
-                    <th>
-                        Makine Kodu
-                        <br>
-                        <small class="text-muted" style="font-weight: normal;">(Seçenekler için sağ tık/basılı tut)</small>
-                    </th>
+                    <th>Kod <small class="text-muted">(Sağ Tık)</small></th>
                     <th>Marka / Tip</th>
-                    <th>Üretim Yılı / Seri No</th>
-                    <th>Yükseklik / Kapasite</th>
-                    <th>Durum / Son Kiralama</th>
+                    <th>Seri No</th>
+                    <th>Yükseklik/Kapasite</th>
+                    <th>Durum</th>
                 </tr>
             </thead>
             <tbody>
                 {% for ekipman in ekipmanlar %}
-                <tr class="ekipman-satiri"
+                <tr class="ekipman-satiri" 
                     data-ekipman-id="{{ ekipman.id }}"
+                    data-ekipman-kod="{{ ekipman.kod }}"
+                    data-durum="{{ ekipman.calisma_durumu }}"
                     data-duzenle-url="{{ url_for('filo.duzelt', id=ekipman.id) }}"
                     data-sil-url="{{ url_for('filo.sil', id=ekipman.id) }}"
                     data-bilgi-url="{{ url_for('filo.bilgi', id=ekipman.id) }}"
-                    data-csrf-token="{{ csrf_token() }}"
-                    data-ekipman-kod="{{ ekipman.kod }}"
-                    data-durum="{{ ekipman.calisma_durumu }}"
-                    data-kirala-url="{{ url_for('kiralama.ekle', next='filo.index', page=pagination.page, q=q, ekipman_id=ekipman.id) }}"
-                    >
-                    <td>
-                        <strong>{{ ekipman.kod }}</strong>
-                    </td> 
+                    data-kirala-url="{{ url_for('kiralama.ekle', ekipman_id=ekipman.id) }}"
+                    data-csrf-token="{{ csrf_token() }}">
+                    <td><strong>{{ ekipman.kod }}</strong></td>
                     <td>{{ ekipman.marka }} / {{ ekipman.tipi }}</td>
-                    <td>{{ ekipman.uretim_tarihi }} / {{ ekipman.seri_no }}</td>
+                    <td>{{ ekipman.seri_no }}</td>
                     <td>{{ ekipman.calisma_yuksekligi }}m / {{ ekipman.kaldirma_kapasitesi }}kg</td>
                     <td>
                         {% if ekipman.calisma_durumu == 'kirada' %}
                             <span class="badge bg-primary">Kirada</span>
-                            <br>
-                            {% if ekipman.aktif_kiralama_bilgisi and ekipman.aktif_kiralama_bilgisi.kiralama %}
-                                <small style="font-size: 0.9em;">
-                                    <strong>Firma:</strong> {{ ekipman.aktif_kiralama_bilgisi.kiralama.firma_musteri.firma_adi }}<br>
-                                    <strong>Form No:</strong> {{ ekipman.aktif_kiralama_bilgisi.kiralama.kiralama_form_no }}
-                                </small>
-                            {% endif %}
-                            <br>
-                            <button type="button" class="btn btn-warning btn-sm sonlandir-buton" 
-                                    data-ekipman-id="{{ ekipman.id }}"
-                                    data-ekipman-kod="{{ ekipman.kod }}"
-                                    data-csrf-token="{{ csrf_token() }}"
-                                    style="margin-top: 5px;">
-                                Sonlandır...
-                            </button>
+                            <button type="button" class="btn btn-warning btn-sm sonlandir-buton ms-2" 
+                                    data-id="{{ ekipman.id }}" data-kod="{{ ekipman.kod }}">Sonlandır</button>
                         {% elif ekipman.calisma_durumu == 'serviste' %}
                             <span class="badge bg-secondary">Serviste</span>
                         {% else %}
@@ -230,248 +95,171 @@
                         {% endif %}
                     </td>
                 </tr>
-                {% else %}
-                <tr>
-                    <td colspan="5">Kayıtlı ekipman bulunamadı.</td>
-                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-
-    {% if pagination %}
-    <div class="pagination">
-        <a href="{{ url_for('filo.index', page=pagination.prev_num, q=q) if pagination.has_prev else '#' }}" class="{{ 'disabled' if not pagination.has_prev else '' }}">&laquo; Önceki</a>
-        {% for page_num in pagination.iter_pages() %}
-            {% if page_num %}
-                {% if page_num != pagination.page %}
-                    <a href="{{ url_for('filo.index', page=page_num, q=q) }}">{{ page_num }}</a>
-                {% else %}
-                    <span class="active">{{ page_num }}</span>
-                {% endif %}
-            {% else %}
-                <span class="disabled">...</span>
-            {% endif %}
-        {% endfor %}
-        <a href="{{ url_for('filo.index', page=pagination.next_num, q=q) if pagination.has_next else '#' }}" class="{{ 'disabled' if not pagination.has_next else '' }}">Sonraki &raquo;</a>
-    </div>
-    {% endif %}
-
 </div>
 
-<!-- GİZLİ MENÜLER VE FORMLAR -->
 <div id="context-menu" class="context-menu">
-    <a href="#" class="context-menu-item kirala" id="menu-kirala" style="display: none;"><i class="fa fa-plus"></i> Ekipmanı Kiraya Ver</a>
-    <a href="#" class="context-menu-item bakim" id="menu-bakim" style="display: none;"><i class="fa fa-wrench"></i> Makineyi Bakıma Al</a>
-    <div class="context-menu-divider" id="menu-kirala-divider" style="display: none;"></div>
-    <a href="#" class="context-menu-item" id="menu-bilgi"><i class="fa fa-eye"></i> Detay/Bakım Geçmişi</a>
-    <a href="#" class="context-menu-item" id="menu-duzenle"><i class="fa fa-pencil"></i> Ekipmanı Düzenle</a>
+    <a href="#" class="context-menu-item text-primary" id="menu-kirala"><i class="fa fa-plus"></i> Kiraya Ver</a>
+    <div class="context-menu-item text-warning" id="menu-bakim"><i class="fa fa-wrench"></i> Bakıma Al</div>
     <div class="context-menu-divider"></div>
-    <a href="#" class="context-menu-item delete" id="menu-sil"><i class="fa fa-trash"></i> Ekipmanı Sil</a>
+    <a href="#" class="context-menu-item" id="menu-bilgi"><i class="fa fa-eye"></i> Detaylar</a>
+    <a href="#" class="context-menu-item" id="menu-duzenle"><i class="fa fa-pencil"></i> Düzenle</a>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item delete" id="menu-sil"><i class="fa fa-trash"></i> Sil</div>
 </div>
 
-<form id="delete-form" method="POST" style="display: none;">
+<div class="modal fade" id="bs-bakim-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('filo.bakima_al') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="ekipman_id" id="bakim-id">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title">Makineyi Bakıma Al: <span id="bakim-kod-label"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Bakım Tarihi</label>
+                        <input type="date" name="tarih" class="form-control" id="bakim-tarihi-input" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Arıza/Açıklama</label>
+                        <input type="text" name="aciklama" class="form-control" placeholder="Arıza nedeni..." required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-warning">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="bs-sonlandir-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('filo.sonlandir') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="ekipman_id" id="sonlandir-id">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Kiralamayı Bitir: <span id="sonlandir-kod-label"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Dönüş Tarihi</label>
+                    <input type="date" name="bitis_tarihi" class="form-control" id="sonlandir-tarihi-input" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Vazgeç</button>
+                    <button type="submit" class="btn btn-primary">İşlemi Tamamla</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<form id="delete-form" method="POST" style="display:none;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 </form>
 
-<!-- Kiralama Sonlandırma Modalı -->
-<div id="modal-backdrop" class="modal-backdrop"></div>
-<div id="sonlandir-modal" class="modal-dialog">
-    <form id="sonlandir-ekipman-form" method="POST" action="{{ url_for('filo.sonlandir', q=q, page=request.args.get('page', 1)) }}">
-        <h3>Kiralamayı Sonlandır</h3>
-        <p>Lütfen <strong id="modal-ekipman-kod"></strong> için bir bitiş tarihi seçin.</p>
-        <input type="hidden" name="csrf_token" id="modal-csrf-token">
-        <input type="hidden" name="ekipman_id" id="modal-ekipman-id">
-        <div class="form-group">
-            <label for="modal-bitis-tarihi">Kiralama Bitiş Tarihi:</label>
-            <input type="date" id="modal-bitis-tarihi" name="bitis_tarihi" required>
-        </div>
-        <div class="modal-actions">
-            <button type="button" class="btn btn-secondary" id="modal-iptal">İptal</button>
-            <button type="submit" class="btn btn-primary">Sonlandır</button>
-        </div>
-    </form>
-</div>
-
-<!-- Bakıma Alma Modalı -->
-<div id="bakim-modal" class="modal-dialog">
-    <form id="bakim-ekipman-form" method="POST" action="{{ url_for('filo.bakima_al', q=q, page=request.args.get('page', 1)) }}">
-        <h3>Makineyi Bakıma Al</h3>
-        <p>Lütfen <strong id="bakim-ekipman-kod"></strong> için bilgileri giriniz.</p>
-        <input type="hidden" name="csrf_token" id="bakim-csrf-token">
-        <input type="hidden" name="ekipman_id" id="bakim-ekipman-id">
-        
-        <div class="form-group">
-            <label for="bakim-tarihi">Bakım Başlangıç Tarihi:</label>
-            <input type="date" id="bakim-tarihi" name="tarih" required>
-        </div>
-        <div class="form-group">
-            <label for="bakim-aciklama">Açıklama / Arıza Nedeni:</label>
-            <input type="text" id="bakim-aciklama" name="aciklama" class="form-control" placeholder="Örn: Yıllık bakım, lastik değişimi..." required>
-        </div>
-        <div class="modal-actions">
-            <button type="button" class="btn btn-secondary" id="bakim-iptal">İptal</button>
-            <button type="submit" class="btn btn-primary" style="background-color: #e0a800; border-color: #e0a800;">Bakıma Al</button>
-        </div>
-    </form>
-</div>
-
 <script>
-    // Global fonksiyon: HTML içindeki onclick için gerekli
+    // Mobil uyarı kapatma
     function closeRotateOverlay() {
-        document.getElementById('rotate-device-overlay').style.setProperty('display', 'none', 'important');
-        document.querySelector('.container').style.setProperty('filter', 'none', 'important');
-        document.querySelector('.container').style.setProperty('pointer-events', 'auto', 'important');
-        document.querySelector('.container').style.setProperty('user-select', 'auto', 'important');
-        document.querySelector('nav.navbar').style.setProperty('filter', 'none', 'important');
+        document.getElementById('rotate-device-overlay').style.display = 'none';
+        document.querySelectorAll('.container, nav.navbar').forEach(el => el.style.filter = 'none');
+        document.querySelectorAll('.container, nav.navbar').forEach(el => el.style.pointerEvents = 'auto');
     }
 
-document.addEventListener('DOMContentLoaded', function() {
-    
-    function addLongPressListener(element, callback) {
-        let timer;
-        element.addEventListener('touchstart', function(e) {
-            timer = setTimeout(function() {
-                timer = null;
-                const touch = e.touches[0];
-                const mockEvent = {
-                    preventDefault: () => e.preventDefault(),
-                    stopPropagation: () => e.stopPropagation(),
-                    pageX: touch.pageX,
-                    pageY: touch.pageY
-                };
-                callback(mockEvent, element);
-            }, 600); 
-        }, {passive: false});
-        function clear() { if (timer) { clearTimeout(timer); timer = null; } }
-        element.addEventListener('touchend', clear);
-        element.addEventListener('touchmove', clear);
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Modalları Başlat (Sadece DOM hazır olduğunda)
+        const maintenanceModal = new bootstrap.Modal(document.getElementById('bs-bakim-modal'));
+        const endRentalModal = new bootstrap.Modal(document.getElementById('bs-sonlandir-modal'));
 
-    const contextMenu = document.getElementById('context-menu');
-    const deleteForm = document.getElementById('delete-form');
-    const menuBilgi = document.getElementById('menu-bilgi');
-    const menuDuzenle = document.getElementById('menu-duzenle');
-    const menuSil = document.getElementById('menu-sil');
-    const menuKirala = document.getElementById('menu-kirala');
-    const menuBakim = document.getElementById('menu-bakim');
-    const menuKiralaDivider = document.getElementById('menu-kirala-divider');
-    
-    let currentSilUrl = null;
-    let currentCsrfToken = null;
-    let currentEkipmanKod = null;
-    let currentEkipmanId = null;
+        const contextMenu = document.getElementById('context-menu');
+        let currentData = {};
 
-    const showMenu = (event, row) => {
-        event.preventDefault();
-        hideSonlandirModal(); hideBakimModal();
-
-        currentSilUrl = row.dataset.silUrl;
-        currentCsrfToken = row.dataset.csrfToken;
-        currentEkipmanKod = row.dataset.ekipmanKod;
-        currentEkipmanId = row.dataset.ekipmanId;
-        const durum = row.dataset.durum;
-        const kiralaUrl = row.dataset.kiralaUrl;
-        
-        menuBilgi.href = row.dataset.bilgiUrl;
-        menuDuzenle.href = row.dataset.duzenleUrl;
-
-        if (durum === 'bosta') {
-            menuKirala.href = kiralaUrl;
-            menuKirala.style.display = 'block';
-            menuBakim.style.display = 'block';
-            menuKiralaDivider.style.display = 'block';
-        } else {
-            menuKirala.style.display = 'none';
-            menuBakim.style.display = 'none';
-            menuKiralaDivider.style.display = 'none';
+        // 2. Uzun Basma (Mobil) Fonksiyonu
+        function addLongPressListener(element, callback) {
+            let timer;
+            element.addEventListener('touchstart', (e) => {
+                timer = setTimeout(() => {
+                    timer = null;
+                    const touch = e.touches[0];
+                    const mockEvent = {
+                        preventDefault: () => e.preventDefault(),
+                        pageX: touch.pageX,
+                        pageY: touch.pageY
+                    };
+                    callback(mockEvent, element);
+                }, 600);
+            }, { passive: false });
+            const clear = () => { if (timer) clearTimeout(timer); };
+            element.addEventListener('touchend', clear);
+            element.addEventListener('touchmove', clear);
         }
 
-        contextMenu.style.left = event.pageX + 'px';
-        contextMenu.style.top = event.pageY + 'px';
-        contextMenu.style.display = 'block';
-    };
-
-    document.querySelectorAll('.ekipman-satiri').forEach(row => {
-        row.addEventListener('contextmenu', (e) => showMenu(e, row));
-        addLongPressListener(row, showMenu);
-    });
-
-    menuSil.addEventListener('click', function(event) {
-        event.preventDefault();
-        if (currentSilUrl && currentEkipmanKod) {
-            if (confirm("'" + currentEkipmanKod + "' kodlu ekipmanı silmek istediğinizden emin misiniz?")) {
-                deleteForm.action = currentSilUrl;
-                deleteForm.querySelector('input[name="csrf_token"]').value = currentCsrfToken;
-                deleteForm.submit();
-            }
-        }
-        hideRowMenu();
-    });
-
-    // --- BAKIM MENÜSÜ TIKLAMA ---
-    menuBakim.addEventListener('click', function(event) {
-        event.preventDefault();
-        hideRowMenu();
-        
-        if (currentEkipmanId) {
-            document.getElementById('bakim-ekipman-id').value = currentEkipmanId;
-            document.getElementById('bakim-ekipman-kod').textContent = currentEkipmanKod;
-            document.getElementById('bakim-csrf-token').value = currentCsrfToken;
-            document.getElementById('bakim-tarihi').value = new Date().toISOString().split('T')[0];
+        // 3. Menü Gösterim Mantığı
+        const showMenu = (e, row) => {
+            e.preventDefault();
+            currentData = row.dataset;
             
-            document.getElementById('modal-backdrop').style.display = 'block';
-            document.getElementById('bakim-modal').style.display = 'block';
-        }
-    });
-    
-    document.getElementById('bakim-iptal').addEventListener('click', hideBakimModal);
-
-    // --- SONLANDIRMA MODALI ---
-    const modalBackdrop = document.getElementById('modal-backdrop');
-    const sonlandirModal = document.getElementById('sonlandir-modal');
-    const modalKalemIdInput = document.getElementById('modal-ekipman-id');
-    const modalCsrfInput = document.getElementById('modal-csrf-token');
-    const modalEkipmanKod = document.getElementById('modal-ekipman-kod');
-    const modalBitisTarihiInput = document.getElementById('modal-bitis-tarihi');
-    const modalIptalButton = document.getElementById('modal-iptal');
-
-    document.querySelectorAll('.sonlandir-buton').forEach(button => {
-        button.addEventListener('click', function(event) {
-            event.preventDefault(); event.stopPropagation(); 
-            hideRowMenu(); 
+            document.getElementById('menu-kirala').style.display = currentData.durum === 'bosta' ? 'block' : 'none';
+            document.getElementById('menu-bakim').style.display = currentData.durum === 'bosta' ? 'block' : 'none';
             
-            modalKalemIdInput.value = button.dataset.ekipmanId;
-            modalEkipmanKod.textContent = button.dataset.ekipmanKod;
-            modalCsrfInput.value = button.dataset.csrfToken;
-            modalBitisTarihiInput.value = new Date().toISOString().split('T')[0]; 
-            
-            modalBackdrop.style.display = 'block';
-            sonlandirModal.style.display = 'block';
+            document.getElementById('menu-bilgi').href = currentData.bilgiUrl;
+            document.getElementById('menu-duzenle').href = currentData.duzenleUrl;
+            document.getElementById('menu-kirala').href = currentData.kiralaUrl;
+
+            contextMenu.style.left = e.pageX + 'px';
+            contextMenu.style.top = e.pageY + 'px';
+            contextMenu.style.display = 'block';
+        };
+
+        // 4. Dinleyicileri Ekle
+        document.querySelectorAll('.ekipman-satiri').forEach(row => {
+            row.addEventListener('contextmenu', e => showMenu(e, row));
+            addLongPressListener(row, showMenu);
         });
-    });
 
-    modalIptalButton.addEventListener('click', hideSonlandirModal);
+        // 5. Bakım Modalı Açılış (Menüden)
+        document.getElementById('menu-bakim').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('bakim-id').value = currentData.ekipmanId;
+            document.getElementById('bakim-kod-label').textContent = currentData.ekipmanKod;
+            document.getElementById('bakim-tarihi-input').value = new Date().toISOString().split('T')[0];
+            contextMenu.style.display = 'none';
+            maintenanceModal.show();
+        });
 
-    function hideRowMenu() { contextMenu.style.display = 'none'; }
-    function hideSonlandirModal() { modalBackdrop.style.display = 'none'; sonlandirModal.style.display = 'none'; }
-    function hideBakimModal() { modalBackdrop.style.display = 'none'; document.getElementById('bakim-modal').style.display = 'none'; }
+        // 6. Sonlandırma Modalı Açılış (Butondan)
+        document.querySelectorAll('.sonlandir-buton').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.getElementById('sonlandir-id').value = btn.dataset.id;
+                document.getElementById('sonlandir-kod-label').textContent = btn.dataset.kod;
+                document.getElementById('sonlandir-tarihi-input').value = new Date().toISOString().split('T')[0];
+                endRentalModal.show();
+            });
+        });
 
-    window.addEventListener('click', function(event) {
-        if (event.target === modalBackdrop) {
-            hideSonlandirModal();
-            hideBakimModal();
-        }
-        hideRowMenu();
+        // 7. Silme İşlemi
+        document.getElementById('menu-sil').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (confirm(currentData.ekipmanKod + ' silinsin mi?')) {
+                const form = document.getElementById('delete-form');
+                form.action = currentData.silUrl;
+                form.querySelector('input[name="csrf_token"]').value = currentData.csrfToken;
+                form.submit();
+            }
+        });
+
+        // Tıklayınca menü kapama
+        window.addEventListener('click', () => contextMenu.style.display = 'none');
     });
-    
-    window.addEventListener('touchstart', function(event) {
-         if (event.target === modalBackdrop) {
-             hideSonlandirModal();
-             hideBakimModal();
-         }
-         if (!event.target.closest('.context-menu')) hideRowMenu();
-    });
-});
 </script>
 {% endblock %}

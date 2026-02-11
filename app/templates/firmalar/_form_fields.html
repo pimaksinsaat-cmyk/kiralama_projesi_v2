@@ -1,0 +1,121 @@
+{{ form.hidden_tag() }}
+
+
+                <div class="mb-3">
+                    {{ form.firma_adi.label(class="form-label fw-bold") }}
+                    {% if form.firma_adi.errors %}
+                        {{ form.firma_adi(class="form-control is-invalid", placeholder="Örn: Pimaks İnşaat A.Ş.") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.firma_adi.errors %} {{ error }} {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.firma_adi(class="form-control", placeholder="Örn: Pimaks İnşaat A.Ş.") }}
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.yetkili_adi.label(class="form-label fw-bold") }}
+                    {% if form.yetkili_adi.errors %}
+                        {{ form.yetkili_adi(class="form-control is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.yetkili_adi.errors %} {{ error }} {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.yetkili_adi(class="form-control") }}
+                    {% endif %}
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                     {{ form.telefon.label(class="form-label fw-bold") }}
+                     {% if form.telefon.errors %}
+                        {{ form.telefon(class="form-control is-invalid", placeholder="05xx xxx xx xx") }}
+                     <div class="invalid-feedback">
+                     {% for error in form.telefon.errors %} {{ error }} {% endfor %}
+                     </div>
+                        {% else %}
+                     {{ form.telefon(class="form-control", placeholder="05xx xxx xx xx") }}
+                        {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                     {{ form.eposta.label(class="form-label fw-bold") }}
+                     {% if form.eposta.errors %}
+                        {{ form.eposta(class="form-control is-invalid", placeholder="ornek@firma.com") }}
+                     <div class="invalid-feedback">
+                     {% for error in form.eposta.errors %} {{ error }} {% endfor %}
+                     </div>
+                        {% else %}
+                      {{ form.eposta(class="form-control", placeholder="ornek@firma.com") }}
+                     {% endif %}
+                    
+                </div>
+                <div class="mb-3">
+                     {{ form.iletisim_bilgileri.label(class="form-label fw-bold") }}  
+                     {% if form.iletisim_bilgileri.errors %}
+                        {{ form.iletisim_bilgileri(class="form-control is-invalid", rows=3) }}
+                     <div class="invalid-feedback">
+                        {% for error in form.iletisim_bilgileri.errors %} {{ error }} {% endfor %}
+                     </div>
+                     {% else %}
+                        {{ form.iletisim_bilgileri(class="form-control", rows=3) }}
+                     {% endif %}
+                </div>
+        
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.vergi_dairesi.label(class="form-label fw-bold") }}
+                        {% if form.vergi_dairesi.errors %}
+                            {{ form.vergi_dairesi(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.vergi_dairesi.errors %} {{ error }} {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.vergi_dairesi(class="form-control") }}
+                        {% endif %}
+                    </div>
+            
+                    <div class="col-md-6 mb-3">
+                        {{ form.vergi_no.label(class="form-label fw-bold") }}
+                        {% if form.vergi_no.errors %}
+                            {{ form.vergi_no(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.vergi_no.errors %} {{ error }} {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.vergi_no(class="form-control") }}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card bg-light mb-4 border-0">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted mb-3">Firma Rolleri</h6>
+                        
+                        <div class="form-check form-switch mb-2">
+                            {{ form.is_musteri(class="form-check-input") }}
+                            <label class="form-check-label" for="is_musteri">
+                                <strong>Bu bir Müşteri mi?</strong> 
+                                <span class="text-muted small">(Fatura kesilecek taraf)</span>
+                            </label>
+                        </div>
+
+                        <div class="form-check form-switch">
+                            {{ form.is_tedarikci(class="form-check-input") }}
+                            <label class="form-check-label" for="is_tedarikci">
+                                <strong>Bu bir Tedarikçi mi?</strong>
+                                <span class="text-muted small">(Mal/Hizmet alınan taraf)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end"> 
+                    <a href="{{ url_for('firmalar.index') }}" class="btn btn-secondary px-4">İptal</a>
+                    {{ form.submit(class="btn btn-primary px-4") }}
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>

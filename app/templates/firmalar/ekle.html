@@ -1,103 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Yeni Firma Kayıt{% endblock %}
+{% block title %}Yeni Firma{% endblock %}
+
 {% block content %}
-
-
-<div class="container">
-     <h2>Yeni Firma Ekle</h2>
-     
-         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-             <div class="container mt-3"> <!-- Mesajların etrafında biraz boşluk için -->
-          {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-          </div>
-          {% endfor %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="mb-4">Yeni Firma Ekle</h2>
+            <form action="" method="POST" novalidate class="card card-body shadow-sm">
+                {% include "firmalar/_form_fields.html" %}
+            </form>
         </div>
-        {% endif %}
-    {% endwith %}
-
-    <form action="" method="POST" novalidate>
-    {{ form.hidden_tag() }}
-      
-      <div class="form-group">
-        <!-- DÜZELTME: Manuel <input> yerine WTForms etiketi kullanıldı -->
-                {{ form.firma_adi.label(text="Firma Adı :") }}
-                <!-- 'class="form-control"' gibi CSS sınıflarını buraya ekleyebilirsiniz -->
-        {{ form.firma_adi(id="firma_adi", class="form-control") }} 
-                <!-- Hata mesajı varsa göster -->
-                {% for error in form.firma_adi.errors %}
-                    <span style="color: red; font-size: 0.9em;">[{{ error }}]</span>
-                {% endfor %}
-      </div>
-
- .      <div class="form-group">
-        {{ form.yetkili_adi.label(text="Yetkili Kişi :") }}
-        {{ form.yetkili_adi(id="yetkili_adi", class="form-control") }}
-                {% for error in form.yetkili_adi.errors %}
-                    <span style="color: red; font-size: 0.9em;">[{{ error }}]</span>
-                {% endfor %}
-      </div>
-
-      <div class="form-group">
-        {{ form.iletisim_bilgileri.label(text="Adres :") }}  
-                <!-- DÜZELTME: Bu, 'forms.py'da TextAreaField olduğu için otomatik <textarea> olur -->
-        {{ form.iletisim_bilgileri(id="iletisim_bilgileri", class="form-control", rows=3) }}
-               {% for error in form.iletisim_bilgileri.errors %}
-                    <span style="color: red; font-size: 0.9em;">[{{ error }}]</span>
-                {% endfor %}
-      </div>
-  
-      <div class="form-group">
-        {{ form.vergi_dairesi.label(text="Vergi Dairesi :") }}
-        {{ form.vergi_dairesi(id="vergi_dairesi", class="form-control") }}   
-                {% for error in form.vergi_dairesi.errors %}
-                    <span style="color: red; font-size: 0.9em;">[{{ error }}]</span>
-                {% endfor %}
-      </div>
-  
-      <div class="form-group">
-        {{ form.vergi_no.label(text="Vergi No:") }}
-        {{ form.vergi_no(id="vergi_no", class="form-control") }}   
-                {% for error in form.vergi_no.errors %}
-                    <span style="color: red; font-size: 0.9em;">[{{ error }}]</span>
-                {% endfor %}
-      </div>
-
-            <!-- 
-            ---------------------------------------------------------------
-            YENİ EKLENEN FİRMA ROLÜ BÖLÜMÜ
-            (Bootstrap 5 'form-check' sınıflarını varsayarak)
-            ---------------------------------------------------------------
-            -->
-            <fieldset class="form-group" style="border: 1px solid #dee2e6; padding: 1.5rem; margin-top: 20px; border-radius: 5px;">
-                <legend style="font-size: 1.2em; font-weight: 500; width: auto; padding: 0 10px; margin-left: 5px;">Firma Rolleri</legend>
-                
-                <div class="form-check form-switch mb-2">
-                    <!-- 'is_musteri' (CheckBox) alanı -->
-                    {{ form.is_musteri(id="is_musteri", class="form-check-input") }}
-                    {{ form.is_musteri.label(for="is_musteri", class="form-check-label") }}
-                    <br>
-                    <small class="text-muted">(Bu firmaya kiralama faturası kesilecekse işaretleyin.)</small>
-                </div>
-
-                <div class="form-check form-switch">
-                    <!-- 'is_tedarikci' (CheckBox) alanı -->
-                    {{ form.is_tedarikci(id="is_tedarikci", class="form-check-input") }}
-                    {{ form.is_tedarikci.label(for="is_tedarikci", class="form-check-label") }}
-                    <br>
-                    <small class="text-muted">(Bu firmadan makine, parça veya hizmet alınacaksa işaretleyin.)</small>
-                </div>
-            </fieldset>
-            <!-- YENİ BÖLÜM SONU -->
-        <div class="btn-container" style="margin-top: 20px;"> 
-         <!-- DÜZELTME: Butonun 'name' attribute'ü yok, o yüzden 'form.submit' kullanmak daha doğru -->
-     {{ form.submit(class="btn btn-primary") }}
-     <a href="{{ url_for('firmalar.index') }}" class="btn btn-secondary">İptal</a>
     </div>
-     </form>
 </div>
-
-
 {% endblock %}

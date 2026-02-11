@@ -23,7 +23,7 @@ from app.filo.models import Ekipman, BakimKaydi, KullanilanParca, StokKarti, Sto
 from app.cari.models import Kasa, Odeme, HizmetKaydi
 
 
-from app.forms import EkipmanForm 
+from app.filo.forms import EkipmanForm 
 import locale
 
 # Türkçe yerel ayarlarını dene
