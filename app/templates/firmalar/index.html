@@ -113,8 +113,8 @@
                     <td>
                         {{ "🟢" if firma.imza_yetkisi_kontrol_edildi else "🔴" }}
                         <strong>{{ firma.firma_adi }}</strong>
-                    </td> 
-                    <td>{{ firma.yetkili_adi }}</td>
+                    <td class="truncate"> 
+                    {{ firma.yetkili_adi }}</td>
                     <td class="truncate">
                         {% if firma.telefon %}
                             <a href="tel:{{ firma.telefon }}"><i class="fa fa-phone"></i> {{ firma.telefon }}</a>
@@ -126,8 +126,8 @@
                                 <i class="fa fa-envelope-o"></i> {{ firma.eposta | truncate(20) }}
                             </a>
                         {% else %}-{% endif %}
-                    </td>
-                    <td>{{ firma.vergi_no }}</td>
+                    <td class="truncate">
+                    {{ firma.vergi_no }}</td>
                     <td class="truncate" title="{{ firma.iletisim_bilgileri }}">{{ firma.iletisim_bilgileri }}</td>
                     
                     <td>
