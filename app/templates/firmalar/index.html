@@ -62,7 +62,11 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' }}" style="padding: 10px; margin-bottom: 10px; border-radius: 5px; background-color: {{ '#f8d7da' if category == 'danger' else '#d4edda' }}; border: 1px solid {{ '#f5c6cb' if category == 'danger' else '#c3e6cb' }}; color: {{ '#721c24' if category == 'danger' else '#155724' }};">
+               
+               
+                <div class="alert 
+                        {{ 'alert-danger' if category == 'danger' else 'alert-success' }}">
+                  
                     {{ message }}
                 </div>
             {% endfor %}
