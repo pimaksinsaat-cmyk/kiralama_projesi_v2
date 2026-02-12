@@ -111,12 +111,12 @@
                         <strong>{{ firma.firma_adi }}</strong>
                     </td> 
                     <td>{{ firma.yetkili_adi }}</td>
-                    <td>
+                    <td class="truncate">
                         {% if firma.telefon %}
                             <a href="tel:{{ firma.telefon }}"><i class="fa fa-phone"></i> {{ firma.telefon }}</a>
                         {% else %}-{% endif %}
                     </td>
-                    <td>
+                    <td class="truncate">
                         {% if firma.eposta %}
                             <a href="mailto:{{ firma.eposta }}" title="{{ firma.eposta }}">
                                 <i class="fa fa-envelope-o"></i> {{ firma.eposta | truncate(20) }}

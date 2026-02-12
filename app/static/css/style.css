@@ -149,5 +149,17 @@
     /* --- Konum Ayarı (Boşluklar) --- */
      margin-bottom: 20px;  /* Logonun altına 20px boşluk ekler */
     }
-   
+   .truncate { 
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+        max-width: 1px; /* fixed table layout ile taşmayı önlemek için kritik */
+    }
+    .truncate:hover { 
+        white-space: normal; 
+        overflow: visible; 
+        background: #fff; 
+        position: relative; 
+        z-index: 5; 
+    }
 
