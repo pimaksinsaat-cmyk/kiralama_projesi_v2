@@ -50,4 +50,8 @@ def create_app(config_class=Config):
     from app.makinedegisim import makinedegisim_bp
     app.register_blueprint(makinedegisim_bp,url_prefix='/makinedegisim')
 
+    # 8. Dökümanlar
+    from app.dokumanlar import dokumanlar_bp
+    app.register_blueprint(dokumanlar_bp, url_prefix='/dokumanlar')
+    
     return app

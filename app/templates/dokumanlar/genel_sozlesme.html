@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sözleşme Yazdır - {{ data.sozlesmeNo }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* A4 ve Yazdırma Ayarları */
+        @media print {
+            .no-print { display: none !important; }
+            body { background-color: white !important; margin: 0 !important; padding: 0 !important; }
+            .contract-page { 
+                box-shadow: none !important; 
+                margin: 0 !important; 
+                padding: 1.2cm 0.8cm 1.5cm 1cm !important; /* Kenar boşlukları optimize edildi */
+                width: 100% !important;
+                height: auto !important;
+            }
+            .page-break { page-break-before: always; }
+        }
+
+        .contract-font {
+            font-family: "Times New Roman", Times, serif !important;
+            line-height: 1.4; /* Satır aralığı hafif daraltıldı */
+            color: black;
+            font-size: 11pt;
+        }
+
+        .madde-baslik {
+            font-weight: bold;
+            text-decoration: underline;
+            margin-top: 12px;
+            margin-bottom: 4px;
+            display: block;
+            text-transform: uppercase;
+        }
+
+        .text-justify { text-align: justify; text-justify: inter-word; }
+        
+        /* Maddelerin sayfa geçişlerindeki boşlukları optimize et */
+        section { page-break-inside: auto; margin-bottom: 8px; }
+        
+        /* Strong ve vurgu uyumu */
+        strong, span, em { font-family: inherit !important; font-style: normal !important; }
+        
+        .tab-space { padding-left: 15px; display: block; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Kontrol Paneli -->
+    <div class="no-print bg-white border-b sticky top-0 z-50 p-4 shadow-sm">
+        <div class="container mx-auto flex justify-between items-center max-w-5xl">
+            <div class="flex items-center gap-4">
+                <a href="{{ url_for('firmalar.index') }}" class="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-2">
+                    <i class="fas fa-chevron-left"></i> Listeye Dön
+                </a>
+                <div class="h-6 w-px bg-gray-300"></div>
+                <div class="text-gray-700 font-medium">
+                    Sözleşme No: <span class="text-blue-700 font-bold">{{ data.sozlesmeNo }}</span>
+                </div>
+            </div>
+            <button onclick="window.print()" class="bg-blue-700 hover:bg-blue-800 text-white px-10 py-2.5 rounded-lg font-bold shadow-lg flex items-center gap-2">
+                <i class="fas fa-print"></i> Yazdır / PDF Kaydet
+            </button>
+        </div>
+    </div>
+
+    <!-- Sözleşme Sayfası -->
+    <div class="container mx-auto py-10 print:py-0">
+        <div class="bg-white mx-auto shadow-2xl p-[1cm] w-[21cm] min-h-[29.7cm] contract-page contract-font">
+            
+            <div class="flex justify-between mb-6 font-bold">
+                <div>Sözleşme No: {{ data.sozlesmeNo }}</div>
+                <div>Sözleşme Tarihi: {{ data.sozlesmeTarihi }}</div>
+            </div>
+
+            <h1 class="text-center text-[16pt] font-bold mb-8 uppercase tracking-tight">KİRALAMA SÖZLEŞMESİ</h1>
+
+            <!-- Madde-1 -->
+            <section>
+                <span class="madde-baslik">Madde-1: Taraflar</span>
+                <p>İşbu kira sözleşmesi: <strong>PİMAKS İNŞAAT TAAHHÜT VE DIŞ TİCARET LTD. ŞTİ.</strong></p>
+                <p>ADRES: İkitelli Osb Mah. Sefaköy San. Sit. 4. Blok No:5 Başakşehir-İstanbul / İkitelli V.D: 7300377202</p>
+                <p>(bundan böyle kısaca KİRAYA VEREN olarak adlandırılacaktır.) ile;</p>
+                <div class="mt-2 space-y-1">
+                    <p>FİRMA ADI: <strong>{{ data.firmaAdi }}</strong></p>
+                    <p>ADRES: {{ data.adres }}</p>
+                    <p>VERGİ DAİRESİ: {{ data.vergiDairesi }}</p>
+                    <p>VERGİ KİMLİK : {{ data.vergiNo }}</p>
+                </div>
+                <p class="mt-2">(bundan böyle KİRACI olarak adlandırılacaktır.) arasında aşağıdaki şartlarla düzenlenmiştir.</p>
+            </section>
+
+            <!-- Madde-2 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-2: Tanımlar</span>
+                <p><strong>MAKİNE :</strong> İşbu sözleşme konusu, mülkiyeti KİRAYA VEREN’e ait olan EK-1’de listelenmiş MAKİNE/MAKİNELER’i ifade eder.</p>
+                <p><strong>OPERATÖR :</strong> İşbu sözleşme konusu MAKİNE/MAKİNELER’i kullanan, OPERATÖR eğitimi almış ve sertifikaya sahip her bir kullanıcıyı ifade eder.</p>
+                <p><strong>KİRALAMA FORMU:</strong> İşbu sözleşmenin referans numarası ile atıfta bulunularak bu sözleşmenin eki haline gelmiş/gelecek olan, kiralanmış her bir MAKİNE/MAKİNELER’in marka, model, seri numarası, kiralama süresi, kullanım yeri, kira bedeli ve ödeme vadesi tanımlanan ve işbu sözleşmenin ayrılmaz parçası mahiyetinde Ek-1 olarak anılan her bir formdur.</p>
+            </section>
+
+            <!-- Madde-3 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-3: Sözleşmenin Konusu ve Süresi</span>
+                <p>3.1 Mülkiyeti ve/veya kullanım hakkı KİRAYA VEREN’e ait olan, EK-1’deki kiralama formunda bilgileri verilen MAKİNE/MAKİNELER’in işbu sözleşmede belirtilen şartlarla kiraya verilmesi ve tarafların karşılıklı hak ve yükümlülüklerinin belirlenmesidir. İşbu sözleşme hükümleri, sözleşmenin referans numarasıyla hazırlanan veya hazırlanacak tüm kiralama formları için geçerlidir.</p>
+                <p>3.2 İşbu kiralama sözleşmesinin süresi 1 (bir) yıl olup, taraflarca sözleşmenin bitim tarihinden en az 1 (ay) önce yazılı olarak bildirim yapılmadıkça sözleşme aynı şartlarla kendiliğinden her yıl uzamaya devam eder.</p>
+                <p>3.3 KİRACI, işbu sözleşme ile KİRAYA VEREN’den kiraladığı MAKİNE/MAKİNELER’in, mücbir sebep durumları (sel, deprem vs.) ve/veya global risk durumları (savaş, seferberlik hali, terör saldırıları, ekonomik kriz vb.) da dahil olmak üzere, kırılması, yanması, çalınması, terör/savaş nedeni ile zarar görmesi, kullanılamaz duruma gelmesi, güveni suistimal edilmesi, 3. Şahıs ve Devletler tarafından el konulması, haczedilmesi, tedbir konulması durumları da dahil olmak üzere ve bunlarla sınırlı olmaksızın KİRAYA VEREN’in iade talebi üzerine derhal KİRAYA VEREN’in tesisinde veya isteyeceği adreste iade edilememesi/ edememesi durumunda MAKİNE/MAKİNELER’in rayiç bedelini nakden ve defaten ödeyeceğini kabul beyan ve taahhüt eder.</p>
+            </section>
+
+            <!-- Madde-4 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-4: MAKİNE/MAKİNELER’in Kullanım Yeri ve Yer Değişikliği</span>
+                <p>4.1 MAKİNE/MAKİNELER’in kullanım yeri EK-1’de belirtilmiştir.</p>
+                <p>4.2 KİRACI, KİRAYA VEREN’e haber vermeksizin kiralanan MAKİNE/MAKİNELER’i EK- 1’de kullanım yeri olarak belirtilmiş olan tesis dışına ve/veya Karayolları Trafik Kanunu ve ilgili Yönetmeliklerin kapsamına giren hiçbir alana götüremez, sevk edemez ve çalıştıramaz. KİRAYA VEREN’in yazılı onayı alınmaksızın MAKİNE/MAKİNELER’in EK-1’de belirtilen kullanım yerinin değiştirilmesi durumunda işbu sözleşme KİRAYA VEREN’in yazılı bildirimini müteakip derhal fesih olacaktır ve KİRACI, iş saatleri içinde, MAKİNE/MAKİNELER’i evrakıyla birlikte, teslim aldığı gibi tam ve çalışır vaziyette, iyi halde KİRAYA VEREN’in tesisinde veya isteyeceği adreste iade edecektir. Aksi takdirde KİRACI, MAKİNE/MAKİNELER’in masrafların kendisine ait olmak üzere bulunduğu yerden KİRAYA VEREN tarafından el koyularak teslim alınabileceği hususunu ve KİRAYA VEREN’ in MAKİNE/MAKİNELER’i teslim almak için yapmış olduğu masrafları, kendisi adına tanzim edilen faturanın tebliğ tarihinden itibaren 7 (yedi) gün içerisinde nakden ve defaten ödemeyi kabul, beyan ve taahhüt eder.</p>
+            </section>
+
+            <!-- Madde-5 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-5: Kiralama Süresi</span>
+                <p>5.1 MAKİNE/MAKİNELER’in kiralama süresi her bir makine için ayrı ayrı EK-1’de belirtilmiştir.</p>
+                <p>5.2 Kira süresi KİRACI’nın talebi üzerine belirlenmiş olup, mutabık kalınmış olunan bu sürenin son bulmasına kadar, taraflardan herhangi biri tarafından, yazılı olarak, kiralama süresinin uzatılmadığı ve/veya bu süre sonunda MAKİNE/MAKİNELER’in geri alınması talep edilmediği sürece, kiralama aynı birim fiyat üzerinden kiralama sözleşmesindeki ve kiralama formundaki şartlarla, kendiliğinden uzar. Ancak taraflar, iadeli taahhütlü mektup/ noter/ EK-1’de belirtilen SATIŞ TEMSİLCİSİ‘ ne ait e-mail adresi/ KEP adresi aracılığıyla yazılı olarak kira süresini uzatmayacağını bildirdiği takdirde, kira süresi kesinlikle uzamayacaktır ve kira süresi sonunda KİRACI, MAKİNE/MAKİNELER’i aynı gün mesai saatleri içerisinde derhal KİRAYA VEREN’ e teslim etmekle yükümlüdür. Bu şekilde, KİRAYA VEREN veya KİRACI tarafından sözleşmenin bildirim yoluyla feshedilmesi halinde, işbu sözleşme, en erken kiralanan MAKİNE/MAKİNELERİN, KİRAYA VEREN’E teslimine kadar hüküm ve sonuçlarını doğurmaya devam eder.</p>
+            </section>
+
+            <!-- Madde-6 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-6: Teslim, Tesellüm ve Kullanım</span>
+                <p>6.1 KİRACI, SATIŞ TEMSİLCİSİ’nin e-mail adresine yazılı olarak MAKİNE/MAKİNELER’i teslim alacak kişi/kişileri bildirmek ile yükümlüdür. KİRACI’nın teslim alacak kişi/kişileri bildirmemesi halinde, teslimin KİRACI’ nın herhangi bir çalışanına, taşeronunun çalışanına ya da 3. şahıslara yapılması KİRACI’ya teslim edilmiş hükmündedir. KİRACI, gerek kendisinin bildirdiği gerek ise madde de sayılan diğer kişilerce imzalanan tesellüm belgelerinin kendisini bağlayıcı nitelikte olduğunu kabul, beyan ve taahhüt eder.</p>
+                <p>6.2 İşbu sözleşmeye konu teşkil eden MAKİNE/MAKİNELER’in tamamı, KİRAYA VEREN tarafından KİRACI’ya mekanik aksamları ve ayrılmaz parçaları ile tam ve çalışır vaziyette teslim edilecektir. KİRACI, teslimat sırasında MAKİNE/MAKİNELER’ i incelemek zorunda olup, hasar tespit etmesi halinde MAKİNE/MAKİNELER’ i teslim almaması ve aynı gün içerisinde teslimi reddetme sebebini de içerir şekilde yazılı olarak KİRAYA VEREN’e bildirmesi hususlarını kabul, beyan ve taahhüt eder. MAKİNE/MAKİNELER’ in işbu sözleşmenin 6.1. maddesinde belirtilen kişilerce teslim alınması, MAKİNE/MAKİNELER’ in incelendiği, görülebilir hiçbir ayıbının bulunmadığı ve KİRACI’nın MAKİNE/MAKİNELER’ i kabul ettiğine ilişkin nihai kanıt oluşturacaktır.</p>
+                <p>6.3 MAKİNE/MAKİNELER’in tesliminde, nakliyenin KİRACI tarafından yapılması/yaptırılması durumunda KİRAYA VEREN’in merkezinde ya da şubelerinde nakliyeciye yapılmış olan teslimat KİRACI’ya yapılmış sayılacaktır.</p>
+                <p>6.4 Kiralanan MAKİNE/MAKİNELER’in teslimi nedeni ile yapılan nakliye ve nakliye sigortası masrafları KİRACI’ya aittir. Bu nakliye ve nakliye sigorta bedellerinin KİRAYA VEREN tarafından ödenmesi halinde ödenen bedel, ilk kira faturasına eklenmek suretiyle KİRACI tarafından karşılanacaktır.</p>
+            </section>
+
+            <!-- Madde-7 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-7: Kira Bedeli ve Ödeme Şekli</span>
+                <p>7.1 MAKİNE/MAKİNELER’in kira bedeli ve diğer hizmet bedelleri mutabık kalınan vadeleriyle birlikte kiralama formunda (EK-1) belirtilmiştir. Ödemeler Euro olarak aynen ödenebileceği gibi ödeme tarihindeki T.C.M.B. döviz satış kuru karşılığı olan TL cinsinden de ödenebilir. Ödemelerin gününde yapılmaması halinde, Ek-1’ de belirlenen vade tarihinden itibaren fiili ödeme tarihine kadar EURO bazında aylık % 1 veya Türk Lirası bazında aylık %3 gecikme faizi uygulanacaktır. Herhangi bir ödemenin gününde yapılmaması, kalan borçları ihtara gerek kalmaksızın muaccel hale getirecektir. Bu durumda KİRAYA VEREN’in MAKİNE/MAKİNELER’in iadesini talep etmesi durumunda KİRACI MAKİNE/MAKİNELER’i derhal iade edeceğini kabul ve taahhüt eder. Nakliye, operatör ve diğer yükümlülükler KİRACI’ya ait olmakla birlikte, bunların bir veya birkaçı eğer KİRAYA VEREN tarafından karşılanırsa bu bedeller için KİRACI’ya ayrıca fatura tanzim edilecektir.</p>
+                <p>7.2 KİRACI’ nın borçlarını 7.1. madde de belirlenen şartlara uygun olarak ödememesi halinde; KİRAYA VEREN, KİRACI’ dan gecikme tarihinden sonra, hangi kayıtla olursa olsun tahsil edilen tutarları, KİRACI’ya hitaben düzenlenmiş ve bedeli ödenmemiş en önceki tarihli faturadan başlayarak mashup etme hakkına sahip olup, KİRACI, KİRAYA VEREN tarafından bu şekilde yapılacak mahsup işlemine itiraz etme hakkından vazgeçtiğini kabul, beyan ve taahhüt eder.</p>
+                <p>7.3 KİRAYA VEREN ile KİRACI arasında düzenlenen sözleşme ve bu sözleşmeye dayanılarak alınan kefalet, teminat, rehin, ipotek, temlik ve kiralama akdine ilişkin düzenlenen tüm belgelerden doğan her türlü vergi, damga vergisi, resim harçlar ve masraflar KİRACI’ya aittir.</p>
+            </section>
+
+            <!-- Madde-8 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-8: Mülkiyet</span>
+                <p>8.1 Mülkiyeti KİRAYA VEREN’e ait olan MAKİNE/MAKİNELER için, hiçbir şekilde KİRACI ve 3. şahıslar tarafından, mülkiyet ve hak iddiasında bulunulamaz, kiralanamaz, rehin edilemez, satılamaz. MAKİNE/MAKİNELER’in KİRACI dışında 3. şahıslara kullandırılması KİRAYA VEREN’in yazılı onayına tabidir. KİRACI, 3. şahıslara karşı, MAKİNE/MAKİNELER’in KİRAYA VEREN’e ait olduğunu savunmakla, rehin, haciz, tedbir vs. konusu yapılmayacağını bildirmekle ve KİRAYA VEREN’i derhal yazılı olarak bilgilendirmekle yükümlüdür. KİRACI’dan kaynaklanan nedenlerle makinelerin, haciz, tedbir, rehin vs. kısıtlamalara uğraması halinde dahi, KİRACI, kira bedellerini ödemekle ve sözleşmeden kaynaklanan sorumluluklarını yerine getirmekle yükümlüdür. KİRACI, KİRAYA VEREN’in yazılı onayı olmadan sözleşmedeki hak ve yükümlülüklerini 3. şahıslara devredemez.</p>
+                <p>8.2 Kiralanan MAKİNE/MAKİNELER karşılık ve teminat olarak gösterilemez, üzerinde haciz işlemi yapılamaz. MAKİNE/MAKİNELER’ in herhangi bir şekilde haczedilmesi ve yediemine bırakılması durumunda, hacizli olarak beklediği sürelere ilişkin kiralar ile üzerindeki haczin kaldırılması, yedieminden geri alınması, yüklenmesi, taşınması ve bu işlemler sırasında MAKİNE/MAKİNELER’in ziya ve hasara uğraması nedeniyle yapılacak tüm masraflar, yargılama giderleri ve avukatlık ücreti KİRACI tarafından tazmin edilecektir.</p>
+                <p>8.3 Nakliyeyi KİRACI’nın yaptığı durumlarda KİRACI, MAKİNE/MAKİNELERİN gidiş- dönüş nakliyeleri için yaptırmış olduğu sigorta poliçesinde KİRAYA VEREN’i daini mürtehin olarak göstermek ve de sigorta şirketi ile sulh ve ibra hususunda yetkilendirmekle yükümlüdür. KİRACI teminat vermek hususunda imtina etmesi durumunda KİRAYA VEREN işbu sözleşmeyi yazılı bildirimde bulunarak tek taraflı olarak feshetme hakkına haizdir. Bu halde sözleşmenin feshedilmesi durumunda KİRAYA VEREN’in fesih bildirimini müteakip 1 (bir) gün içinde KİRACI MAKİNE/MAKİNELER’i KİRAYA VEREN’e tüm masrafları kendisine ait olmak üzere kayıtsız şartsız teslim etmekle yükümlüdür.</p>
+            </section>
+
+            <!-- Madde-9 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-9: Kiracı’nın Kullanım İle İlgili Sorumluluğu</span>
+                <p>9.1 KİRACI, kiralanan MAKİNE/MAKİNELER’i kapasite ve amacına, iş güvenliği ve sağlığı mevzuat ve gereklerine uygun olarak ve sözleşmede ve/veya sözleşmenin eklerinde belirtilen yer, ortam ve işlerde kullanabilir. Kira konusu MAKİNE/MAKİNELER; amacı, kapasitesi, belirtilen yer ve ortam dışında kullanılamaz. KİRACI, MAKİNE/MAKİNELER’i hiçbir şekilde kumlama ve/veya raspa işlemlerinde kullanmayacağını, gayrikabili rücu kabul ve taahhüt eder. Aksi takdirde KİRACI, KİRAYA VEREN’in bu ihlallerden kaynaklı olarak oluşabilecek zararların tümünü tazmin ile yükümlüdür.</p>
+                <p>9.2 KİRACI, kiralanan MAKİNE/MAKİNELER için çalışma sahasında mevzuattan ve sözleşmeden doğan her türlü güvenlik tedbirini almakla yükümlüdür. Kiralanan MAKİNE/ MAKİNELER’in, iş saatleri dışında etrafı tel örgü veya duvarla çevrili, kapalı, 24 saat güvenlik görevlisi bulunan aydınlık bir alanda muhafazasını sağlanması ve buna ilişkin azami güvenlik tedbirlerinin alınması KİRACI’ nın yükümlülüğündedir. Yangın, sabotaj ve benzeri nedenlerden dolayı doğabilecek zararlara karşı KİRACI, işyerinde gerekli mali sorumluluk sigortalarını yaptırmakla ve kiralamış olduğu MAKİNE/MAKİNELERİ zeyilname düzenleterek poliçe kapsamına aldırmakla yükümlüdür. MAKİNE/MAKİNELER’in, kullanım sahasında meydana gelen bu ve buna benzer nedenlerle göreceği hasarlardan KİRACI sorumludur.</p>
+                <p>9.3 Kullanıcıların eğitim alma ihtiyaçlarını belirlemek ve MAKİNE/MAKİNELER’in kullanımını Milli Eğitim Bakanlığı tarafından onaylı operatörlük belgesine sahip Personel ve Yük Yükseltici Operatörüne yaptırmaktan ve MAKİNE/MAKİNELER’in, belirtilen çalışma talimatlarına, İş güvenliğine ilişkin mevzuata uygun şekilde kullanılmasından; aykırı kullanım nedeni ile doğacak her türlü tazmin yükü, hasar ve zararlardan KİRACI sorumludur.</p>
+                <p>9.4 KİRACI, kiralama süresi boyunca MAKİNE/MAKİNELERİN arızalanması durumunda KİRAYA VEREN’e EK-1 de belirtilen servis iletişim bilgileri aracılıyla derhal yazılı olarak bildirim yapmakla yükümlüdür. Geriye dönük olarak yapılacak olan arıza bildirimleri KİRAYA VEREN tarafından dikkate alınmayacak ve bildirimin yapıldığı gün arızanın meydana geldiği kabul edilecektir. MAKİNE/MAKİNELER üzerinde yapılacak onarımlar, KİRAYA VEREN’in bilgi, gözetim ve denetimi altında ve orijinal parça, malzemelerle yapılacaktır.</p>
+                <p>9.5 KİRACI, MAKİNE/MAKİNELER’in mülkiyetinde ya da kullanımında oluşabilecek zararların KİRAYA VEREN bilgisi dahilinde minimum düzeyde tutulması ve acil müdahale gerektiren hallerde azami önlemlerin alınması ile yükümlüdür. KİRAYA VEREN’ in bilgisi dışında KİRACI’nın OPERATÖR’leri ve/veya başka kurum ve kişilerce bakım ve onarım için müdahale edilemez. KİRACI hiçbir şartta; arıza, tamir, kaza, hastalık, fesih vs. gerekçe göstermek suretiyle yükümlülüklerini yerine getirmekten kaçınamaz, zararının tazmini ve sair taleplerde bulunamaz.</p>
+                <p>9.6 KİRACI, teslim tarihinden fiilen iadesine kadar, MAKİNE/MAKİNELER’i; korumakla, operatörlük belgesine sahip ve ehil personel aracılığıyla, garanti şartlarına ve teknik kapasiteye uygun şekilde, uygun yakıt ve malzeme ile azami özeni göstererek kullanmakla yükümlüdür. KİRACI, motor yağı, hidrolik yağı, su ve diğer sıvı seviyeleri ile basınç seviyesi ve lastiklerin durumunun tespiti için günlük kontrolleri, yapısal parçaların sağlamlığı ve kaynak noktalarının gözle kontrolü, günlük bakım, yağlama, akü suyu kontrolü vs. işlemleri yapmakla ve MAKİNE/MAKİNELER’in periyodik bakım zamanı (çalışma saatinin 250 ve katlarını gösterdiğinde yapılmaktadır.) geldiğinde durumu derhal bildirmekle yükümlüdür.</p>
+                <p>9.7 MAKİNE/MAKİNELER’in her türlü yakıt/enerji giderleri KİRACI’ya aittir. MAKİNE/MAKİNELER de kullanılacak Dizel yakıt Eurodizel olmalıdır. Yakıttan dolayı oluşacak hasarlardan KİRACI sorumludur. Yakıt kalitesinin analiz edilmesi sorumluluğu KİRACI’ya aittir.</p>
+                <p>9.8 KİRACI, KİRAYA VEREN’in yazılı iznini almaksızın hiçbir şekilde MAKİNE/MAKİNELER üzerinde değişiklik ve ilave yapamaz, üzerindeki yazı ve bilgileri yok edemez, değiştiremez, logo vs. ekleyemez.</p>
+                <p>9.9 PERSOENEL YÜKSELTİCİ PLATFORLAR : MAKİNE/MAKİNELER iç mekan ve düz zeminde çalışmak için uygundur, dış ortamlarda ve rüzgarlı havada çalıştırılması uygun değildir. MAKİNE/MAKİNELER’in, iş güvenliği açısından yükseltilmiş pozisyonda iken yürütülmemesi gerekmektedir. MAKİNE/MAKİNELER şarj edildiği esnada kullanılamaz. MAKİNE/MAKİNELER’in üzerinde sadece personel çalışması için tasarlanmıştır, yük ve malzeme kaldırmak amacıyla kullanılamaz.</p>
+                <p>9.10 FORKLİFT / YÜKLEME /KALDIRMA MAKİNELERİ: MAKİNE/MAKİNELER Resmi kurumlardan alınmış operatörlük belgesine sahip olan KİRACI ya ait ehil personel tarafından kullanılacaktır. Söz konusu makineler kapasitelerinin üzerinde malzeme kaldırmayacaklardır, İLAVE UZATMA ÇATAL BIÇAĞI kullanılamaz bu durum makinelerin kaldırma kapasitelerinin üzerine çıkmasına sebep olur. MAKİNE/MAKİNELER ile personel kaldırılamaz ve veya taşınamaz. MAKİNE/MAKİNELER trafiğe ve veya yaya kaldırımlarına çıkartılamaz. MAKİNE/MAKİNELER in kaldıracağı yükler düzgün ve sağlam paletlenmiş olmalıdır. MAKİNE/MAKİNELER in kullanımı sırasında tüm iş güvenliklerinin sağlanması KİRACI ya aittir.</p>
+                <p>9.11 İşbu kiralama sözleşmesi kapsamında zilyetliği KİRACI’ya bırakılan MAKİNE/MAKİNELER’in kullanılacağı iş ile KİRAYA VEREN arasında hiçbir bağ yoktur. MAKİNE/MAKİNELER’in KİRACI’ya tesliminden KİRAYA VEREN’e fiilen iadesine kadar geçen sürede meydana gelebilecek herhangi bir zarar, adli/idari para cezaları ve tazmin yükü getiren her türlü sorumluluk KİRACI’ya aittir.</p>
+                <p>9.12 KİRACI, MAKİNE/MAKİNELER’in kullanımı sırasında KİRACI’nın çalışanlarının, çevresinin ve üçüncü şahısların uğrayacağı cismani, bedeni, maddi-manevi, menfi- müsbet tüm zararlardan kusursuz sorumludur.</p>
+                <p>9.13 KİRACI, kiralanan MAKİNE/MAKİNELER ile ilgili her türlü iletişim ve/veya işbu sözleşme kapsamında yapmakla yükümlü olduğu her türlü bildirimi, işbu EK-1’de belirtilen SATIŞ TEMSİLCİSİ ‘ne ait e-mail adresiyle de sağlayacağını kabul,beyan ve taahhüt eder.</p>
+                <p>9.14 KİRACI kiralanan MAKİNE/MAKİNELER’i gün sonunda çalışması sona erdiğinde anahtarlarını ve kumandalarını MAKİNE/MAKİNELER üzerinde bırakmayıp, güvenli bir yerde muhafaza etmekle yükümlüdür.</p>
+            </section>
+
+            <!-- Madde-10 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-10: Makine/Makinelerin İadesi</span>
+                <p>10.1 KİRACI, kira süresinin sonunda veya sözleşmenin KİRAYA VEREN tarafından feshi halinde, MAKİNE/MAKİNELER’i derhal ve mesai saatleri içerisinde evrakıyla birlikte, teslim aldığı gibi tam ve çalışır vaziyette KİRAYA VEREN’in tesisinde veya KİRAYA VEREN’in bildireceği adreste iade edecektir. MAKİNE/MAKİNELER’in mesai saatleri dışında iadesi halinde, iade bir sonraki gün yapılmış sayılır. İadenin gecikmesi halinde KİRACI, kira bedelinin yanı sıra cezai şart olarak her gecikme günü için KDV dahil günlük kira bedelinin 2 (iki) katı bedel ödemekle yükümlüdür.</p>
+                <p>10.2 MAKİNE/MAKİNELER’in iade edildiğini ispatlama külfeti KİRACI’ya aittir. KİRACI, MAKİNE/MAKİNELER’i iade edeceği zaman KİRACI’nın bir yetkilisi ve/veya KİRACI tarafından yetkilendirilen bir temsilcisi mutlaka teslimat için hazır bulunmalı ve MAKİNE/MAKİNELER’in iade tutanağını imzalamalıdır. KİRACI’ nın yetkilisi MAKİNE/MAKİNELER’in iadesi esnasında hazır bulunmaz ve/veya iade tutanağını imzalamaz ise KİRAYA VEREN’in düzenleyeceği iade tutanağı geçerli olacaktır ve KİRACI’nın bu tutanağa itiraz hakkı bulunmamaktadır.</p>
+                <p>10.3 KİRACI, MAKİNE/MAKİNELER’in iade gününü yazılı olarak bildirmekle yükümlüdür. Aksi halde MAKİNE/MAKİNELER’in KİRACI’nın zilyetliğinde bulunduğu zaman dilimi için de KİRACI MAKİNE/MAKİNELER’i kullanmasa dahi kira bedelini ödemekle yükümlüdür.</p>
+                <p>10.4 KİRAYA VEREN, iade sonrası, MAKİNE/MAKİNELER’in kontrolünün yapılması ve hasar miktarının belirlenmesi için 7 (yedi) işgünü süreye sahip olacaktır. KİRAYA VEREN, hasarın miktarını ve işbu hasarı gidermek için gerekli onarım bedelini, henüz ilgili onarım gerçekleştirilmeden önce kendi teknik servisi aracılıyla tespit edecektir. KİRAYA VEREN gerek gördüğü takdirde anılan işlemleri masrafları KİRACI’ ya yansıtılarak ekspertiz büroları aracılığı ile gerçekleştirecektir. KİRAYA VEREN, MAKİNE/MAKİNELER üzerinde bulunan hasarların detaylı fotoğrafları, eksiklikleri ve rücu bedellerini KİRACI’ya internet yolu ile bildirilecektir. Bildirim tarihinden itibaren 5 (beş) işgünü içerisinde taraflar arasında mutabakat sağlanacaktır. Aksi takdirde, KİRACI, KİRAYA VEREN’ in hasar, eksiklik, MAKİNE/MAKİNELER’in satış bedelindeki değer kaybı, tamirat masrafları, tamirde mahrum kalınan kira bedeli vb. hususlardaki tespitlerinde mutabık kaldıklarını kabul, beyan ve taahhüt eder.</p>
+            </section>
+
+            <!-- Madde-11 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-11: Kaza, Hasar, Çalınma</span>
+                <p>11.1 Kiracı, Kullanıcının kusuru veya çalışma ortamının olumsuz şartları nedeni ile makine/makinelerde meydana gelen her türlü hasardan sorumlu olduğunu ve ilgili hasarlara ait bedeli ödeyeceğini gayrikabili rücu kabul ve taahhüt eder. Kullanıcı hataları KİRAYA VEREN’in servis raporu ile tespit edilir. KİRACI hiçbir şekilde, KİRAYA VEREN’in yapmış olduğu sigorta ile ilgili hak talebinde bulunamaz.</p>
+                <p>11.2 Sözleşme konusu MAKİNE/MAKİNE’lerin işbu sözleşmenin 4. maddesine aykırı kullanımı neticesinde meydana gelen olaylarda; kaza raporu, alkol raporu, ehliyet fotokopisi gibi belgelerin asılları veya tasdikli fotokopileri kaza tarihinden itibaren en geç 3 (üç) işgünü içerisinde KİRAYA VEREN’e ulaştırılacaktır. Bu raporlar her türlü hasarda sigortalardan faydalanabilmek için gerekli olup, alınmamaları veya zamanında teslim edilmemeleri halinde hasar bedeli ve MAKİNE/MAKİNELER’in tamirde geçen günlerine ait kira bedeli KİRACI tarafından karşılanacaktır.</p>
+                <p>11.3 Gerek diğer motorlu kara araçlarına gerekse üçüncü şahıslara karşı, kira konusu MAKİNE/MAKİNELER’in karışabileceği kazalar nedeniyle doğması muhtemel bedeni, cismani, maddi-manevi, menfi-müspet zarar ve her türlü zarardan KİRACI sorumlu olacaktır.</p>
+                <p>11.4 MAKİNE/MAKİNELER’in KİRACI’ nın kusuru/ihmali sonucunda çalınması/kaybolması durumunda, KİRACI bu çalınma/kaybolma sebebi ile KİRAYA VEREN’in uğrayacağı bütün zararları karşılamakla yükümlüdür.</p>
+                <p>11.5 KİRACI, işbu madde kapsamında karşılaması gereken zararlar için kendine tebliğ edilecek fatura bedelini, tebliğ edildiği tarihten itibaren 7 (yedi) gün içerisinde KİRAYA VERENE nakden ve defaten ödemeyi taahhüt etmiştir.</p>
+                <p>11.6 Kiralanan MAKİNE/MAKİNELER’in çalınması, kaybolması, KİRACI’nın kusuru ile hasarlanması, kullanılamaz hale gelmesi durumunda KİRACI, KİRAYA VEREN’e bu durumu derhal ve yazılı olarak bildirir. Aksi takdirde KİRACI, rayiç bedeli ile işbu rayiç bedelin yarısı tutarında cezai şartı ödemeyi peşinen kabul, beyan ve taahhüt eder.</p>
+            </section>
+
+            <!-- Madde-12 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-12: Fesih Hakkı, Sözleşmenin Sona Ermesi, Cezai Şart, Tazminat</span>
+                <p>12.1 KİRACI’nın; işbu sözleşme şartlarından herhangi birine aykırı davranması, ölümü, fesih-tasfiye hali, iflası, konkordato ilan etmesi gibi durumlarda KİRAYA VEREN, tek taraflı olarak, işbu sözleşmeyi feshedebilir.</p>
+                <p>12.2 KİRACI’ nın ödemeleri aksatması halinde, KİRAYA VEREN yazılı ihbarda bulunarak işbu sözleşmeyi tek taraflı olarak feshedebilir.</p>
+                <p>12.3 Sözleşmenin feshi hallerinde, KİRACI, KİRAYA VEREN tarafından belirtilen teslim yerinde MAKİNE/MAKİNELER’i KİRAYA VEREN’e derhal teslim edecektir.</p>
+                <p>12.6 İşbu sözleşmeden doğacak tüm maddi-manevi tazminat, menfi-müspet zarar, doğrudan-dolaylı zarar ve her türlü alacak nedeniyle oluşacak giderimlerden KİRACI sorumludur.</p>
+                <p>12.7 KİRACI’nın işyerinde grev, lokavt gibi sendikal kararların alınması durumunda sözleşme askıya alınır ve kiralık MAKİNE/MAKİNELER derhal KİRAYA VEREN’ e iade edilir.</p>
+            </section>
+
+            <!-- Madde-13 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-13: Doğru Beyan Yükümlülüğü</span>
+                <p>İşbu sözleşme ve sözleşmeye dayalı olarak KİRACI’nın KİRAYA VEREN’e tevdi ettiği belge ve bilgilerin yasal ve doğru olduğu hususunda güven esas olup, bu güveni zedeleyen faktörlerin tespiti halinde brüt sözleşme bedelinin %60’ı oranında cezai şart ödemek zorunluluğunda kalacağını KİRACI peşinen kabul, beyan ve taahhüt eder.</p>
+            </section>
+
+            <!-- Madde-14 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-14: Gizlilik</span>
+                <p>Taraflar, birbirleri hakkında öğrendikleri tüm bilgileri gizli tutacaklarını, diğer tarafın yazılı onayını almadan bu bilgileri üçüncü kişilere açıklamayıp, ifşa etmeyeceklerini kabul, beyan ve taahhüt ederler.</p>
+            </section>
+
+            <!-- Madde-15 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-15: Bölünebilirlik</span>
+                <p>Bu sözleşmenin hükümlerinden birisinin yasa dışı ya da uygulanamaz olması halinde, bu durum sadece ilgili hükümle ilgili kabul edilecek ve sözleşmenin diğer hükümlerine bir etkisi bulunmayacaktır.</p>
+            </section>
+
+            <!-- Madde-16 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-16: Anlaşmazlık Halli-Yetkili Mahkeme</span>
+                <p>16.1 İşbu sözleşme ve sözleşmeden doğan/doğacak tüm hak ve yükümlülükler T.C. yasalarına tabidir. İstanbul Merkez Mahkemeleri ve İcra Daireleri yetkilidir.</p>
+                <p>16.2 KİRACI, KİRAYA VEREN’ in usulüne uygun olarak tutulmuş ticari defter ve kayıtları ile bilgisayar ortamındaki kayıtların geçerli, bağlayıcı, kesin ve münhasır delil olacağını kabul eder.</p>
+            </section>
+
+            <!-- Madde-17 -->
+            <section class="text-justify">
+                <span class="madde-baslik">Madde-17: Son Hükümler</span>
+                <p>17.2 İşbu sözleşmenin imzalanmasından doğacak damga vergisi yükümlülüğünün tamamı KİRACI’ ya aittir.</p>
+                <p>17.3 Sözleşmede yazılı adresler tebligat adresleri olup değişiklikler 3 (üç) işgünü içerisinde yazılı olarak karşı tarafa bildirilmelidir.</p>
+                <p>17.4 İşbu sözleşme ve eklerinde taraflara ait olarak belirtilen e-mail adreslerinin değişmesi halinde karşı tarafa derhal değişiklik yazılı olarak bildirilecektir.</p>
+            </section>
+
+            <!-- İmza Alanı -->
+            <div class="mt-10 pt-6 border-t-2 border-black">
+                <p class="text-center font-bold mb-6 text-[12pt]">
+                    İşbu 7 (yedi) sayfa ve 17 (onyedi) madde ile eklerinden (Ek-1: kiralama formu, Ek-2: İmza sirküleri) ibaret sözleşme tarafların karşılıklı mutabakatı ile 2 (iki) nüsha olarak düzenlenmiş ve {{ data.sozlesmeTarihi }} tarihinde imza altına alınmıştır.
+                </p>
+
+                <div class="grid grid-cols-2 gap-8 text-center text-[12pt]">
+                    <div class="space-y-16">
+                        <div>
+                            <p class="font-bold underline uppercase">KİRACI</p>
+                            <p class="font-bold uppercase text-[10pt] mt-1 leading-tight px-4">{{ data.firmaAdi }}</p>
+                        </div>
+                        <div class="text-gray-400 italic text-sm">Kaşe / İmza</div>
+                    </div>
+                    <div class="space-y-16 border-l border-gray-300">
+                        <div>
+                            <p class="font-bold underline uppercase">KİRAYA VEREN</p>
+                            <p class="font-bold text-[10pt] mt-1">PİMAKS İNŞAAT TAAHHÜT VE DIŞ TİCARET LTD. ŞTİ.</p>
+                        </div>
+                        <div class="text-gray-400 italic text-sm">Kaşe / İmza</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alt Bilgi -->
+            <div class="mt-16 pt-4 border-t border-gray-100 flex justify-between text-[8pt] text-gray-400 italic">
+                <div>Pimaks Dijital Arşiv - Ref: {{ data.sozlesmeNo }}</div>
+                <div>Sayfa 1 / 7</div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

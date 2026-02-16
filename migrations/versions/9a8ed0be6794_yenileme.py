@@ -1,8 +1,8 @@
-""" sıfırlama
+"""yenileme
 
-Revision ID: cca1561d3743
+Revision ID: 9a8ed0be6794
 Revises: 
-Create Date: 2025-12-21 20:04:18.987634
+Create Date: 2026-02-12 23:50:50.015685
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'cca1561d3743'
+revision = '9a8ed0be6794'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -22,6 +22,8 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('firma_adi', sa.String(length=150), nullable=False),
     sa.Column('yetkili_adi', sa.String(length=100), nullable=False),
+    sa.Column('telefon', sa.String(length=20), nullable=True),
+    sa.Column('eposta', sa.String(length=120), nullable=True),
     sa.Column('iletisim_bilgileri', sa.Text(), nullable=False),
     sa.Column('vergi_dairesi', sa.String(length=100), nullable=False),
     sa.Column('vergi_no', sa.String(length=50), nullable=False),
@@ -29,9 +31,14 @@ def upgrade():
     sa.Column('is_tedarikci', sa.Boolean(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('bakiye', sa.Numeric(precision=15, scale=2), nullable=False),
+    sa.Column('imza_yetkisi_kontrol_edildi', sa.Boolean(), nullable=False),
+    sa.Column('imza_yetkisi_kontrol_tarihi', sa.DateTime(), nullable=True),
+    sa.Column('imza_yetkisi_kontrol_eden_id', sa.Integer(), nullable=True),
+    sa.Column('imza_arsiv_notu', sa.String(length=255), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('firma', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_firma_eposta'), ['eposta'], unique=False)
         batch_op.create_index(batch_op.f('ix_firma_firma_adi'), ['firma_adi'], unique=False)
         batch_op.create_index(batch_op.f('ix_firma_is_musteri'), ['is_musteri'], unique=False)
         batch_op.create_index(batch_op.f('ix_firma_is_tedarikci'), ['is_tedarikci'], unique=False)
@@ -42,6 +49,7 @@ def upgrade():
     sa.Column('kasa_adi', sa.String(length=100), nullable=False),
     sa.Column('tipi', sa.String(length=20), nullable=False),
     sa.Column('para_birimi', sa.String(length=3), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('bakiye', sa.Numeric(precision=15, scale=2), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
@@ -69,18 +77,6 @@ def upgrade():
         batch_op.create_index(batch_op.f('ix_ekipman_kod'), ['kod'], unique=True)
         batch_op.create_index(batch_op.f('ix_ekipman_seri_no'), ['seri_no'], unique=False)
 
-    op.create_table('hizmet_kaydi',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('firma_id', sa.Integer(), nullable=False),
-    sa.Column('tarih', sa.Date(), nullable=False),
-    sa.Column('tutar', sa.Numeric(precision=15, scale=2), nullable=False),
-    sa.Column('aciklama', sa.String(length=250), nullable=True),
-    sa.Column('yon', sa.String(length=10), nullable=False),
-    sa.Column('fatura_no', sa.String(length=50), nullable=True),
-    sa.Column('vade_tarihi', sa.Date(), nullable=True),
-    sa.ForeignKeyConstraint(['firma_id'], ['firma.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
     op.create_table('kiralama',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('kiralama_form_no', sa.String(length=100), nullable=True),
@@ -144,20 +140,49 @@ def upgrade():
     sa.ForeignKeyConstraint(['ekipman_id'], ['ekipman.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('hizmet_kaydi',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('firma_id', sa.Integer(), nullable=False),
+    sa.Column('nakliye_id', sa.Integer(), nullable=True),
+    sa.Column('ozel_id', sa.Integer(), nullable=True),
+    sa.Column('tarih', sa.Date(), nullable=False),
+    sa.Column('tutar', sa.Numeric(precision=15, scale=2), nullable=False),
+    sa.Column('aciklama', sa.String(length=250), nullable=True),
+    sa.Column('yon', sa.String(length=10), nullable=False),
+    sa.Column('fatura_no', sa.String(length=50), nullable=True),
+    sa.Column('vade_tarihi', sa.Date(), nullable=True),
+    sa.ForeignKeyConstraint(['firma_id'], ['firma.id'], ),
+    sa.ForeignKeyConstraint(['nakliye_id'], ['nakliye.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('kiralama_kalemi',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('kiralama_id', sa.Integer(), nullable=False),
-    sa.Column('ekipman_id', sa.Integer(), nullable=False),
+    sa.Column('ekipman_id', sa.Integer(), nullable=True),
+    sa.Column('is_dis_tedarik_ekipman', sa.Boolean(), nullable=True),
+    sa.Column('harici_ekipman_tipi', sa.String(length=100), nullable=True),
+    sa.Column('harici_ekipman_marka', sa.String(length=100), nullable=True),
+    sa.Column('harici_ekipman_model', sa.String(length=100), nullable=True),
+    sa.Column('harici_ekipman_seri_no', sa.String(length=100), nullable=True),
+    sa.Column('harici_ekipman_kapasite', sa.Integer(), nullable=True),
+    sa.Column('harici_ekipman_yukseklik', sa.Integer(), nullable=True),
+    sa.Column('harici_ekipman_uretim_yili', sa.Integer(), nullable=True),
+    sa.Column('harici_ekipman_tedarikci_id', sa.Integer(), nullable=True),
     sa.Column('kiralama_baslangici', sa.Date(), nullable=False),
     sa.Column('kiralama_bitis', sa.Date(), nullable=False),
     sa.Column('kiralama_brm_fiyat', sa.Numeric(precision=15, scale=2), nullable=False),
     sa.Column('kiralama_alis_fiyat', sa.Numeric(precision=15, scale=2), nullable=True),
+    sa.Column('is_oz_mal_nakliye', sa.Boolean(), nullable=True),
+    sa.Column('is_harici_nakliye', sa.Boolean(), nullable=True),
     sa.Column('nakliye_satis_fiyat', sa.Numeric(precision=15, scale=2), nullable=True),
     sa.Column('nakliye_alis_fiyat', sa.Numeric(precision=15, scale=2), nullable=True),
     sa.Column('nakliye_tedarikci_id', sa.Integer(), nullable=True),
+    sa.Column('nakliye_araci_id', sa.Integer(), nullable=True),
     sa.Column('sonlandirildi', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['ekipman_id'], ['ekipman.id'], ),
+    sa.ForeignKeyConstraint(['harici_ekipman_tedarikci_id'], ['firma.id'], ),
     sa.ForeignKeyConstraint(['kiralama_id'], ['kiralama.id'], ),
+    sa.ForeignKeyConstraint(['nakliye_araci_id'], ['ekipman.id'], ),
     sa.ForeignKeyConstraint(['nakliye_tedarikci_id'], ['firma.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -209,6 +234,7 @@ def downgrade():
     op.drop_table('kullanilan_parca')
     op.drop_table('stok_hareket')
     op.drop_table('kiralama_kalemi')
+    op.drop_table('hizmet_kaydi')
     op.drop_table('bakim_kaydi')
     with op.batch_alter_table('stok_karti', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_stok_karti_parca_kodu'))
@@ -220,7 +246,6 @@ def downgrade():
 
     op.drop_table('nakliye')
     op.drop_table('kiralama')
-    op.drop_table('hizmet_kaydi')
     with op.batch_alter_table('ekipman', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_ekipman_seri_no'))
         batch_op.drop_index(batch_op.f('ix_ekipman_kod'))
@@ -232,6 +257,7 @@ def downgrade():
         batch_op.drop_index(batch_op.f('ix_firma_is_tedarikci'))
         batch_op.drop_index(batch_op.f('ix_firma_is_musteri'))
         batch_op.drop_index(batch_op.f('ix_firma_firma_adi'))
+        batch_op.drop_index(batch_op.f('ix_firma_eposta'))
 
     op.drop_table('firma')
     # ### end Alembic commands ###

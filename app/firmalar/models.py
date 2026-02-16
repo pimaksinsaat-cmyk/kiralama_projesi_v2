@@ -1,4 +1,5 @@
 from app.extensions import db
+from datetime import date
 
 # 1. FIRMA (Müşteri/Tedarikçi)
 class Firma(db.Model):
@@ -25,6 +26,18 @@ class Firma(db.Model):
     
     # KRİTİK GÜNCELLEME: Float -> Numeric(15, 2)
     bakiye = db.Column(db.Numeric(15, 2), default=0, nullable=False)
+
+    # --- YENİ: SÖZLEŞME VE BULUT YÖNETİM ALANLARI ---
+    # Sözleşme Takibi
+    sozlesme_no = db.Column(db.String(50), unique=False, nullable=True) # Örn: PS-2026-001
+    sozlesme_rev_no = db.Column(db.Integer, default=0, nullable=True) # Yenilendikçe artacak
+    sozlesme_tarihi = db.Column(db.Date, nullable=True, default=date.today)
+    
+    # Bulut Klasör Yönetimi
+    # Örn: "145_pimaks_i" şeklinde slugified klasör adı
+    bulut_klasor_adi = db.Column(db.String(100), unique=True, nullable=True)
+
+
 
     # -------------------------------------------------
     # İMZA YETKİSİ / SÖZLEŞME KONTROL DURUMU (HAFİF)
@@ -64,7 +77,8 @@ class Firma(db.Model):
         'Kiralama',
         back_populates='firma_musteri',
         foreign_keys='Kiralama.firma_musteri_id',
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        order_by="desc(Kiralama.id)"
     )
     
     # Filo Modülü (Tedarikçi ise)

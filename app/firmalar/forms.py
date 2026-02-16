@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SubmitField, BooleanField
-from wtforms.validators import DataRequired, Length, InputRequired
-
+from wtforms import StringField, TextAreaField, SubmitField, BooleanField, IntegerField, DateField
+from wtforms.validators import DataRequired, Length, InputRequired,Optional
+from datetime import date
 # İsteğiniz üzerine utils kütüphanesi korundu
 from app.utils import validate_currency, secim_hata_mesaji
 # Modelin yeni adresi:
@@ -43,6 +43,13 @@ class FirmaForm(FlaskForm):
         DataRequired(message="Vergi numarası zorunludur."),
         Length(max=50, message="Vergi numarası çok uzun.")
     ])
+
+    # --- SÖZLEŞME VE DOKÜMAN TAKİBİ ---
+    # Bu alan ilk kayıt anında boş bırakılabilir, sistem otomatik üretebilir.
+    genel_sozlesme_no = StringField('PS Numarası (Boşsa Otomatik Oluşur)', validators=[Optional(), Length(max=50)])
+    sozlesme_rev_no = IntegerField('Sözleşme Revizyon No', default=0)
+    sozlesme_tarihi = DateField('Sözleşme İmza Tarihi', default=date.today, validators=[Optional()])
+    
 
     # Rol Seçimleri
     is_musteri = BooleanField('Bu bir Müşteri mi?', default=True)

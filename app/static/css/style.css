@@ -164,9 +164,9 @@
     }
 
     .alert-danger {
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-    color: #721c24;
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
     }
 
     .alert-success {
@@ -175,4 +175,22 @@
     color: #155724;
     }
 
+    /* Arama Çubuğu Tasarımı */
+    .search-form { 
+        display: flex; 
+        gap: 10px; 
+        margin-bottom: 15px; 
+        max-width: 900px; /* Kutunun toplam genişliğini buradan ayarlayabilirsin */
+    }
 
+    .search-form input { 
+        flex-grow: 1; /* İçindeki boşluğu tamamen doldurur */
+        padding: 10px; /* Biraz daha etli durması için padding artırıldı */
+        border: 1px solid #ccc; 
+        border-radius: 5px; 
+        font-size: 1em;
+    }
+
+    .search-form button {
+        padding: 10px 25px; /* Butonu da giriş kutusuyla aynı hizaya getirdik */
+    }

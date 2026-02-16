@@ -173,34 +173,78 @@
 
         <div class="tab-pane fade" id="kiralama">
             <div class="card card-body shadow-sm">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
+                 <div class="table-responsive">
+                     <table class="table table-hover align-middle">
+                        <thead class="table-light">
                             <tr>
-                                <th>Form No</th>
-                                <th>Ekipmanlar</th>
-                                <th>Durum</th>
-                                <th class="text-end">İşlem</th>
+                                <th style="width: 15%;">Form No</th>
+                                <th style="width: 55%;">Ekipmanlar ve Durumları</th>
+                                <th style="width: 20%;">Genel Durum</th>
+                                <th class="text-end" style="width: 10%;">İşlem</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for kiralama in firma.kiralamalar %}
+                            {% for kiralama in firma.kiralamalar | sort(attribute='id', reverse=True)%}
                             <tr>
-                                <td><a href="{{ url_for('kiralama.duzenle', kiralama_id=kiralama.id) }}"><strong>{{ kiralama.kiralama_form_no }}</strong></a></td>
                                 <td>
-                                    <ul class="mb-0 ps-3 small">
-                                        {% for kalem in kiralama.kalemler %}
-                                            <li>{{ kalem.ekipman.kod }} - {{ kalem.ekipman.tipi }}</li>
-                                        {% endfor %}
-                                    </ul>
+                                    <a href="{{ url_for('kiralama.duzenle', kiralama_id=kiralama.id) }}">
+                                        <strong>{{ kiralama.kiralama_form_no or 'No Belirtilmemiş' }}</strong>
+                                    </a>
                                 </td>
-                                <td><span class="badge bg-success">Devam Ediyor</span></td>
-                                <td class="text-end">
-                                    <a href="{{ url_for('kiralama.duzenle', kiralama_id=kiralama.id) }}" class="btn btn-sm btn-outline-primary">Detay</a>
+
+                                <td>
+    <ul class="list-unstyled mb-0 small">
+        {% for kalem in kiralama.kalemler %}
+        <li class="mb-3 d-flex align-items-start">
+            {% if kalem.sonlandirildi %}
+                <span class="badge bg-secondary me-2" style="min-width: 65px; opacity: 0.7;">Bitti</span>
+                <div class="text-muted" style="opacity: 0.8;">
+                    <span class="fw-bold">{{ kalem.ekipman.kod }} - {{ kalem.ekipman.tipi }}</span><br>
+                    <small>
+                        <i class="fa fa-calendar-check-o"></i> 
+                        {{ kalem.kiralama_baslangici.strftime('%d.%m.%Y') }} - {{ kalem.kiralama_bitis.strftime('%d.%m.%Y') }} tarihleri arası çalıştı.
+                    </small>
+                </div>
+            {% else %}
+                <span class="badge bg-success me-2" style="min-width: 65px;">Aktif</span>
+                <div>
+                    <span class="fw-bold text-dark">{{ kalem.ekipman.kod }} - {{ kalem.ekipman.tipi }}</span>
+                    <i class="fas fa-tractor ms-1 text-primary" title="Makine Sahada"></i><br>
+                    <small class="text-primary fw-bold">
+                        <i class="fa fa-clock-o"></i> 
+                        {{ kalem.kiralama_baslangici.strftime('%d.%m.%Y') }} tarihinden beri çalışıyor.
+                    </small>
+                </div>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</td>
+
+                                <td>
+                                    {% set toplam = kiralama.kalemler | length %}
+                                    {% set biten = kiralama.kalemler | selectattr('sonlandirildi', 'equalto', true) | list | length %}
+                            
+                                    {% if biten == 0 %}
+                                        <span class="text-success fw-bold"><i class="fa fa-play-circle"></i> Tamamı Sahada</span>
+                                    {% elif biten == toplam %}
+                                        <span class="text-secondary"><i class="fa fa-check-double"></i> Sözleşme Kapandı</span>
+                                    {% else %}
+                                        <span class="text-warning fw-bold">
+                                        <i class="fa fa-exclamation-circle"></i> Parçalı Teslimat
+                                        <br><small class="text-muted">({{ biten }}/{{ toplam }} makine döndü)</small>
+                                        </span>
+                                    {% endif %}
                                 </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
+
+                        <td class="text-end">
+                            <a href="{{ url_for('kiralama.duzenle', kiralama_id=kiralama.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fa fa-search"></i>
+                            </a>
+                        </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
                     </table>
                 </div>
             </div>
@@ -213,7 +257,7 @@
                         <table class="table table-borderless">
                             <tr><th>Yetkili Kişi:</th><td>{{ firma.yetkili_adi or '-' }}</td></tr>
                             <tr><th>Telefon:</th><td>{{ firma.telefon or '-' }}</td></tr>
-                            <tr><th>Email:</th><td>{{ firma.email or '-' }}</td></tr
+                            <tr><th>Email:</th><td>{{ firma.email or '-' }}</td></tr>
                             <tr><th>Vergi No:</th><td>{{ firma.vergi_no or '-' }}</td></tr>
                             <tr><th>İletişim:</th><td>{{ firma.iletisim_bilgileri or '-' }}</td></tr>
                         </table>

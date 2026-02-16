@@ -4,266 +4,373 @@
 
 {% block content %}
 <style>
-    /* Genel Stil */
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 20px; background-color: #f8f9fa; }
-    .container { max-width: 1500px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    /* Genel Tasarım */
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; }
+    .container { max-width: 1500px; margin: 30px auto; padding: 25px; background-color: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     
     /* Tablo Stilleri */
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; table-layout: fixed; }
-    th, td { padding: 12px; border: 1px solid #dee2e6; text-align: left; vertical-align: middle; }
-    th { background-color: #e9ecef; position: sticky; top: 0; z-index: 10; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; font-size: 0.92em; table-layout: fixed; }
+    th, td { padding: 14px; border-bottom: 1px solid #edf2f7; text-align: left; vertical-align: middle; }
+    th { background-color: #f1f5f9; font-weight: 600; color: #4a5568; position: sticky; top: 0; z-index: 10; border-top: 1px solid #dee2e6; }
     
-    /* Adres ve uzun metin kısıtlama */
-    .truncate { 
-        white-space: nowrap; 
-        overflow: hidden; 
-        text-overflow: ellipsis; 
-    }
-    .truncate:hover { 
-        white-space: normal; 
-        overflow: visible; 
-        background: #fff; 
-        position: relative; 
-        z-index: 5; 
-        cursor: help;
-    }
+    /* Satır Tıklama Özelliği */
+    .firma-satiri { transition: background-color 0.2s; cursor: pointer; }
+    .firma-satiri:hover { background-color: #f7fafc; }
+    
+    /* Metin Sınırlandırma */
+    .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .truncate:hover { white-space: normal; overflow: visible; background: #fff; position: relative; z-index: 5; }
 
-    /* Link ve Butonlar */
-    a { color: #007bff; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    
-    /* Badge (Rol) Stilleri */
-    .badge { display: inline-block; padding: .35em .65em; font-size: .75em; font-weight: 700; border-radius: .25rem; margin-right: 5px; color: #fff; }
-    .bg-primary { background-color: #007bff; }
-    .bg-warning { background-color: #ffc107; color: #343a40; }
+    /* Rozetler ve Butonlar */
+    .badge { display: inline-block; padding: 0.4em 0.8em; font-size: 0.75em; font-weight: 700; border-radius: 6px; margin-right: 4px; color: #fff; }
+    .bg-primary { background-color: #3182ce; }
+    .bg-warning { background-color: #ecc94b; color: #2d3748; }
+    .bg-info { background-color: #4fd1c5; color: #2d3748; }
+    .bg-secondary { background-color: #718096; }
 
-    /* Context Menu (Sağ Tık) */
-    .context-menu { display: none; position: absolute; background-color: white; border: 1px solid #ccc; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 5px; z-index: 2000; min-width: 180px; padding: 5px 0; }
-    .context-menu-item { display: block; padding: 10px 15px; color: #333; text-decoration: none; font-size: 0.95em; cursor: pointer; }
-    .context-menu-item:hover { background-color: #f8f9fa; color: #007bff; text-decoration: none; }
-    .context-menu-item i { width: 20px; margin-right: 8px; }
-    .context-menu-item.delete { color: #dc3545; font-weight: bold; border-top: 1px solid #eee; margin-top: 5px; }
-    .context-menu-item.delete:hover { background-color: #dc3545; color: white; }
+    /* Sağ Tık Menüsü (Context Menu) */
+    .context-menu { 
+        display: none; 
+        position: absolute; 
+        background-color: #ffffff; 
+        border: 1px solid #e2e8f0; 
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+        border-radius: 8px; 
+        z-index: 2000; 
+        min-width: 240px; 
+        padding: 8px 0; 
+    }
+    .context-menu-item { 
+        display: flex; 
+        align-items: center; 
+        padding: 10px 20px; 
+        color: #4a5568; 
+        text-decoration: none; 
+        font-size: 0.95em; 
+        cursor: pointer; 
+        border: none; 
+        background: none; 
+        width: 100%; 
+        transition: background 0.2s;
+    }
+    .context-menu-item:hover { background-color: #f7fafc; color: #3182ce; }
+    .context-menu-item i { width: 24px; font-size: 1.1em; color: #718096; }
+    .context-menu-item.delete { color: #e53e3e; border-top: 1px solid #edf2f7; margin-top: 5px; padding-top: 12px; }
+    .context-menu-item.delete:hover { background-color: #fff5f5; color: #c53030; }
     
-    /* Arama Formu */
-    .search-form { display: flex; gap: 10px; margin-bottom: 15px; }
-    .search-form input[type="text"] { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-    .search-form button { padding: 8px 20px; border: none; border-radius: 5px; background-color: #007bff; color: white; cursor: pointer; }
+    /* Arama Alanı */
+    .search-form { display: flex; gap: 12px; margin-bottom: 20px; }
+    .search-form input { flex-grow: 1; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; transition: border 0.2s; }
+    .search-form input:focus { border-color: #3182ce; }
+    .search-form button { padding: 10px 25px; border: none; border-radius: 8px; background-color: #3182ce; color: white; font-weight: 600; cursor: pointer; }
 
     /* Sayfalama */
-    .pagination { margin-top: 20px; text-align: center; }
-    .pagination a, .pagination span { padding: 8px 12px; margin: 0 3px; border: 1px solid #dee2e6; border-radius: 5px; text-decoration: none; }
-    .pagination .active { background-color: #007bff; color: white; }
+    .pagination { margin-top: 25px; display: flex; justify-content: center; gap: 5px; }
+    .pagination a, .pagination span { padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #4a5568; }
+    .pagination .active { background-color: #3182ce; color: white; border-color: #3182ce; }
 </style>
 
 <div class="container">
-    <h1>Firma Listesi</h1>
+    <!-- Başlık ve Buton Sol Tarafta Gruplandı -->
+    <div class="mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <h2 class="fw-bold mb-0">Firma Listesi</h2>
+            <a href="{{ url_for('firmalar.ekle') }}" class="btn btn-success shadow-sm px-4 btn-sm">
+                <i class="fas fa-plus me-2"></i>Yeni Firma Ekle
+            </a>
+        </div>
+    </div>
     
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-               
-               
-                <div class="alert 
-                        {{ 'alert-danger' if category == 'danger' else 'alert-success' }}">
-                  
+                <div class="alert alert-{{ 'danger' if category == 'danger' else ('warning' if category == 'warning' else 'success') }} alert-dismissible fade show shadow-sm mb-4">
                     {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
                 </div>
             {% endfor %}
         {% endif %}
     {% endwith %}
 
-    <p>
-        <a href="{{ url_for('firmalar.ekle') }}" style="background: #28a745; color: white; padding: 8px 15px; border-radius: 5px; display: inline-block;">+ Yeni Firma Ekle</a>
-         &nbsp; | &nbsp; 
-        <a href="{{ url_for('main.index') }}">Ana Sayfaya Dön</a>
-    </p>
-
     <form method="GET" action="{{ url_for('firmalar.index') }}" class="search-form">
-        <input type="text" name="q" placeholder="Firma, Yetkili, Telefon veya E-posta ile ara..." value="{{ q or '' }}">
-        <button type="submit">Bul</button>
+        <input type="text" name="q" placeholder="Firma adı, yetkili, vergi no veya iletişim bilgisi ile hızlı ara..." value="{{ q or '' }}">
+        <button type="submit"><i class="fas fa-search me-2"></i>Bul</button>
     </form>
 
-    <div style="overflow-x: auto;">
+    <div class="table-responsive">
         <table>
             <thead>
                 <tr>
-                    <th style="width: 20%;">Firma Adı <br><small class="text-muted" style="font-weight: normal;">(Sağ tıkla)</small></th>
-                    <th style="width: 15%;">Yetkili Kişi</th>
-                    <th style="width: 12%;">Telefon</th>
-                    <th style="width: 15%;">E-posta</th>
-                    <th style="width: 10%;">Vergi No</th>
-                    <th style="width: 20%;">Adres</th>
-                    <th style="width: 8%;">Rolü</th>
+                    <th style="width: 22%;">Firma Ünvanı <br><small class="text-muted fw-normal">(Gitmek için tıkla / Sağ tık menü)</small></th>
+                    <th style="width: 14%;">Sözleşme (PS)</th>
+                    <th style="width: 16%;">Yetkili</th>
+                    <th style="width: 13%;">İletişim</th>
+                    <th style="width: 12%;">E-posta</th>
+                    <th style="width: 11%;">Vergi No</th>
+                    <th style="width: 8%; text-align: center;">Rol</th>
                 </tr>
             </thead>
             <tbody>
                 {% for firma in firmalar %}
                 <tr class="firma-satiri"
                     data-firma-id="{{ firma.id }}"
-                    data-telefon="{{ firma.telefon }}"
-                    data-yetkili-adi="{{ firma.yetkili_adi or '' }}"
-                    data-kiralama-url="{{ url_for('kiralama.index', q=firma.firma_adi) }}" {# Kiralama listesine firmanın adıyla filtre gönderiyoruz #}
+                    data-firma-adi="{{ firma.firma_adi }}"
+                    data-yetkili-adi="{{ firma.yetkili_adi or 'Yetkili Belirtilmemiş' }}"
+                    data-telefon="{{ firma.telefon or '' }}"
+                    data-vergi-no="{{ firma.vergi_no or '' }}"
+                    data-sozlesme-no="{{ firma.sozlesme_no or '' }}"
+                    data-klasor-adi="{{ firma.bulut_klasor_adi or '' }}"
+                    data-bilgi-url="{{ url_for('firmalar.bilgi', id=firma.id) }}"
                     data-duzenle-url="{{ url_for('firmalar.duzelt', id=firma.id) }}"
                     data-sil-url="{{ url_for('firmalar.sil', id=firma.id) }}"
-                    data-bilgi-url="{{ url_for('firmalar.bilgi', id=firma.id) }}"
-                    data-csrf-token="{{ csrf_token() }}"
-                    data-firma-adi="{{ firma.firma_adi }}">
+                    data-sozlesme-hazirla-url="{{ url_for('firmalar.sozlesme_hazirla', id=firma.id) }}"
+                    data-sozlesme-yazdir-url="{{ url_for('dokumanlar.ps_yazdir', firma_id=firma.id) }}"
+                    data-kiralama-url="{{ url_for('kiralama.index', q=firma.firma_adi) }}">
                     
                     <td>
-                        {{ "🟢" if firma.imza_yetkisi_kontrol_edildi else "🔴" }}
-                        <strong>{{ firma.firma_adi }}</strong>
-                    <td class="truncate"> 
-                    {{ firma.yetkili_adi }}</td>
-                    <td class="truncate">
-                        {% if firma.telefon %}
-                            <a href="tel:{{ firma.telefon }}"><i class="fa fa-phone"></i> {{ firma.telefon }}</a>
-                        {% else %}-{% endif %}
+                        <span class="me-2">{{ "🟢" if firma.imza_yetkisi_kontrol_edildi else "🔴" }}</span>
+                        <span class="fw-bold">{{ firma.firma_adi }}</span>
+                        {% if firma.bulut_klasor_adi %}
+                            <i class="fas fa-folder-open ms-1 text-muted small" title="Klasör: {{ firma.bulut_klasor_adi }}"></i>
+                        {% endif %}
                     </td>
-                    <td class="truncate">
-                        {% if firma.eposta %}
-                            <a href="mailto:{{ firma.eposta }}" title="{{ firma.eposta }}">
-                                <i class="fa fa-envelope-o"></i> {{ firma.eposta | truncate(20) }}
+                    <td>
+                        {% if firma.sozlesme_no %}
+                            <span class="badge bg-info">{{ firma.sozlesme_no }}</span>
+                        {% else %}
+                            <span class="text-muted small italic">Hazırlanmadı</span>
+                        {% endif %}
+                    </td>
+                    <td class="truncate">{{ firma.yetkili_adi or '-' }}</td>
+                    <td>
+                        {% if firma.telefon %}
+                            <a href="tel:{{ firma.telefon }}" class="text-decoration-none action-link">
+                                <i class="fas fa-phone-alt me-1 text-muted small"></i> {{ firma.telefon }}
                             </a>
                         {% else %}-{% endif %}
-                    <td class="truncate">
-                    {{ firma.vergi_no }}</td>
-                    <td class="truncate" title="{{ firma.iletisim_bilgileri }}">{{ firma.iletisim_bilgileri }}</td>
-                    
-                    <td>
-                        {% if firma.is_musteri %}<span class="badge bg-primary">M</span>{% endif %}
-                        {% if firma.is_tedarikci %}<span class="badge bg-warning">T</span>{% endif %}
+                    </td>
+                    <td class="truncate" title="{{ firma.eposta }}">
+                        {% if firma.eposta %}
+                            <a href="mailto:{{ firma.eposta }}" class="text-decoration-none action-link">
+                                <i class="far fa-envelope me-1 text-muted"></i> {{ firma.eposta }}
+                            </a>
+                        {% else %}-{% endif %}
+                    </td>
+                    <td class="text-monospace">{{ firma.vergi_no or '-' }}</td>
+                    <td style="text-align: center;">
+                        {% if firma.is_musteri %}<span class="badge bg-primary" title="Müşteri">M</span>{% endif %}
+                        {% if firma.is_tedarikci %}<span class="badge bg-warning" title="Tedarikçi">T</span>{% endif %}
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="7" style="text-align: center; padding: 20px;">Kayıt bulunamadı.</td></tr>
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        <i class="fas fa-folder-open d-block mb-3 fs-2"></i>
+                        Aranan kriterlere uygun firma kaydı bulunamadı.
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    {% if pagination %}
+    {% if pagination and pagination.pages > 1 %}
     <div class="pagination">
         {% if pagination.has_prev %}
-            <a href="{{ url_for('firmalar.index', page=pagination.prev_num, q=q) }}">&laquo; Önceki</a>
+            <a href="{{ url_for('firmalar.index', page=pagination.prev_num, q=q) }}">&laquo;</a>
         {% endif %}
-        <span class="active">{{ pagination.page }} / {{ pagination.pages }}</span>
+        
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% if page_num %}
+                <a href="{{ url_for('firmalar.index', page=page_num, q=q) }}" class="{{ 'active' if page_num == pagination.page else '' }}">{{ page_num }}</a>
+            {% else %}
+                <span>...</span>
+            {% endif %}
+        {% endfor %}
+
         {% if pagination.has_next %}
-            <a href="{{ url_for('firmalar.index', page=pagination.next_num, q=q) }}">Sonraki &raquo;</a>
+            <a href="{{ url_for('firmalar.index', page=pagination.next_num, q=q) }}">&raquo;</a>
         {% endif %}
     </div>
     {% endif %}
+
+    <!-- İMZA YETKİSİ GÖSTERGELERİ -->
+    <div class="mt-5 p-3 bg-light border rounded shadow-sm" style="font-size: 0.85em; max-width: 400px;">
+        <h6 class="text-muted mb-2 border-bottom pb-1 fw-bold">İmza Yetkisi Durumları</h6>
+        <div class="mb-1">
+            <span style="font-size: 1.1em;">🟢</span> İmza yetkisi kontrol edilmiş firma
+        </div>
+        <div>
+            <span style="font-size: 1.1em;">🔴</span> İmza yetkisi henüz kontrol edilmemiş
+        </div>
+    </div>
 </div>
 
-<div id="context-menu" class="context-menu">
-    <a href="#" class="context-menu-item" id="menu-bilgi"><i class="fa fa-search"></i> Cari Detayı Görüntüle</a>
+<!-- SAĞ TIK MENÜSÜ -->
+<div id="context-menu" class="context-menu shadow-lg">
+    <a href="#" class="context-menu-item" id="menu-bilgi">
+        <i class="fas fa-file-invoice-dollar me-3 text-primary"></i> Cari Detayı & Ekstre
+    </a>
+    <a href="#" class="context-menu-item" id="menu-sozlesme-hazirla" style="color: #2b6cb0; font-weight: 600;">
+        <i class="fas fa-file-signature me-3"></i> Sözleşme Hazırla (PS)
+    </a>
     
-    <a href="#" class="context-menu-item" id="menu-kiralama"><i class="fa fa-history"></i> Kiralama Geçmişi</a>
-    <a href="#" class="context-menu-item text-success" id="menu-whatsapp"><i class="fa fa-whatsapp"></i> WhatsApp Mesajı</a>
-    <a href="#" class="context-menu-item" id="menu-duzenle"><i class="fa fa-pencil"></i> Firmayı Düzenle</a>
-    <a href="#" class="context-menu-item delete" id="menu-sil"><i class="fa fa-trash"></i> Firmayı Sil</a>
+    <!-- YAZDIRMA LİNKİ -->
+    <a href="#" target="_blank" class="context-menu-item" id="menu-sozlesme-yazdir" style="color: #1a202c; font-weight: bold;">
+        <i class="fas fa-print me-3 text-dark"></i> Sözleşmeyi Yazdır (PS)
+    </a>
+
+    <!-- ARŞİV KLASÖRÜ LİNKİ -->
+    <a href="#" target="_blank" class="context-menu-item" id="menu-klasor-ac" style="color: #6b46c1; font-weight: 500;">
+        <i class="fas fa-folder-open me-3"></i> Arşiv Klasörünü Aç
+    </a>
+    <a href="#" class="context-menu-item" id="menu-kiralama">
+        <i class="fas fa-history me-3 text-secondary"></i> Kiralama Geçmişi
+    </a>
+    <a href="#" class="context-menu-item text-success" id="menu-whatsapp" style="color: #2f855a;">
+        <i class="fab fa-whatsapp me-3"></i> WhatsApp Mesajı Gönder
+    </a>
+    <a href="#" class="context-menu-item" id="menu-duzenle">
+        <i class="fas fa-edit me-3 text-warning"></i> Bilgileri Güncelle
+    </a>
+    <button type="button" class="context-menu-item delete" id="menu-sil">
+        <i class="fas fa-trash-alt me-3"></i> Firmayı Arşive Kaldır
+    </button>
 </div>
 
-<form id="delete-form" method="POST" style="display: none;">
+<!-- GİZLİ İŞLEM FORMU -->
+<form id="action-form" method="POST" style="display: none;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 </form>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const contextMenu = document.getElementById('context-menu');
-    const deleteForm = document.getElementById('delete-form');
-    const menuBilgi = document.getElementById('menu-bilgi');
-    const menuKiralama = document.getElementById('menu-kiralama');
-    const menuWhatsapp = document.getElementById('menu-whatsapp');
-    const menuDuzenle = document.getElementById('menu-duzenle');
-    const menuSil = document.getElementById('menu-sil');
+    const actionForm = document.getElementById('action-form');
     
-    let currentSilUrl = null;
-    let currentFirmaAdi = null;
-    let currentYetkili = null;
+    // Menü öğeleri
+    const items = {
+        bilgi: document.getElementById('menu-bilgi'),
+        sozlesme: document.getElementById('menu-sozlesme-hazirla'),
+        yazdir: document.getElementById('menu-sozlesme-yazdir'),
+        klasor: document.getElementById('menu-klasor-ac'),
+        kiralama: document.getElementById('menu-kiralama'),
+        whatsapp: document.getElementById('menu-whatsapp'),
+        duzenle: document.getElementById('menu-duzenle'),
+        sil: document.getElementById('menu-sil')
+    };
+    
+    let activeData = {};
 
-    const showMenu = (event, row) => {
-        event.preventDefault();
+    const openContextMenu = (e, row) => {
+        e.preventDefault();
+        e.stopPropagation(); // Sağ tık yapıldığında satır tıklama olayını engelle
         
-        // --- BURASI KRİTİK: Değişkenleri satırdan (dataset) çekiyoruz ---
-        currentSilUrl = row.dataset.silUrl;
-        currentFirmaAdi = row.dataset.firmaAdi;
-        currentYetkili = row.dataset.yetkiliAdi;
-        const tel = row.dataset.telefon; // Satırdaki data-telefon
-        const kiralamaUrl = row.dataset.kiralamaUrl; // Satırdaki data-kiralama-url
-
-        menuBilgi.href = row.dataset.bilgiUrl;
-        menuDuzenle.href = row.dataset.duzenleUrl;
-        
-        // Kiralama linkini ata
-        if (menuKiralama) {
-            menuKiralama.href = kiralamaUrl || "#";
-        }
-
-        // WhatsApp Mantığı
-        if (menuWhatsapp) {
-            if (tel && tel.trim() !== "" && tel !== "None") {
-                menuWhatsapp.style.display = 'block';
-                
-                // Telefon numarasını temizle
-                let temizNo = tel.replace(/\D/g, ''); 
-                if (temizNo.startsWith('0')) {
-                    temizNo = '90' + temizNo.substring(1);
-                } else if (temizNo.length === 10) {
-                    temizNo = '90' + temizNo;
-                }
-
-                const mesaj = encodeURIComponent(`Merhaba ${currentYetkili}, Pimaks Kiralama Hizmetlerinden Size Ulaşıyoruz.`);
-                menuWhatsapp.href = `https://wa.me/${temizNo}?text=${mesaj}`;
-            } else {
-                menuWhatsapp.style.display = 'none';
+        // Verileri nesneye al
+        activeData = {
+            id: row.dataset.firmaId,
+            adi: row.dataset.firmaAdi,
+            yetkili: row.dataset.yetkiliAdi,
+            tel: row.dataset.telefon,
+            vergi: row.dataset.vergiNo,
+            ps: row.dataset.sozlesmeNo,
+            klasor: row.dataset.klasorAdi,
+            urls: {
+                bilgi: row.dataset.bilgiUrl,
+                duzenle: row.dataset.duzenleUrl,
+                sil: row.dataset.silUrl,
+                ps_hazirla: row.dataset.sozlesmeHazirlaUrl,
+                ps_yazdir: row.dataset.sozlesmeYazdirUrl,
+                kiralama: row.dataset.kiralamaUrl
             }
+        };
+
+        // Linkleri ve Görünürlüğü Ayarla
+        items.bilgi.href = activeData.urls.bilgi;
+        items.duzenle.href = activeData.urls.duzenle;
+        items.kiralama.href = activeData.urls.kiralama;
+
+        // Sözleşme ve Yazdırma Kontrolü
+        const hasPS = activeData.ps && activeData.ps !== "" && activeData.ps !== "None";
+        
+        // Numara yoksa "Hazırla" göster, varsa "Yazdır" göster
+        items.sozlesme.style.display = hasPS ? 'none' : 'flex';
+        items.yazdir.style.display = hasPS ? 'flex' : 'none';
+        if (hasPS) items.yazdir.href = activeData.urls.ps_yazdir;
+        
+        // Klasör Linki
+        if (activeData.klasor && activeData.klasor !== "") {
+            items.klasor.style.display = 'flex';
+            items.klasor.href = `/static/arsiv/${activeData.klasor}/`;
+        } else {
+            items.klasor.style.display = 'none';
         }
 
-        contextMenu.style.left = event.pageX + 'px';
-        contextMenu.style.top = event.pageY + 'px';
+        // WhatsApp kontrolü
+        if (activeData.tel && activeData.tel.length > 5) {
+            items.whatsapp.style.display = 'flex';
+            let cleanNo = activeData.tel.replace(/\D/g, '');
+            if (cleanNo.startsWith('0')) cleanNo = '90' + cleanNo.substring(1);
+            else if (cleanNo.length === 10) cleanNo = '90' + cleanNo;
+            const text = encodeURIComponent(`Sayın ${activeData.yetkili}, Pimaks Kiralama'dan size ulaşıyoruz.`);
+            items.whatsapp.href = `https://wa.me/${cleanNo}?text=${text}`;
+        } else {
+            items.whatsapp.style.display = 'none';
+        }
+
+        // Pozisyon ayarla
         contextMenu.style.display = 'block';
+        contextMenu.style.left = e.pageX + 'px';
+        contextMenu.style.top = e.pageY + 'px';
     };
 
-    // Dinleyiciler
+    // Satır Dinleyicileri
     document.querySelectorAll('.firma-satiri').forEach(row => {
-        row.addEventListener('contextmenu', (e) => showMenu(e, row));
+        // SOL TIK: Cari Bilgiye Git
+        row.addEventListener('click', (e) => {
+            if (e.target.closest('.action-link')) return;
+            const url = row.dataset.bilgiUrl;
+            if (url) window.location.href = url;
+        });
+
+        // SAĞ TIK: Menü Aç
+        row.addEventListener('contextmenu', (e) => openContextMenu(e, row));
         
-        // Mobil Long Press
-        let timer;
+        // Dokunmatik uzun basma
+        let touchTimer;
         row.addEventListener('touchstart', (e) => {
-            timer = setTimeout(() => {
-                const touch = e.touches[0];
-                showMenu({
-                    preventDefault: () => e.preventDefault(),
-                    pageX: touch.pageX,
-                    pageY: touch.pageY
+            touchTimer = setTimeout(() => {
+                const t = e.touches[0];
+                openContextMenu({ 
+                    preventDefault: () => e.preventDefault(), 
+                    pageX: t.pageX, 
+                    pageY: t.pageY,
+                    stopPropagation: () => e.stopPropagation()
                 }, row);
-            }, 600);
-        }, { passive: false });
-        
-        row.addEventListener('touchend', () => clearTimeout(timer));
-        row.addEventListener('touchmove', () => clearTimeout(timer));
+            }, 700);
+        });
+        row.addEventListener('touchend', () => clearTimeout(touchTimer));
     });
 
     window.addEventListener('click', () => contextMenu.style.display = 'none');
 
-    menuSil.addEventListener('click', (e) => {
+    // İşlem Onayları
+    items.sozlesme.addEventListener('click', (e) => {
         e.preventDefault();
-        if (confirm("'" + currentFirmaAdi + "' silinecek. Onaylıyor musunuz?")) {
-            deleteForm.action = currentSilUrl;
-            deleteForm.submit();
+        const beklenenKlasor = `${activeData.adi}_${activeData.vergi || activeData.id}`.replace(/\s+/g, '_');
+        if (confirm(`'${activeData.adi}' için PS numarası atanacak ve '${beklenenKlasor}' isimli arşiv klasörleri oluşturulacak. Emin misiniz?`)) {
+            actionForm.action = activeData.urls.ps_hazirla;
+            actionForm.submit();
+        }
+    });
+
+    items.sil.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (confirm(`'${activeData.adi}' arşive kaldırılacak. Devam edilsin mi?`)) {
+            actionForm.action = activeData.urls.sil;
+            actionForm.submit();
         }
     });
 });
 </script>
-<div class="mt-4 p-3 bg-light border rounded shadow-sm" style="font-size: 0.9em; max-width: 400px;">
-        <h6 class="text-muted mb-2 border-bottom pb-1">İmza Yetkisi Durumları</h6>
-        <div class="mb-1">
-            <span style="font-size: 1.2em;">🟢</span> İmza yetkisi kontrol edilmiş firma
-        </div>
-        <div>
-            <span style="font-size: 1.2em;">🔴</span> İmza yetkisi henüz kontrol edilmemiş
-        </div>
-    </div>
 {% endblock %}
