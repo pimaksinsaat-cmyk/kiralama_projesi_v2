@@ -245,10 +245,16 @@
     <!-- SADECE KİRALAMA FORMU YAZDIRMA -->
     <div style="height:1px; background:#eee; margin:5px 0;"></div>
     <a class="context-menu-item text-primary" id="menu-kiralama-formu"><i class="fas fa-file-invoice me-2"></i>Kiralama Formunu Yazdır (PDF)</a>
-    
+    <!-- YENİ EKLENEN TESLİM TUTANAĞI SEÇENEĞİ -->
+    <a class="context-menu-item text-success" id="menu-teslim-tutanagi"><i class="fas fa-file-contract me-2"></i>Teslim Tutanağı Yazdır (PDF)</a>
     <div style="height:1px; background:#eee; margin:5px 0;"></div>
     <a class="context-menu-item text-danger fw-bold" id="menu-sil"><i class="fas fa-trash-alt me-2"></i>Kiralama Kaydını Sil</a>
 </div>
+
+
+
+
+
 
 <div id="context-menu-kalem" class="context-menu-kalem shadow">
     <div class="px-3 py-2 small text-muted border-bottom fw-bold" id="menu-kalem-title">MAKİNE İŞLEMLERİ</div>
@@ -346,6 +352,12 @@ document.addEventListener('DOMContentLoaded', function() {
             form.submit();
         }
     };
+
+    // Mevcut script içindeki menu click işlemlerine ekleyin:
+        document.getElementById('menu-teslim-tutanagi').onclick = () => {
+            if(state.rentalId) window.open(`/dokumanlar/yazdir/teslim-tutanagi/${state.rentalId}`, '_blank');
+        };
+
 
     document.getElementById('menu-sonlandir').onclick = () => {
         document.getElementById('modal-kalem-id').value = state.kId;

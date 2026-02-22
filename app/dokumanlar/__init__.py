@@ -6,3 +6,4 @@ dokumanlar_bp = Blueprint('dokumanlar', __name__, template_folder='templates')
 
 from app.dokumanlar import routes
 from . import kiralama_routes
+from . import teslim_tutanagi_hazirla
