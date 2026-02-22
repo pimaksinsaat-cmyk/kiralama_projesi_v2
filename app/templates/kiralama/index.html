@@ -116,7 +116,6 @@
         </div>
         
         <form method="GET" action="{{ url_for('kiralama.index') }}" class="d-flex mb-0" style="width: 35%;">
-            {# ARAMA ALANI GÜNCELLENDİ: Makine kodu da eklendi #}
             <input type="text" name="q" class="form-control form-control-sm me-2 shadow-sm border-secondary" placeholder="Form no, müşteri veya makine kodu ara..." value="{{ q or '' }}">
             <button type="submit" class="btn btn-dark btn-sm px-4 shadow-sm">ARA</button>
         </form>
@@ -242,6 +241,11 @@
 <div id="context-menu" class="context-menu shadow">
     <div class="px-3 py-2 small text-muted border-bottom fw-bold" id="menu-form-title">FORM İŞLEMLERİ</div>
     <a class="context-menu-item" id="menu-duzenle"><i class="fas fa-edit me-2 text-primary"></i>Kiralama Formunu Düzenle</a>
+    
+    <!-- SADECE KİRALAMA FORMU YAZDIRMA -->
+    <div style="height:1px; background:#eee; margin:5px 0;"></div>
+    <a class="context-menu-item text-primary" id="menu-kiralama-formu"><i class="fas fa-file-invoice me-2"></i>Kiralama Formunu Yazdır (PDF)</a>
+    
     <div style="height:1px; background:#eee; margin:5px 0;"></div>
     <a class="context-menu-item text-danger fw-bold" id="menu-sil"><i class="fas fa-trash-alt me-2"></i>Kiralama Kaydını Sil</a>
 </div>
@@ -286,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const contextMenuKalem = document.getElementById('context-menu-kalem');
     const backdrop = document.getElementById('modal-backdrop-sonlandir');
     
-    let state = { kUrl: null, sUrl: null, fNo: null, csrf: null, kId: null, eKod: null, kCsrf: null };
+    let state = { kUrl: null, sUrl: null, fNo: null, csrf: null, kId: null, eKod: null, kCsrf: null, rentalId: null };
 
     function closeModals() {
         backdrop.style.display = 'none';
@@ -303,6 +307,8 @@ document.addEventListener('DOMContentLoaded', function() {
             state.sUrl = this.dataset.silUrl;
             state.fNo = this.dataset.formNo;
             state.csrf = this.dataset.csrfToken;
+            state.rentalId = this.dataset.kiralamaId;
+            
             document.getElementById('menu-form-title').innerText = state.fNo;
             contextMenu.style.top = e.pageY + 'px'; contextMenu.style.left = e.pageX + 'px';
             contextMenu.style.display = 'block';
@@ -325,14 +331,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Menu Click İşlemleri
     document.getElementById('menu-duzenle').onclick = () => { if(state.kUrl) window.location.href = state.kUrl; };
-    document.getElementById('menu-sil').onclick = () => {
+    
+    // YAZDIRMA AKSİYONU (SADECE KİRALAMA FORMU)
+    document.getElementById('menu-kiralama-formu').onclick = () => {
+        if(state.rentalId) window.open(`/dokumanlar/yazdir/form/${state.rentalId}`, '_blank');
+    };
+
+      document.getElementById('menu-sil').onclick = () => {
         if(confirm(state.fNo + ' nolu tüm kiralama silinecek. Emin misiniz?')) {
             const form = document.getElementById('delete-form');
             form.action = state.sUrl; form.querySelector('input[name="csrf_token"]').value = state.csrf;
             form.submit();
         }
     };
+
     document.getElementById('menu-sonlandir').onclick = () => {
         document.getElementById('modal-kalem-id').value = state.kId;
         document.getElementById('modal-ekipman-kod').innerText = state.eKod;
@@ -340,6 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('modal-bitis-tarihi').value = new Date().toISOString().split('T')[0];
         backdrop.style.display = 'flex';
     };
+
     document.getElementById('menu-iptal').onclick = () => {
         if(confirm(state.eKod + ' tekrar AKTİF edilsin mi?')) {
             document.getElementById('iptal-kalem-id').value = state.kId;

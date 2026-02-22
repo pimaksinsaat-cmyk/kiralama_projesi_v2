@@ -1,19 +1,19 @@
 import os
-from flask import flash, redirect, url_for, send_file
+from flask import flash, redirect, url_for, send_file, request
 from . import dokumanlar_bp
 from app.firmalar.models import Firma
 
-# word_engine modülünü güvenli bir şekilde içe aktaralım
+# engine_ps.py modülünü güvenli bir şekilde içe aktaralım
 try:
-    from app.dokumanlar.word_engine import ps_word_olustur
+    from app.dokumanlar.engine_ps import ps_word_olustur
 except ImportError:
-    from .word_engine import ps_word_olustur
+    from .engine_ps import ps_word_olustur
 
 @dokumanlar_bp.route('/ps-yazdir/<int:firma_id>')
 def ps_yazdir(firma_id):
     """
     Sözleşmeyi oluşturur ve tarayıcıya gönderir.
-    PDF ise ekranda açar, Word ise indirme işlemi başlatır.
+    Hız Optimizasyonu: Dosya zaten varsa LibreOffice'i çalıştırmadan mevcut dosyayı gönderir.
     """
     try:
         # 1. Firmayı veritabanından bul
@@ -24,9 +24,21 @@ def ps_yazdir(firma_id):
             flash(f"'{firma.firma_adi}' için önce PS numarası oluşturmalısınız (Sağ Tık -> Sözleşme Hazırla).", "warning")
             return redirect(url_for('firmalar.index'))
 
-        # 3. Dosyayı OLUŞTUR (word_engine.py dosyasındaki seçili kodu çalıştırır)
-        # Bu fonksiyon PDF oluşturursa .pdf yolunu, hata alırsa .docx yolunu döndürür.
-        dosya_yolu = ps_word_olustur(firma)
+        # --- HIZ OPTİMİZASYONU (ÖNBELLEK) ---
+        # Eğer kullanıcı özellikle 'yenile' demediyse ve dosya sistemde varsa doğrudan gönder.
+        # Bu işlem mobildeki 5-10 saniyelik beklemeyi ikinci tıklamada 0'a indirir.
+        refresh = request.args.get('refresh', 'false').lower() == 'true'
+        
+        # Dosya yolunu oluştur (engine_ps.py ile aynı mantık)
+        base_path = os.path.join(os.getcwd(), 'app', 'static', 'arsiv', firma.bulut_klasor_adi, 'PS')
+        pdf_yolu = os.path.join(base_path, f"{firma.sozlesme_no}_Sozlesme.pdf")
+
+        if not refresh and os.path.exists(pdf_yolu):
+            # Dosya bulundu, motoru çalıştırmadan doğrudan gönderiyoruz.
+            dosya_yolu = pdf_yolu
+        else:
+            # 3. Dosyayı OLUŞTUR (İlk kez oluşturuluyor veya zorunlu yenileme yapılıyor)
+            dosya_yolu = ps_word_olustur(firma)
         
         if not dosya_yolu or not os.path.exists(dosya_yolu):
             flash("Dosya oluşturulamadı veya sunucu diskinde bulunamadı.", "danger")
@@ -37,12 +49,10 @@ def ps_yazdir(firma_id):
         
         if uzanti == '.pdf':
             mimetype = 'application/pdf'
-            # as_attachment=False: iPhone ve bilgisayarda dosyayı indirmeden tarayıcıda açar.
+            # as_attachment=False: iPhone'da doğrudan Safari içinde açar
             as_attachment = False
         else:
-            # Word dosyası için standart MIME tipi
             mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            # Word dosyaları tarayıcıda açılamayacağı için indirilmesini sağlarız.
             as_attachment = True
 
         # 5. Dosyayı Kullanıcıya Gönder
@@ -54,6 +64,5 @@ def ps_yazdir(firma_id):
         )
         
     except Exception as e:
-        # Hata durumunda log bas ve kullanıcıyı ana sayfaya yönlendir
         flash(f"Döküman hazırlama sırasında bir hata oluştu: {str(e)}", "danger")
         return redirect(url_for('firmalar.index'))

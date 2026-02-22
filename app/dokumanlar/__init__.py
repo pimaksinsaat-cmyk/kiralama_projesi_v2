@@ -5,3 +5,4 @@ from flask import Blueprint
 dokumanlar_bp = Blueprint('dokumanlar', __name__, template_folder='templates')
 
 from app.dokumanlar import routes
+from . import kiralama_routes
